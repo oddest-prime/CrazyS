@@ -2,49 +2,49 @@
 Changelog for package rotors_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-4.0.14 (2020-08-22)
--------------------
+6.0.8 (2020-08-22)
+------------------
 
-4.0.13 (2020-05-13)
--------------------
+6.0.7 (2020-05-13)
+------------------
 * Add a simple scenario in which using the Octomap plugin with the Crazyflie 2.0
+* Fixed issue related to the world file #50
 * Contributors: Giuseppe Silano
 
-4.0.12 (2020-05-02)
--------------------
+6.0.6 (2020-05-02)
+------------------
 * Add launch file for simulating the Crazyflie 2.0 with a VI sensor. In addition, an RVIZ configuration file allows to see the camera images and point cloud data
 * Contributors: Giuseppe Silano
 
-4.0.11 (2020-04-23)
+6.0.5 (2020-04-23)
 ------------------
 * Add a swarm example with the Crazyflie 2.0
 * The spline trajectory generator now is a shared library
 * Add a trajectory generator when using splines for the swarm example
 * Contributors: Giuseppe Silano
 
-4.0.10 (2020-04-14)
--------------------
+6.0.4 (2020-04-14)
+------------------
 * Add INDI and Mellinger's (it does not work yet) controllers to the spaw_mav_crazyflie.launch file
 * Add spline trajectory generator
 * Add launch files to run the Internal Model and Mellinger's controllers
 * Add resource files for the above controllers and trajectory generator
 * Contributors: Ria Sonecha, Giuseppe Silano
 
-4.0.9 (2020-03-22)
+6.0.3 (2020-03-22)
 ------------------
 * Add data saving features in crazyflie2_hovering_example.launch
 * Delete useless plots in crazyflie2_hovering_example.launch
 * Contributors: Giuseppe Silano
 
-4.0.8 (2020-02-09)
+6.0.2 (2020-02-09)
 ------------------
 * Add resource file for the Crazyflie's on-board controller when the joystick interface is active
 * Add lunch file for piloting the Crazyflie with the joystick
 * Contributors: Giuseppe Silano
 
-4.0.7 (2019-12-28)
+6.0.1 (2019-12-28)
 ------------------
-* Disable shadows
 * Fix issue related to "xacro.py is deprecated; please use xacro instead"
 * Contributors: Giuseppe Silano
 

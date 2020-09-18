@@ -2,37 +2,37 @@
 Changelog for package rotors_description
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-4.0.14 (2020-08-22)
--------------------
+6.0.8 (2020-08-22)
+------------------
 * Add crazyflie2_forster.xacro file with Forster's parameters as described in #56
 * Contributors: Tonirayn
 
-4.0.13 (2020-05-13)
--------------------
+6.0.7 (2020-05-13)
+------------------
 
-4.0.12 (2020-05-02)
--------------------
+6.0.6 (2020-05-02)
+------------------
 * Add a VI sensor for the Crazyflie without shape and visual part
 * Contributors: Giuseppe Silano
 
-4.0.11 (2020-04-23)
+6.0.5 (2020-04-23)
 ------------------
 * Fix issue according to https://github.com/gsilano/CrazyS/issues/44
 * Changed the "measurement_divisor" (from 10 to 1) at line 895 in the component_snippets.xacro file
 * Contributors: Giuseppe Silano
 
-4.0.10 (2020-04-14)
+6.0.4 (2020-04-14)
 ------------------
 * Add ideal imu sensor for the Crazyflie
 * Contributors: Ria Sonecha, Giuseppe Silano
 
-4.0.9 (2020-03-22)
+6.0.3 (2020-03-22)
 ------------------
 
-4.0.8 (2020-02-09)
+6.0.2 (2020-02-09)
 ------------------
 
-4.0.7 (2019-12-28)
+6.0.1 (2019-12-28)
 ------------------
 * Deleted pi constant in the component_snippest file.
 * Contributors: Giuseppe Silano

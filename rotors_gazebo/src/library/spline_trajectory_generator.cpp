@@ -400,6 +400,9 @@ namespace rotors_gazebo {
      GetRosParameter(pnh, "position_final/y", position_final_.y(), &position_final_.y());
      GetRosParameter(pnh, "position_final/z", position_final_.z(), &position_final_.z());
 
+     ROS_DEBUG("[Library] Position final x: %f, y: %f, z :%f", position_final_.x(), position_final_.y(),
+       position_final_.z());
+
      GetRosParameter(pnh, "velocity_initial/x", velocity_initial_.x(), &velocity_initial_.x());
      GetRosParameter(pnh, "velocity_initial/y", velocity_initial_.y(), &velocity_initial_.y());
      GetRosParameter(pnh, "velocity_initial/z", velocity_initial_.z(), &velocity_initial_.z());

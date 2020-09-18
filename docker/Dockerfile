@@ -31,8 +31,15 @@ RUN useradd -m flie && \
     echo "flie:flie" | chpasswd && \
     adduser flie sudo && \
     mkdir /crazyflie_ws && \
-    chown flie:flie /crazyflie_ws 
-	
+    chown flie:flie /crazyflie_ws && \
+    mkdir -p /home/flie/.ssh && \
+    chown flie:flie /home/flie/.ssh
+
+COPY deploy-key.pub /home/flie/.ssh/id_rsa.pub
+COPY deploy-key /home/flie/.ssh/id_rsa
+
+RUN chown flie:flie /home/flie/.ssh/*
+
 USER flie
 
 RUN echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
@@ -42,8 +49,9 @@ WORKDIR /crazyflie_ws
 RUN mkdir -p /crazyflie_ws/src 
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash; cd /crazyflie_ws/src; catkin_init_workspace; cd /crazyflie_ws; catkin init"
 
-# RUN cd /crazyflie_ws/src && git clone -b dev/ros-melodic https://github.com/gsilano/CrazyS.git
-RUN cd /crazyflie_ws/src && git clone -b dev/ros-melodic git@github.com:oddest-prime/crazys.git && git checkout dockerized
+RUN ssh-keyscan github.com >> ~/.ssh/known_hosts
+RUN cd /crazyflie_ws/src && git clone -b dev/ros-melodic https://github.com/gsilano/CrazyS.git
+# RUN cd /crazyflie_ws/src && git clone -b dockerized git@github.com:oddest-prime/crazys.git
 RUN cd /crazyflie_ws/src && git clone -b med18_gazebo9 https://github.com/gsilano/mav_comm.git
 # RUN cd /crazyflie_ws && rosdep update && rosdep install --from-paths src -i
 

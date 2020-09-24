@@ -97,10 +97,10 @@ void PositionControllerMpc::MultiDofJointTrajectoryCallback(const trajectory_msg
 
   if (n_commands >= 1) {
     waypointHasBeenPublished_ = true;
-    ROS_INFO("PositionController got first MultiDOFJointTrajectory message.");
+    ROS_INFO("MpcController got first MultiDOFJointTrajectory message.");
   }
 
-  ROS_DEBUG("PositionController got MultiDOFJointTrajectory message: x=%f, y=%f, z=%f, yaw=%f", eigen_reference.position_W[0], eigen_reference.position_W[1], eigen_reference.position_W[2], eigen_reference.getYaw());
+  ROS_DEBUG("MpcController got MultiDOFJointTrajectory message: x=%f, y=%f, z=%f, yaw=%f", eigen_reference.position_W[0], eigen_reference.position_W[1], eigen_reference.position_W[2], eigen_reference.getYaw());
 
 }
 
@@ -215,7 +215,7 @@ void PositionControllerMpc::Publish(){
 
 void PositionControllerMpc::IMUCallback(const sensor_msgs::ImuConstPtr& imu_msg) {
 
-    ROS_INFO_ONCE("PositionController got first imu message.");
+    ROS_INFO_ONCE("MpcController got first imu message.");
 
     // Angular velocities data
     sensors_.gyro.x = imu_msg->angular_velocity.x;
@@ -233,7 +233,7 @@ void PositionControllerMpc::IMUCallback(const sensor_msgs::ImuConstPtr& imu_msg)
 
 void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg) {
 
-    ROS_INFO_ONCE("PositionController got first odometry message.");
+    ROS_INFO_ONCE("MpcController got first odometry message.");
 
     if (waypointHasBeenPublished_ && enable_state_estimator_){
 
@@ -253,7 +253,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
       eigenOdometryFromMsg(odometry_msg, &odometry);
       position_controller_.SetOdometryWithoutStateEstimator(odometry);
 
-      ROS_DEBUG("PositionController got odometry message: x=%f y=%f z=%f", odometry.position[0], odometry.position[1], odometry.position[2]);
+      ROS_DEBUG("MpcController got odometry message: x=%f y=%f z=%f", odometry.position[0], odometry.position[1], odometry.position[2]);
 
       Eigen::Vector4d ref_rotor_velocities;
       position_controller_.CalculateRotorVelocities(&ref_rotor_velocities);

@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "rotors_control/position_controller.h"
+#include "rotors_control/mpc_controller.h"
 #include "rotors_control/transform_datatypes.h"
 #include "rotors_control/Matrix3x3.h"
 #include "rotors_control/Quaternion.h"
@@ -55,7 +55,7 @@
 
 namespace rotors_control{
 
-PositionController::PositionController()
+MpcController::MpcController()
     : controller_active_(false),
     state_estimator_active_(false),
     dataStoring_active_(false),
@@ -102,10 +102,10 @@ PositionController::PositionController()
 
 }
 
-PositionController::~PositionController() {}
+MpcController::~MpcController() {}
 
 //The callback saves data come from simulation into csv files
-void PositionController::CallbackSaveData(const ros::TimerEvent& event){
+void MpcController::CallbackSaveData(const ros::TimerEvent& event){
 
       if(!dataStoring_active_){
          return;
@@ -201,13 +201,13 @@ void PositionController::CallbackSaveData(const ros::TimerEvent& event){
 }
 
 // Reading parameters come frame launch file
-void PositionController::SetLaunchFileParameters(){
+void MpcController::SetLaunchFileParameters(){
 
 	// The boolean variable is used to inactive the logging if it is not useful
 	if(dataStoring_active_){
 
 		// Time after which the data storing function is turned on
-		timer_ = n_.createTimer(ros::Duration(dataStoringTime_), &PositionController::CallbackSaveData, this, false, true);
+		timer_ = n_.createTimer(ros::Duration(dataStoringTime_), &MpcController::CallbackSaveData, this, false, true);
 
 		// Cleaning the string vector contents
     listPropellersVelocity_.clear();
@@ -227,7 +227,7 @@ void PositionController::SetLaunchFileParameters(){
 }
 
 // Controller gains are entered into local global variables
-void PositionController::SetControllerGains(){
+void MpcController::SetControllerGains(){
 
       xy_gain_kp_ = Eigen::Vector2f(controller_parameters_.xy_gain_kp_.x(), controller_parameters_.xy_gain_kp_.y());
       xy_gain_ki_ = Eigen::Vector2f(controller_parameters_.xy_gain_ki_.x(), controller_parameters_.xy_gain_ki_.y());
@@ -247,12 +247,12 @@ void PositionController::SetControllerGains(){
 
 }
 
-void PositionController::SetTrajectoryPoint(const mav_msgs::EigenTrajectoryPoint& command_trajectory) {
+void MpcController::SetTrajectoryPoint(const mav_msgs::EigenTrajectoryPoint& command_trajectory) {
     command_trajectory_= command_trajectory;
     controller_active_= true;
 }
 
-void PositionController::CalculateRotorVelocities(Eigen::Vector4d* rotor_velocities) {
+void MpcController::CalculateRotorVelocities(Eigen::Vector4d* rotor_velocities) {
     assert(rotor_velocities);
 
     // This is to disable the controller if we do not receive a trajectory
@@ -308,7 +308,7 @@ void PositionController::CalculateRotorVelocities(Eigen::Vector4d* rotor_velocit
     *rotor_velocities = Eigen::Vector4d(omega_1, omega_2, omega_3, omega_4);
 }
 
-void PositionController::Quaternion2Euler(double* roll, double* pitch, double* yaw) const {
+void MpcController::Quaternion2Euler(double* roll, double* pitch, double* yaw) const {
     assert(roll);
     assert(pitch);
     assert(yaw);
@@ -328,26 +328,19 @@ void PositionController::Quaternion2Euler(double* roll, double* pitch, double* y
 
 }
 
-void PositionController::ControlMixer(double* PWM_1, double* PWM_2, double* PWM_3, double* PWM_4) {
+void MpcController::ControlMixer(double* PWM_1, double* PWM_2, double* PWM_3, double* PWM_4) {
     assert(PWM_1);
     assert(PWM_2);
     assert(PWM_3);
     assert(PWM_4);
 
-    if(!state_estimator_active_)
-       // When the state estimator is disable, the delta_omega_ value is computed as soon as the new odometry message is available.
-       //The timing is managed by the publication of the odometry topic
-       HoveringController(&control_t_.thrust);
+    // When the state estimator is disable, the delta_omega_ value is computed as soon as the new odometry message is available.
+    //The timing is managed by the publication of the odometry topic
+    HoveringController(&control_t_.thrust);
 
     // Control signals are sent to the on board control architecture if the state estimator is active
     double delta_phi, delta_theta, delta_psi;
-    if(state_estimator_active_){
-       crazyflie_onboard_controller_.SetControlSignals(control_t_);
-       crazyflie_onboard_controller_.SetDroneState(state_);
-       crazyflie_onboard_controller_.RateController(&delta_phi, &delta_theta, &delta_psi);
-    }
-    else
-       RateController(&delta_phi, &delta_theta, &delta_psi);
+    RateController(&delta_phi, &delta_theta, &delta_psi);
 
     *PWM_1 = control_t_.thrust - (delta_theta/2) - (delta_phi/2) - delta_psi;
     *PWM_2 = control_t_.thrust + (delta_theta/2) - (delta_phi/2) + delta_psi;
@@ -370,11 +363,11 @@ void PositionController::ControlMixer(double* PWM_1, double* PWM_2, double* PWM_
       listPWMComponents_.push_back(tempPWMComponents.str());
     }
 
-    ROS_DEBUG("Omega: %f, Delta_theta: %f, Delta_phi: %f, delta_psi: %f", control_t_.thrust, delta_theta, delta_phi, delta_psi);
+    ROS_INFO("Omega: %f, Delta_theta: %f, Delta_phi: %f, delta_psi: %f", control_t_.thrust, delta_theta, delta_phi, delta_psi);
     ROS_DEBUG("PWM1: %f, PWM2: %f, PWM3: %f, PWM4: %f", *PWM_1, *PWM_2, *PWM_3, *PWM_4);
 }
 
-void PositionController::XYController(double* theta_command, double* phi_command) {
+void MpcController::XYController(double* theta_command, double* phi_command) {
     assert(theta_command);
     assert(phi_command);
 
@@ -429,14 +422,14 @@ void PositionController::XYController(double* theta_command, double* phi_command
 
     }
 
-     ROS_DEBUG("Theta_kp: %f, Theta_ki: %f", theta_command_kp, theta_command_ki_);
-     ROS_DEBUG("Phi_kp: %f, Phi_ki: %f", phi_command_kp, phi_command_ki_);
-     ROS_DEBUG("Phi_c: %f, Theta_c: %f", *phi_command, *theta_command);
-     ROS_DEBUG("E_vx: %f, E_vy: %f", e_vx, e_vy);
-     ROS_DEBUG("E_x: %f, E_y: %f", xe, ye);
+     ROS_INFO("Theta_kp: %f, Theta_ki: %f", theta_command_kp, theta_command_ki_);
+     ROS_INFO("Phi_kp: %f, Phi_ki: %f", phi_command_kp, phi_command_ki_);
+     ROS_INFO("Phi_c: %f, Theta_c: %f", *phi_command, *theta_command);
+     ROS_INFO("E_vx: %f, E_vy: %f", e_vx, e_vy);
+     ROS_INFO("E_x: %f, E_y: %f", xe, ye);
 }
 
-void PositionController::YawPositionController(double* r_command) {
+void MpcController::YawMpcController(double* r_command) {
     assert(r_command);
 
     double roll, pitch, yaw;
@@ -468,7 +461,7 @@ void PositionController::YawPositionController(double* r_command) {
 
 }
 
-void PositionController::HoveringController(double* omega) {
+void MpcController::HoveringController(double* omega) {
     assert(omega);
 
     double z_error, z_reference, dot_zeta;
@@ -521,7 +514,7 @@ void PositionController::HoveringController(double* omega) {
 
 }
 
-void PositionController::ErrorBodyFrame(double* xe, double* ye) const {
+void MpcController::ErrorBodyFrame(double* xe, double* ye) const {
     assert(xe);
     assert(ye);
 
@@ -548,9 +541,14 @@ void PositionController::ErrorBodyFrame(double* xe, double* ye) const {
 /* FROM HERE THE FUNCTIONS EMPLOYED WHEN THE STATE ESTIMATOR IS UNABLE ARE REPORTED */
 
 //Such function is invoked by the position controller node when the state estimator is not in the loop
-void PositionController::SetOdometryWithoutStateEstimator(const EigenOdometry& odometry) {
+void MpcController::SetOdometryWithoutStateEstimator(const EigenOdometry& odometry) {
 
     odometry_ = odometry;
+
+    ROS_INFO("target: x=%f, y=%f, z=%f, yaw=%f odom: x=%f y=%f z=%f",
+        command_trajectory_.position_W[0], command_trajectory_.position_W[1], command_trajectory_.position_W[2], command_trajectory_.getYaw(),
+        odometry.position[0], odometry.position[1], odometry.position[2]);
+
 
     // Such function is invoked when the ideal odometry sensor is employed
     SetSensorData();
@@ -559,7 +557,7 @@ void PositionController::SetOdometryWithoutStateEstimator(const EigenOdometry& o
 
       // Saving drone attitude in a file
       std::stringstream tempDronePosition;
-      tempDronePosition << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << "," 
+      tempDronePosition << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ","
               << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
 
       listDronePosition_.push_back(tempDronePosition.str());
@@ -567,7 +565,7 @@ void PositionController::SetOdometryWithoutStateEstimator(const EigenOdometry& o
 }
 
 // Odometry values are put in the state structure. The structure contains the aircraft state
-void PositionController::SetSensorData() {
+void MpcController::SetSensorData() {
 
     // Only the position sensor is ideal, any virtual sensor or systems is available to get it
     state_.position.x = odometry_.position[0];
@@ -588,7 +586,7 @@ void PositionController::SetSensorData() {
     state_.angularVelocity.z = odometry_.angular_velocity[2];
 }
 
-void PositionController::RateController(double* delta_phi, double* delta_theta, double* delta_psi) {
+void MpcController::RateController(double* delta_phi, double* delta_theta, double* delta_psi) {
     assert(delta_phi);
     assert(delta_theta);
     assert(delta_psi);
@@ -602,7 +600,7 @@ void PositionController::RateController(double* delta_phi, double* delta_theta, 
     AttitudeController(&p_command, &q_command);
 
     double r_command;
-    YawPositionController(&r_command);
+    YawMpcController(&r_command);
 
     double p_error, q_error, r_error;
     p_error = p_command - p;
@@ -631,7 +629,7 @@ void PositionController::RateController(double* delta_phi, double* delta_theta, 
 
 }
 
-void PositionController::AttitudeController(double* p_command, double* q_command) {
+void MpcController::AttitudeController(double* p_command, double* q_command) {
     assert(p_command);
     assert(q_command);
 
@@ -664,6 +662,7 @@ void PositionController::AttitudeController(double* p_command, double* q_command
     }
 
     ROS_DEBUG("Phi_c: %f, Phi_e: %f, Theta_c: %f, Theta_e: %f", phi_command, phi_error, theta_command, theta_error);
+    ROS_DEBUG("p_c: %f, q_c: %f", p_command, q_command);
 
 }
 
@@ -672,46 +671,24 @@ void PositionController::AttitudeController(double* p_command, double* q_command
 /* FROM HERE THE FUNCTIONS EMPLOYED WHEN THE STATE ESTIMATOR IS ABLED ARE REPORTED */
 
 // Such function is invoked by the position controller node when the state estimator is considered in the loop
-void PositionController::SetOdometryWithStateEstimator(const EigenOdometry& odometry) {
-
+void MpcController::SetOdometryWithStateEstimator(const EigenOdometry& odometry) {
     odometry_ = odometry;
 }
 
 
 // The aircraft attitude is computed by the complementary filter with a frequency rate of 250Hz
-void PositionController::CallbackAttitudeEstimation() {
-
-    // Angular velocities updating
-    complementary_filter_crazyflie_.EstimateAttitude(&state_, &sensors_);
-
-    ROS_DEBUG("Attitude Callback");
-
+void MpcController::CallbackAttitudeEstimation() {
+    ROS_INFO("CallbackAttitudeEstimation");
 }
 
 // The high level control runs with a frequency of 100Hz
-void PositionController::CallbackHightLevelControl() {
-
-    // Thrust value
-    HoveringController(&control_t_.thrust);
-
-    // Phi and theta command signals. The Error Body Controller is invoked every 0.01 seconds. It uses XYController's outputs
-    XYController(&control_t_.pitch, &control_t_.roll);
-
-    // Yaw rate command signals
-    YawPositionController(&control_t_.yawRate);
-
-    ROS_DEBUG("Position_x: %f, Position_y: %f, Position_z: %f", state_.position.x, state_.position.y, state_.position.z);
-
-    ROS_DEBUG("Angular_velocity_x: %f, Angular_velocity_y: %f, Angular_velocity_z: %f", state_.angularVelocity.x,
-             state_.angularVelocity.y, state_.angularVelocity.z);
-
-    ROS_DEBUG("Linear_velocity_x: %f, Linear_velocity_y: %f, Linear_velocity_z: %f", state_.linearVelocity.x,
-             state_.linearVelocity.y, state_.linearVelocity.z);
+void MpcController::CallbackHightLevelControl() {
+  ROS_INFO("CallbackHightLevelControl");
 
 }
 
 // The aircraft angular velocities are update with a frequency of 500Hz
-void PositionController::SetSensorData(const sensorData_t& sensors) {
+void MpcController::SetSensorData(const sensorData_t& sensors) {
 
     // The functions runs at 500Hz, the same frequency with which the IMU topic publishes new values (with a frequency of 500Hz)
     sensors_ = sensors;
@@ -731,6 +708,7 @@ void PositionController::SetSensorData(const sensorData_t& sensors) {
     state_.linearVelocity.z = odometry_.velocity[2];
 
 }
+
 
 
 }

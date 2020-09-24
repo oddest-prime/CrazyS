@@ -18,7 +18,7 @@ find_package(
 
 catkin_package(
   INCLUDE_DIRS include ${Eigen_INCLUDE_DIRS}
-  LIBRARIES lee_position_controller position_controller crazyflie_onboard_controller
+  LIBRARIES lee_position_controller position_controller mpc_controller crazyflie_onboard_controller
     roll_pitch_yawrate_thrust_controller sensfusion6 crazyflie_complementary_filter
     mellinger_controller internal_model_controller
     roll_pitch_yawrate_thrust_controller_crazyflie
@@ -39,6 +39,10 @@ add_library(lee_position_controller
 
 add_library(position_controller
    src/library/position_controller.cpp
+)
+
+add_library(mpc_controller
+   src/library/mpc_controller.cpp
 )
 
 add_library(crazyflie_onboard_controller
@@ -75,6 +79,9 @@ add_dependencies(lee_position_controller ${catkin_EXPORTED_TARGETS})
 target_link_libraries(position_controller ${catkin_LIBRARIES})
 add_dependencies(position_controller ${catkin_EXPORTED_TARGETS})
 
+target_link_libraries(mpc_controller ${catkin_LIBRARIES})
+add_dependencies(mpc_controller ${catkin_EXPORTED_TARGETS})
+
 target_link_libraries(mellinger_controller ${catkin_LIBRARIES})
 add_dependencies(mellinger_controller ${catkin_EXPORTED_TARGETS})
 
@@ -110,7 +117,7 @@ target_link_libraries(position_controller_node
 add_executable(position_controller_mpc src/nodes/position_controller_mpc.cpp)
 add_dependencies(position_controller_mpc ${catkin_EXPORTED_TARGETS})
 target_link_libraries(position_controller_mpc
-  position_controller crazyflie_complementary_filter crazyflie_onboard_controller
+  mpc_controller crazyflie_complementary_filter crazyflie_onboard_controller
   sensfusion6 mellinger_controller internal_model_controller ${catkin_LIBRARIES})
 
 add_executable(roll_pitch_yawrate_thrust_controller_node

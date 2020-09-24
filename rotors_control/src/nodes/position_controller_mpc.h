@@ -39,9 +39,7 @@
 
 
 #include "rotors_control/common.h"
-#include "rotors_control/position_controller.h"
-#include "rotors_control/mellinger_controller.h"
-#include "rotors_control/internal_model_controller.h"
+#include "rotors_control/mpc_controller.h"
 #include "rotors_control/crazyflie_complementary_filter.h"
 
 
@@ -62,9 +60,7 @@ namespace rotors_control {
             bool enable_mellinger_controller_ = false;
             bool enable_internal_model_controller_ = false;
 
-            PositionController position_controller_;
-            MellingerController mellinger_controller_;
-            InternalModelController internal_model_controller_;
+            MpcController position_controller_;
             sensorData_t sensors_;
             ros::Time imu_msg_head_stamp_;
 

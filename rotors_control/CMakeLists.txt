@@ -20,7 +20,7 @@ catkin_package(
   INCLUDE_DIRS include ${Eigen_INCLUDE_DIRS}
   LIBRARIES lee_position_controller position_controller crazyflie_onboard_controller
     roll_pitch_yawrate_thrust_controller sensfusion6 crazyflie_complementary_filter
-    mellinger_controller internal_model_controller 
+    mellinger_controller internal_model_controller
     roll_pitch_yawrate_thrust_controller_crazyflie
   CATKIN_DEPENDS geometry_msgs mav_msgs nav_msgs roscpp sensor_msgs
   DEPENDS Eigen
@@ -107,13 +107,19 @@ target_link_libraries(position_controller_node
   position_controller crazyflie_complementary_filter crazyflie_onboard_controller
   sensfusion6 mellinger_controller internal_model_controller ${catkin_LIBRARIES})
 
+add_executable(position_controller_mpc src/nodes/position_controller_mpc.cpp)
+add_dependencies(position_controller_mpc ${catkin_EXPORTED_TARGETS})
+target_link_libraries(position_controller_mpc
+  position_controller crazyflie_complementary_filter crazyflie_onboard_controller
+  sensfusion6 mellinger_controller internal_model_controller ${catkin_LIBRARIES})
+
 add_executable(roll_pitch_yawrate_thrust_controller_node
   src/nodes/roll_pitch_yawrate_thrust_controller_node.cpp)
 add_dependencies(roll_pitch_yawrate_thrust_controller_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(roll_pitch_yawrate_thrust_controller_node
   roll_pitch_yawrate_thrust_controller ${catkin_LIBRARIES})
 
-add_executable(roll_pitch_yawrate_thrust_crazyflie_node 
+add_executable(roll_pitch_yawrate_thrust_crazyflie_node
   src/nodes/roll_pitch_yawrate_thrust_crazyflie_node.cpp)
 add_dependencies(roll_pitch_yawrate_thrust_crazyflie_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(roll_pitch_yawrate_thrust_crazyflie_node
@@ -125,7 +131,7 @@ install(TARGETS lee_position_controller position_controller crazyflie_onboard_co
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
-install(TARGETS lee_position_controller_node position_controller_node roll_pitch_yawrate_thrust_controller_node
+install(TARGETS lee_position_controller_node position_controller_node position_controller_mpc roll_pitch_yawrate_thrust_controller_node
   roll_pitch_yawrate_thrust_crazyflie_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

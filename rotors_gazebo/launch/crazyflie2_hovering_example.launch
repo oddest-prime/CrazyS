@@ -39,7 +39,7 @@
       <arg name="log_file" value="$(arg log_file)"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_node" pkg="rotors_control" type="position_controller_node" output="screen">
+   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>

@@ -335,9 +335,11 @@ void PositionController::ControlMixer(double* PWM_1, double* PWM_2, double* PWM_
     assert(PWM_4);
 
     if(!state_estimator_active_)
+    {
        // When the state estimator is disable, the delta_omega_ value is computed as soon as the new odometry message is available.
        //The timing is managed by the publication of the odometry topic
        HoveringController(&control_t_.thrust);
+    }
 
     // Control signals are sent to the on board control architecture if the state estimator is active
     double delta_phi, delta_theta, delta_psi;
@@ -552,6 +554,11 @@ void PositionController::SetOdometryWithoutStateEstimator(const EigenOdometry& o
 
     odometry_ = odometry;
 
+    ROS_INFO("target: x=%f, y=%f, z=%f, yaw=%f odom: x=%f y=%f z=%f",
+        command_trajectory_.position_W[0], command_trajectory_.position_W[1], command_trajectory_.position_W[2], command_trajectory_.getYaw(),
+        odometry.position[0], odometry.position[1], odometry.position[2]);
+
+
     // Such function is invoked when the ideal odometry sensor is employed
     SetSensorData();
 
@@ -559,7 +566,7 @@ void PositionController::SetOdometryWithoutStateEstimator(const EigenOdometry& o
 
       // Saving drone attitude in a file
       std::stringstream tempDronePosition;
-      tempDronePosition << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << "," 
+      tempDronePosition << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ","
               << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
 
       listDronePosition_.push_back(tempDronePosition.str());
@@ -664,6 +671,7 @@ void PositionController::AttitudeController(double* p_command, double* q_command
     }
 
     ROS_DEBUG("Phi_c: %f, Phi_e: %f, Theta_c: %f, Theta_e: %f", phi_command, phi_error, theta_command, theta_error);
+    ROS_DEBUG("p_c: %f, q_c: %f", p_command, q_command);
 
 }
 
@@ -684,12 +692,15 @@ void PositionController::CallbackAttitudeEstimation() {
     // Angular velocities updating
     complementary_filter_crazyflie_.EstimateAttitude(&state_, &sensors_);
 
-    ROS_DEBUG("Attitude Callback");
+    ROS_INFO("Attitude Callback");
 
 }
 
 // The high level control runs with a frequency of 100Hz
 void PositionController::CallbackHightLevelControl() {
+
+    ROS_INFO("CallbackHightLevelControl");
+    return;
 
     // Thrust value
     HoveringController(&control_t_.thrust);

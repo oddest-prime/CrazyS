@@ -61,10 +61,10 @@ int main(int argc, char** argv) {
   ros::Duration(5.0).sleep();
 
   trajectory_msgs::MultiDOFJointTrajectory trajectory_msg;
-  trajectory_msg.header.stamp = ros::Time::now();
+
 
   // Default desired position and yaw.
-  Eigen::Vector3d desired_position(0.0, 0.0, 1.0);
+  Eigen::Vector3d desired_position(0.3, 0.5, 1.0);
   double desired_yaw = 0.0;
 
   // Overwrite defaults if set as node parameters.
@@ -73,15 +73,23 @@ int main(int argc, char** argv) {
   nh_private.param("z", desired_position.z(), desired_position.z());
   nh_private.param("yaw", desired_yaw, desired_yaw);
 
-  mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(
-      desired_position, desired_yaw, &trajectory_msg);
+  for(int i = 0; i < 500; i++)
+  {
+    desired_position(0) = i % 3 - 1;
+    desired_position(1) = (i/3) % 3 - 1;
 
-  ROS_INFO("Publishing waypoint on namespace %s: [%f, %f, %f].",
+    trajectory_msg.header.stamp = ros::Time::now();
+    mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
+
+    ROS_INFO("Publishing waypoint on namespace %s: [%f, %f, %f].",
            nh.getNamespace().c_str(), desired_position.x(),
            desired_position.y(), desired_position.z());
-  trajectory_pub.publish(trajectory_msg);
+  	trajectory_pub.publish(trajectory_msg);
 
-  ros::spinOnce();
+    ros::spinOnce();
+    ros::Duration(5.0).sleep();
+  }
+
   ros::shutdown();
 
   return 0;

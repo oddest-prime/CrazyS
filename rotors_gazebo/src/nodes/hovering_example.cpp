@@ -73,10 +73,13 @@ int main(int argc, char** argv) {
   nh_private.param("z", desired_position.z(), desired_position.z());
   nh_private.param("yaw", desired_yaw, desired_yaw);
 
-  for(int i = 0; i < 500; i++)
+  for(int i = 4; i < 500; i++)
   {
-    desired_position(0) = i % 3 - 1;
-    desired_position(1) = (i/3) % 3 - 1;
+    desired_position(0) = (float)((i/1) % 3 - 1) * 0.5;
+    desired_position(1) = (float)((i/3) % 3 - 1) * 0.5;
+
+    //desired_position(0) = 0;
+    //desired_position(1) = 0;
 
     trajectory_msg.header.stamp = ros::Time::now();
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
@@ -87,7 +90,7 @@ int main(int argc, char** argv) {
   	trajectory_pub.publish(trajectory_msg);
 
     ros::spinOnce();
-    ros::Duration(5.0).sleep();
+    ros::Duration(10.0).sleep();
   }
 
   ros::shutdown();

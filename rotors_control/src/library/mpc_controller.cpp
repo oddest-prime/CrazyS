@@ -47,8 +47,8 @@
 #define MOTORS_INTERCEPT                         426.24 /* MOTORS_INTERCEPT [rad/s]*/
 #define MAX_PROPELLERS_ANGULAR_VELOCITY          2618 /* MAX PROPELLERS ANGULAR VELOCITY [rad/s]*/
 #define MAX_R_DESIDERED                          3.4907 /* MAX R DESIDERED VALUE [rad/s]*/
-#define MAX_THETA_COMMAND                        0.5236 /* MAX THETA COMMMAND [rad]*/
-#define MAX_PHI_COMMAND                          0.5236 /* MAX PHI COMMAND [rad]*/
+#define MAX_THETA_COMMAND                        (0.5236*1) /* MAX THETA COMMMAND [rad]*/
+#define MAX_PHI_COMMAND                          (0.5236*1) /* MAX PHI COMMAND [rad]*/
 #define MAX_POS_DELTA_OMEGA                      1289 /* MAX POSITIVE DELTA OMEGA [PWM]*/
 #define MAX_NEG_DELTA_OMEGA                      -1718 /* MAX NEGATIVE DELTA OMEGA [PWM]*/
 #define SAMPLING_TIME                            0.01 /* SAMPLING TIME [s] */
@@ -122,20 +122,22 @@ void MpcController::CallbackSaveData(const ros::TimerEvent& event){
       ofstream fileDeltaCommands;
       ofstream filePQCommands;
       ofstream fileDronePosition;
+      ofstream fileTrajectory;
 
       ROS_INFO("CallbackSavaData function is working. Time: %f seconds, %f nanoseconds", odometry_.timeStampSec, odometry_.timeStampNsec);
 
-      filePropellersVelocity.open("/home/" + user_ + "/PropellersVelocity.csv", std::ios_base::app);
-      fileDroneAttiude.open("/home/" + user_ + "/DroneAttiude.csv", std::ios_base::app);
-      filePWM.open("/home/" + user_ + "/PWM.csv", std::ios_base::app);
-      filePWMComponents.open("/home/" + user_ + "/PWMComponents.csv", std::ios_base::app);
-      fileCommandAttiude.open("/home/" + user_ + "/CommandAttitude.csv", std::ios_base::app);
-      fileRCommand.open("/home/" + user_ + "/RCommand.csv", std::ios_base::app);
-      fileOmegaCommand.open("/home/" + user_ + "/OmegaCommand.csv", std::ios_base::app);
-      fileXeYe.open("/home/" + user_ + "/XeYe.csv", std::ios_base::app);
-      fileDeltaCommands.open("/home/" + user_ + "/DeltaCommands.csv", std::ios_base::app);
-      filePQCommands.open("/home/" + user_ + "/PQCommands.csv", std::ios_base::app);
-      fileDronePosition.open("/home/" + user_ + "/DronePosition.csv", std::ios_base::app);
+      filePropellersVelocity.open("/crazyflie_ws/src/crazys/log_output/PropellersVelocity.csv", std::ios_base::app);
+      fileDroneAttiude.open("/crazyflie_ws/src/crazys/log_output/DroneAttiude.csv", std::ios_base::app);
+      filePWM.open("/crazyflie_ws/src/crazys/log_output/PWM.csv", std::ios_base::app);
+      filePWMComponents.open("/crazyflie_ws/src/crazys/log_output/PWMComponents.csv", std::ios_base::app);
+      fileCommandAttiude.open("/crazyflie_ws/src/crazys/log_output/CommandAttitude.csv", std::ios_base::app);
+      fileRCommand.open("/crazyflie_ws/src/crazys/log_output/RCommand.csv", std::ios_base::app);
+      fileOmegaCommand.open("/crazyflie_ws/src/crazys/log_output/OmegaCommand.csv", std::ios_base::app);
+      fileXeYe.open("/crazyflie_ws/src/crazys/log_output/XeYe.csv", std::ios_base::app);
+      fileDeltaCommands.open("/crazyflie_ws/src/crazys/log_output/DeltaCommands.csv", std::ios_base::app);
+      filePQCommands.open("/crazyflie_ws/src/crazys/log_output/PQCommands.csv", std::ios_base::app);
+      fileDronePosition.open("/crazyflie_ws/src/crazys/log_output/DronePosition.csv", std::ios_base::app);
+      fileTrajectory.open("/crazyflie_ws/src/crazys/log_output/Trajectory.csv", std::ios_base::app);
 
       // Saving control signals in a file
       for (unsigned n=0; n < listPropellersVelocity_.size(); ++n) {
@@ -182,6 +184,10 @@ void MpcController::CallbackSaveData(const ros::TimerEvent& event){
           fileDronePosition << listDronePosition_.at( n );
       }
 
+      for (unsigned n=0; n < listTrajectory_.size(); ++n) {
+          fileTrajectory << listTrajectory_.at( n );
+      }
+
       // Closing all opened files
       filePropellersVelocity.close();
       fileDroneAttiude.close();
@@ -194,6 +200,7 @@ void MpcController::CallbackSaveData(const ros::TimerEvent& event){
       fileDeltaCommands.close();
       filePQCommands.close();
       fileDronePosition.close();
+      fileTrajectory.close();
 
       // To have a one shot storing
       dataStoring_active_ = false;
@@ -221,7 +228,7 @@ void MpcController::SetLaunchFileParameters(){
     listDeltaCommands_.clear();
     listPQCommands_.clear();
     listDronePosition_.clear();
-
+    listTrajectory_.clear();
 	}
 
 }
@@ -382,6 +389,9 @@ void MpcController::XYController(double* theta_command, double* phi_command) {
     e_vx = xe - u;
     e_vy = ye - v;
 
+    e_vx = xe - u/20; // do not add velocity
+    e_vy = ye - v/20; // do not add velocity
+
     double theta_command_kp;
     theta_command_kp = xy_gain_kp_.x() * e_vx;
     theta_command_ki_ = theta_command_ki_ + (xy_gain_ki_.x() * e_vx * SAMPLING_TIME);
@@ -416,7 +426,7 @@ void MpcController::XYController(double* theta_command, double* phi_command) {
 
       // Saving drone attitude in a file
       std::stringstream tempXeYe;
-      tempXeYe << xe << "," << ye << "," << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
+      tempXeYe << xe << "," << ye << "," << e_vx << "," << e_vy << "," << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
 
       listXeYe_.push_back(tempXeYe.str());
 
@@ -507,20 +517,21 @@ void MpcController::HoveringController(double* omega) {
 
      }
 
-     ROS_DEBUG("Delta_omega_kp: %f, Delta_omega_ki: %f, Delta_omega_kd: %f", delta_omega_kp, delta_omega_ki_, delta_omega_kd);
+     ROS_INFO("Delta_omega_kp: %f, Delta_omega_ki: %f, Delta_omega_kd: %f", delta_omega_kp, delta_omega_ki_, delta_omega_kd);
      ROS_DEBUG("Z_error: %f, Delta_omega: %f", z_error, delta_omega);
      ROS_DEBUG("Dot_zeta: %f", dot_zeta);
-     ROS_DEBUG("Omega: %f, delta_omega: %f", *omega, delta_omega);
+     ROS_INFO("Omega: %f, delta_omega: %f", *omega, delta_omega);
 
 }
 
-void MpcController::ErrorBodyFrame(double* xe, double* ye) const {
+void MpcController::ErrorBodyFrame(double* xe, double* ye) {
     assert(xe);
     assert(ye);
 
     // X and Y reference coordinates
     double x_r = command_trajectory_.position_W[0];
     double y_r = command_trajectory_.position_W[1];
+    double z_r = command_trajectory_.position_W[2];
 
     // Position error
     double x_error_, y_error_;
@@ -535,6 +546,14 @@ void MpcController::ErrorBodyFrame(double* xe, double* ye) const {
     *xe = x_error_ * cos(yaw) + y_error_ * sin(yaw);
     *ye = y_error_ * cos(yaw) - x_error_ * sin(yaw);
 
+    if(dataStoring_active_){
+      // Saving trajectory in a file
+      std::stringstream tempTrajectory;
+      tempTrajectory << x_r << "," << y_r << "," << z_r << "," << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
+
+      listTrajectory_.push_back(tempTrajectory.str());
+    }
+
 }
 
 
@@ -545,10 +564,15 @@ void MpcController::SetOdometryWithoutStateEstimator(const EigenOdometry& odomet
 
     odometry_ = odometry;
 
-    ROS_INFO("target: x=%f, y=%f, z=%f, yaw=%f odom: x=%f y=%f z=%f",
+    /*ROS_INFO("target: x=%f, y=%f, z=%f, yaw=%f odom: x=%f y=%f z=%f, xV=%f, yV=%f, zV=%f, xA=%f, yA=%f, zA=%f.",
         command_trajectory_.position_W[0], command_trajectory_.position_W[1], command_trajectory_.position_W[2], command_trajectory_.getYaw(),
-        odometry.position[0], odometry.position[1], odometry.position[2]);
-
+        odometry_.position[0], odometry_.position[1], odometry_.position[2],
+        odometry_.velocity[0], odometry_.velocity[1], odometry_.velocity[2],
+        odometry_.angular_velocity[0], odometry_.angular_velocity[1], odometry_.angular_velocity[2]);
+        */
+    ROS_INFO("target: x=%f, y=%f, z=%f, yaw=%f  odom: x=%f y=%f z=%f",
+        command_trajectory_.position_W[0], command_trajectory_.position_W[1], command_trajectory_.position_W[2], command_trajectory_.getYaw(),
+        odometry_.position[0], odometry_.position[1], odometry_.position[2]);
 
     // Such function is invoked when the ideal odometry sensor is employed
     SetSensorData();
@@ -661,8 +685,8 @@ void MpcController::AttitudeController(double* p_command, double* q_command) {
       listPQCommands_.push_back(tempPQCommands.str());
     }
 
-    ROS_DEBUG("Phi_c: %f, Phi_e: %f, Theta_c: %f, Theta_e: %f", phi_command, phi_error, theta_command, theta_error);
-    ROS_DEBUG("p_c: %f, q_c: %f", p_command, q_command);
+    ROS_INFO("Phi_c: %f, Phi: %f, Phi_e: %f, Theta_c: %f, Theta: %f, Theta_e: %f", phi_command, roll, phi_error, theta_command, pitch, theta_error);
+    ROS_INFO("p_c: %f, q_c: %f", *p_command, *q_command);
 
 }
 

@@ -19,7 +19,7 @@ RUN apt-get install -y \
     ros-melodic-rqt-rotors ros-melodic-rotors-comm ros-melodic-mav-msgs ros-melodic-rotors-control \
     ros-melodic-rotors-gazebo ros-melodic-rotors-evaluation ros-melodic-rotors-joy-interface \
     ros-melodic-rotors-gazebo-plugins ros-melodic-mav-planning-msgs ros-melodic-rotors-description ros-melodic-rotors-hil-interface \
-    ffmpeg
+    ffmpeg screen
 
 RUN apt-get -y remove ros-melodic-gazebo* gazebo* && \
     sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list' && \
@@ -48,7 +48,7 @@ RUN echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
 
 WORKDIR /crazyflie_ws
 
-RUN mkdir -p /crazyflie_ws/src 
+RUN mkdir -p /crazyflie_ws/src
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash; cd /crazyflie_ws/src; catkin_init_workspace; cd /crazyflie_ws; catkin init"
 
 RUN ssh-keyscan github.com >> ~/.ssh/known_hosts
@@ -61,5 +61,3 @@ RUN /bin/bash -c "source /opt/ros/melodic/setup.bash; cd /crazyflie_ws; catkin b
 RUN echo "source /crazyflie_ws/devel/setup.bash" >> ~/.bashrc
 
 CMD /bin/bash
-
-

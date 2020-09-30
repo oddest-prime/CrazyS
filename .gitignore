@@ -39,3 +39,7 @@
 *.exe
 *.out
 *.app
+
+log_output/*.csv
+log_output/*.png
+*.mp4

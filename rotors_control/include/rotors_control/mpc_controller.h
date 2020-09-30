@@ -86,6 +86,7 @@ namespace rotors_control {
             std::vector<string> listDeltaCommands_;
             std::vector<string> listPQCommands_;
             std::vector<string> listDronePosition_;
+            std::vector<string> listTrajectory_;
 
             // Callbacks
             ros::NodeHandle n_;
@@ -117,7 +118,7 @@ namespace rotors_control {
 
             void RateController(double* delta_phi, double* delta_theta, double* delta_psi);
             void AttitudeController(double* p_command, double* q_command);
-            void ErrorBodyFrame(double* xe, double* ye) const;
+            void ErrorBodyFrame(double* xe, double* ye);
             void HoveringController(double* delta_omega);
             void YawMpcController(double* r_command);
             void XYController(double* theta_command, double* phi_command);

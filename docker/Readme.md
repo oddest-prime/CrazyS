@@ -11,7 +11,9 @@
 	
 	ffmpeg -r 30 -pattern_type glob -i "/tmp/cam1/default_camera1_link_*.jpg" -c:v libx264 my_cam1.mp4
 	ffmpeg -r 30 -pattern_type glob -i "/tmp/cam2/default_camera2_link_*.jpg" -c:v libx264 my_cam2.mp4
+	ffmpeg -r 30 -pattern_type glob -i "/tmp/cam3/default_camera3_link_*.jpg" -c:v libx264 my_cam3.mp4
+	ffmpeg -r 30 -pattern_type glob -i "/tmp/cam4/default_camera4_link_*.jpg" -c:v libx264 my_cam4.mp4	
 	
-	ffmpeg -r 30 -pattern_type glob -i "/tmp/cam1/default_camera1_link_*.jpg" -i "/tmp/cam2/default_camera2_link_*.jpg" -filter_complex '[0:v]pad=iw*2:ih[int];[int][1:v]overlay=W/2:0[vid]' -map [vid] -c:v libx264 my_cam_x.mp4
-	
-	ffmpeg -i my_cam1.mp4 -i my_cam2.mp4 -filter_complex hstack output.mp4
+	ffmpeg -i my_cam1.mp4 -i my_cam3.mp4 -filter_complex hstack my_out1.mp4
+	ffmpeg -i my_cam2.mp4 -i my_cam4.mp4 -filter_complex hstack my_out2.mp4
+	ffmpeg -i my_out1.mp4 -i my_out2.mp4 -filter_complex vstack my_out.mp4

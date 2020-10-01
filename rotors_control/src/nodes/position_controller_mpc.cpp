@@ -97,7 +97,7 @@ void PositionControllerMpc::MultiDofJointTrajectoryCallback(const trajectory_msg
 
   if (n_commands >= 1) {
     waypointHasBeenPublished_ = true;
-    ROS_INFO("MpcController got first MultiDOFJointTrajectory message.");
+    ROS_INFO_ONCE("MpcController got first MultiDOFJointTrajectory message.");
   }
 
   ROS_DEBUG("MpcController got MultiDOFJointTrajectory message: x=%f, y=%f, z=%f, yaw=%f", eigen_reference.position_W[0], eigen_reference.position_W[1], eigen_reference.position_W[2], eigen_reference.getYaw());
@@ -180,6 +180,7 @@ void PositionControllerMpc::InitializeParams() {
 
     //Reading the parameters come from the launch file
     bool dataStoringActive;
+    int droneNumber;
     double dataStoringTime;
     std::string user;
 
@@ -189,6 +190,13 @@ void PositionControllerMpc::InitializeParams() {
     }
     else
        ROS_ERROR("Failed to get param 'user'");
+
+     if (pnh.getParam("droneNumber", droneNumber)){
+     ROS_INFO("Got param 'droneNumber': %d", droneNumber);
+     position_controller_.droneNumber_ = droneNumber;
+     }
+     else
+        ROS_ERROR("Failed to get param 'droneNumber'");
 
     if (pnh.getParam("csvFilesStoring", dataStoringActive)){
     ROS_INFO("Got param 'csvFilesStoring': %d", dataStoringActive);

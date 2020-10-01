@@ -8,7 +8,7 @@
   <arg name="log_file" default="$(arg mav_name)" />
   <arg name="paused" value="true"/>
   <arg name="debug" default="false"/>
-  <arg name="gui" default="false"/>
+  <arg name="gui" default="true"/>
   <arg name="csvFilesStoring" default="true"/>
   <arg name="csvFilesStoringTime" default="100.0"/> <!-- seconds -->
   <arg name="user_account" default="giuseppe"/>
@@ -43,12 +43,15 @@
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
+      <param name="droneNumber" value="0"/>
       <param name="user_account" value="$(arg user_account)"/>
       <rosparam unless="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name).yaml" />
       <rosparam if="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name)_with_stateEstimator.yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
    </node>
-   <node name="hovering_example" pkg="rotors_gazebo" type="hovering_example" output="screen" />
+   <node name="waypoint_publisher_csv" pkg="rotors_gazebo" type="waypoint_publisher_csv" output="screen" args="/crazyflie_ws/src/crazys/waypoints_hover_0.txt"/>
+ />
+   <!--node name="hovering_example" pkg="rotors_gazebo" type="hovering_example" output="screen" /-->
    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
    <node name="quaternion_to_rpy" pkg="rotors_gazebo" type="quaternion_to_rpy" output="screen" >

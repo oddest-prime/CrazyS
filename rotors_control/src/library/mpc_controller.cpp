@@ -60,6 +60,7 @@ MpcController::MpcController()
     state_estimator_active_(false),
     dataStoring_active_(false),
     dataStoringTime_(0),
+    droneNumber_(255),
     phi_command_ki_(0),
     theta_command_ki_(0),
     p_command_ki_(0),
@@ -124,7 +125,7 @@ void MpcController::CallbackSaveData(const ros::TimerEvent& event){
       ofstream fileDronePosition;
       ofstream fileTrajectory;
 
-      ROS_INFO("CallbackSavaData function is working. Time: %f seconds, %f nanoseconds", odometry_.timeStampSec, odometry_.timeStampNsec);
+      ROS_DEBUG("CallbackSavaData function is working. Time: %f seconds, %f nanoseconds", odometry_.timeStampSec, odometry_.timeStampNsec);
 
       filePropellersVelocity.open("/crazyflie_ws/src/crazys/log_output/PropellersVelocity.csv", std::ios_base::app);
       fileDroneAttiude.open("/crazyflie_ws/src/crazys/log_output/DroneAttiude.csv", std::ios_base::app);
@@ -370,7 +371,8 @@ void MpcController::ControlMixer(double* PWM_1, double* PWM_2, double* PWM_3, do
       listPWMComponents_.push_back(tempPWMComponents.str());
     }
 
-    ROS_INFO("Omega: %f, Delta_theta: %f, Delta_phi: %f, delta_psi: %f", control_t_.thrust, delta_theta, delta_phi, delta_psi);
+    ROS_DEBUG("droneNumber: %d", droneNumber_);
+    ROS_DEBUG("Omega: %f, Delta_theta: %f, Delta_phi: %f, delta_psi: %f", control_t_.thrust, delta_theta, delta_phi, delta_psi);
     ROS_DEBUG("PWM1: %f, PWM2: %f, PWM3: %f, PWM4: %f", *PWM_1, *PWM_2, *PWM_3, *PWM_4);
 }
 
@@ -432,11 +434,11 @@ void MpcController::XYController(double* theta_command, double* phi_command) {
 
     }
 
-     ROS_INFO("Theta_kp: %f, Theta_ki: %f", theta_command_kp, theta_command_ki_);
-     ROS_INFO("Phi_kp: %f, Phi_ki: %f", phi_command_kp, phi_command_ki_);
-     ROS_INFO("Phi_c: %f, Theta_c: %f", *phi_command, *theta_command);
-     ROS_INFO("E_vx: %f, E_vy: %f", e_vx, e_vy);
-     ROS_INFO("E_x: %f, E_y: %f", xe, ye);
+     ROS_DEBUG("Theta_kp: %f, Theta_ki: %f", theta_command_kp, theta_command_ki_);
+     ROS_DEBUG("Phi_kp: %f, Phi_ki: %f", phi_command_kp, phi_command_ki_);
+     ROS_DEBUG("Phi_c: %f, Theta_c: %f", *phi_command, *theta_command);
+     ROS_DEBUG("E_vx: %f, E_vy: %f", e_vx, e_vy);
+     ROS_DEBUG("E_x: %f, E_y: %f", xe, ye);
 }
 
 void MpcController::YawMpcController(double* r_command) {
@@ -517,10 +519,10 @@ void MpcController::HoveringController(double* omega) {
 
      }
 
-     ROS_INFO("Delta_omega_kp: %f, Delta_omega_ki: %f, Delta_omega_kd: %f", delta_omega_kp, delta_omega_ki_, delta_omega_kd);
+     ROS_DEBUG("Delta_omega_kp: %f, Delta_omega_ki: %f, Delta_omega_kd: %f", delta_omega_kp, delta_omega_ki_, delta_omega_kd);
      ROS_DEBUG("Z_error: %f, Delta_omega: %f", z_error, delta_omega);
      ROS_DEBUG("Dot_zeta: %f", dot_zeta);
-     ROS_INFO("Omega: %f, delta_omega: %f", *omega, delta_omega);
+     ROS_DEBUG("Omega: %f, delta_omega: %f", *omega, delta_omega);
 
 }
 
@@ -564,13 +566,13 @@ void MpcController::SetOdometryWithoutStateEstimator(const EigenOdometry& odomet
 
     odometry_ = odometry;
 
-    /*ROS_INFO("target: x=%f, y=%f, z=%f, yaw=%f odom: x=%f y=%f z=%f, xV=%f, yV=%f, zV=%f, xA=%f, yA=%f, zA=%f.",
+    /*ROS_DEBUG("target: x=%f, y=%f, z=%f, yaw=%f odom: x=%f y=%f z=%f, xV=%f, yV=%f, zV=%f, xA=%f, yA=%f, zA=%f.",
         command_trajectory_.position_W[0], command_trajectory_.position_W[1], command_trajectory_.position_W[2], command_trajectory_.getYaw(),
         odometry_.position[0], odometry_.position[1], odometry_.position[2],
         odometry_.velocity[0], odometry_.velocity[1], odometry_.velocity[2],
         odometry_.angular_velocity[0], odometry_.angular_velocity[1], odometry_.angular_velocity[2]);
         */
-    ROS_INFO("target: x=%f, y=%f, z=%f, yaw=%f  odom: x=%f y=%f z=%f",
+    ROS_DEBUG("target: x=%f, y=%f, z=%f, yaw=%f  odom: x=%f y=%f z=%f",
         command_trajectory_.position_W[0], command_trajectory_.position_W[1], command_trajectory_.position_W[2], command_trajectory_.getYaw(),
         odometry_.position[0], odometry_.position[1], odometry_.position[2]);
 
@@ -685,8 +687,8 @@ void MpcController::AttitudeController(double* p_command, double* q_command) {
       listPQCommands_.push_back(tempPQCommands.str());
     }
 
-    ROS_INFO("Phi_c: %f, Phi: %f, Phi_e: %f, Theta_c: %f, Theta: %f, Theta_e: %f", phi_command, roll, phi_error, theta_command, pitch, theta_error);
-    ROS_INFO("p_c: %f, q_c: %f", *p_command, *q_command);
+    ROS_DEBUG("Phi_c: %f, Phi: %f, Phi_e: %f, Theta_c: %f, Theta: %f, Theta_e: %f", phi_command, roll, phi_error, theta_command, pitch, theta_error);
+    ROS_DEBUG("p_c: %f, q_c: %f", *p_command, *q_command);
 
 }
 
@@ -702,12 +704,12 @@ void MpcController::SetOdometryWithStateEstimator(const EigenOdometry& odometry)
 
 // The aircraft attitude is computed by the complementary filter with a frequency rate of 250Hz
 void MpcController::CallbackAttitudeEstimation() {
-    ROS_INFO("CallbackAttitudeEstimation");
+    ROS_DEBUG("CallbackAttitudeEstimation");
 }
 
 // The high level control runs with a frequency of 100Hz
 void MpcController::CallbackHightLevelControl() {
-  ROS_INFO("CallbackHightLevelControl");
+  ROS_DEBUG("CallbackHightLevelControl");
 
 }
 

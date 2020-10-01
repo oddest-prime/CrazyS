@@ -60,6 +60,7 @@ namespace rotors_control {
             std::string user_;
             double dataStoringTime_;
             bool dataStoring_active_;
+            int droneNumber_;
             bool waypointFilter_active_;
             bool EKF_active_;
 

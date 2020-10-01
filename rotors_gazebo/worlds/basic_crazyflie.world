@@ -55,7 +55,7 @@
     <model name="camera2">
     <link name="link">
       <gravity>0</gravity>
-      <pose>0 0 4 0 1.5708 0</pose>
+      <pose>0 0 6 0 1.5708 0</pose>
       <inertial>
         <mass>0.1</mass>
       </inertial>

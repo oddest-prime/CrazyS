@@ -1,19 +1,21 @@
 	docker build . --tag crazys
 
 	docker run -it crazys
-	
+
 	docker run -it --device /dev/dri/ --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v "$(pwd)":/crazyflie_ws/src/crazys crazys
-	
+
 	export containerId=$(docker ps -l -q)
 	xhost +local:`docker inspect --format='{{ .Config.Hostname }}' $containerId`
-	
+
 	roslaunch rotors_gazebo crazyflie2_hovering_example.launch
-	
+
+	rm -f *.csv && rm /tmp/cam* -rf && roslaunch rotors_gazebo crazyflie2_hovering_two.launch
+
 	ffmpeg -r 30 -pattern_type glob -i "/tmp/cam1/default_camera1_link_*.jpg" -c:v libx264 my_cam1.mp4
 	ffmpeg -r 30 -pattern_type glob -i "/tmp/cam2/default_camera2_link_*.jpg" -c:v libx264 my_cam2.mp4
 	ffmpeg -r 30 -pattern_type glob -i "/tmp/cam3/default_camera3_link_*.jpg" -c:v libx264 my_cam3.mp4
-	ffmpeg -r 30 -pattern_type glob -i "/tmp/cam4/default_camera4_link_*.jpg" -c:v libx264 my_cam4.mp4	
-	
+	ffmpeg -r 30 -pattern_type glob -i "/tmp/cam4/default_camera4_link_*.jpg" -c:v libx264 my_cam4.mp4
+
 	ffmpeg -i my_cam1.mp4 -i my_cam3.mp4 -filter_complex hstack my_out1.mp4
 	ffmpeg -i my_cam2.mp4 -i my_cam4.mp4 -filter_complex hstack my_out2.mp4
 	ffmpeg -i my_out1.mp4 -i my_out2.mp4 -filter_complex vstack my_out.mp4

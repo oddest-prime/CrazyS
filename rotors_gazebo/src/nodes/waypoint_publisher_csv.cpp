@@ -18,33 +18,81 @@
  * limitations under the License.
  */
 
+#include <fstream>
+#include <iostream>
 #include <thread>
 #include <chrono>
 
-#include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <mav_msgs/conversions.h>
 #include <mav_msgs/default_topics.h>
+#include <mav_msgs/eigen_mav_msgs.h>
 #include <ros/ros.h>
 #include <std_srvs/Empty.h>
+#include <sensor_msgs/Imu.h>
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
 
-int main(int argc, char** argv) {
-  int droneNumber = 255;
+bool sim_running = false;
 
-  ros::init(argc, argv, "hovering_example");
+static const int64_t kNanoSecondsInSecond = 1000000000;
+
+void callback(const sensor_msgs::ImuPtr& msg) {
+  sim_running = true;
+}
+
+class WaypointWithTime {
+ public:
+  WaypointWithTime()
+      : waiting_time(0), yaw(0.0) {
+  }
+
+  WaypointWithTime(double t, float x, float y, float z, float _yaw)
+      : position(x, y, z), yaw(_yaw), waiting_time(t) {
+  }
+
+  Eigen::Vector3d position;
+  double yaw;
+  double waiting_time;
+};
+
+int main(int argc, char** argv) {
+  ros::init(argc, argv, "waypoint_publisher_csv");
   ros::NodeHandle nh;
+
+  ROS_INFO("Started waypoint_publisher.");
+
+  ros::V_string args;
+  ros::removeROSArgs(argc, argv, args);
+
+  if (args.size() != 2 && args.size() != 3) {
+    ROS_ERROR("Usage: waypoint_publisher_csv <waypoint_file>"
+        "\nThe waypoint file should be structured as: space separated: wait_time [s] x[m] y[m] z[m] yaw[deg])");
+    return -1;
+  }
+
+  std::vector<WaypointWithTime> waypoints;
+  const float DEG_2_RAD = M_PI / 180.0;
+
+  std::ifstream wp_file(args.at(1).c_str());
+
+  if (wp_file.is_open()) {
+    double t, x, y, z, yaw;
+    // Only read complete waypoints.
+    while (wp_file >> t >> x >> y >> z >> yaw) {
+      waypoints.push_back(WaypointWithTime(t, x, y, z, yaw * DEG_2_RAD));
+    }
+    wp_file.close();
+    ROS_INFO("Read %d waypoints.", (int) waypoints.size());
+  } else {
+    ROS_ERROR_STREAM("Unable to open poses file: " << args.at(1));
+    return -1;
+  }
 
   // Create a private node handle for accessing node parameters.
   ros::NodeHandle nh_private("~");
   ros::Publisher trajectory_pub =
       nh.advertise<trajectory_msgs::MultiDOFJointTrajectory>(
           mav_msgs::default_topics::COMMAND_TRAJECTORY, 10);
-  ROS_INFO("Started hovering example.");
-
-  if (nh_private.getParam("droneNumber", droneNumber))
-    ROS_INFO("Hovering example got param 'droneNumber': %d", droneNumber);
-  else
-     ROS_ERROR("Failed to get param 'droneNumber'");
 
   std_srvs::Empty srv;
   bool unpaused = ros::service::call("/gazebo/unpause_physics", srv);
@@ -65,58 +113,33 @@ int main(int argc, char** argv) {
     ROS_INFO("Unpaused the Gazebo simulation.");
   }
 
-  // Wait for 5 seconds to let the Gazebo GUI show up.
-  //ros::Duration(5.0).sleep();
-
-  double begin = ros::Time::now().toSec();
-  ROS_INFO("droneNumber %d begin = %f.", droneNumber, begin);
-
-//  ros::Duration(3.0 - begin).sleep();
   ros::Time::sleepUntil(ros::Time(5.0));
   trajectory_msgs::MultiDOFJointTrajectory trajectory_msg;
 
+  ROS_INFO("Start publishing waypoints (csv).");
 
   // Default desired position and yaw.
   Eigen::Vector3d desired_position(0.3, 0.5, 1.0);
   double desired_yaw = 0.0;
 
-  // Overwrite defaults if set as node parameters.
-  nh_private.param("x", desired_position.x(), desired_position.x());
-  nh_private.param("y", desired_position.y(), desired_position.y());
-  nh_private.param("z", desired_position.z(), desired_position.z());
-  nh_private.param("yaw", desired_yaw, desired_yaw);
-
-  for(int i = 4; i < 500; i++)
+  for (size_t i = 0; i < waypoints.size(); ++i)
   {
-    if(droneNumber == 1)
-    {
-      desired_position(0) = 0.5;
-      desired_position(1) = (float)(i % 3 - 1) * 0.5;
-    }
-    else if(droneNumber == 2)
-    {
-      desired_position(0) = -0.5;
-      desired_position(1) = (float)(1 - i % 3) * 0.5;
-    }
-    else
-    {
-      desired_position(0) = (float)((i/1) % 3 - 1) * 0.5;
-      desired_position(1) = (float)((i/3) % 3 - 1) * 0.5;
-    }
-
-    //desired_position(0) = 0;
-    //desired_position(1) = 0;
-
+    WaypointWithTime& wp = waypoints[i];
     trajectory_msg.header.stamp = ros::Time::now();
+
+    desired_position(0) = wp.position[0];
+    desired_position(1) = wp.position[1];
+    desired_position(2) = wp.position[2];
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
 
-    ROS_INFO("Publishing waypoint on namespace %s: [%f, %f, %f].",
-           nh.getNamespace().c_str(), desired_position.x(),
-           desired_position.y(), desired_position.z());
-  	trajectory_pub.publish(trajectory_msg);
+    ROS_INFO("Publishing waypoint on namespace %s: [%f, %f, %f] waiting %f seconds.",
+    nh.getNamespace().c_str(), desired_position.x(),
+    desired_position.y(), desired_position.z(), wp.waiting_time);
+
+    trajectory_pub.publish(trajectory_msg);
 
     ros::spinOnce();
-    ros::Duration(10.0).sleep();
+    ros::Duration(wp.waiting_time).sleep();
   }
 
   ros::shutdown();

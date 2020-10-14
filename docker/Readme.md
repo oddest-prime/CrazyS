@@ -1,5 +1,7 @@
 	docker build . --tag crazys
 
+	docker run --rm --volume "$(pwd)":/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh
+
 	docker run -it crazys
 
 	docker run -it --device /dev/dri/ --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v "$(pwd)":/crazyflie_ws/src/crazys crazys
@@ -7,7 +9,7 @@
 	export containerId=$(docker ps -l -q)
 	xhost +local:`docker inspect --format='{{ .Config.Hostname }}' $containerId`
 
-	roslaunch rotors_gazebo crazyflie2_hovering_example.launch
+	roslaunch rotors_gazebo crazyflie2_hovering_example.launch gui:=false
 
 	rm -f *.csv && rm /tmp/cam* -rf && roslaunch rotors_gazebo crazyflie2_hovering_two.launch
 

@@ -101,6 +101,7 @@ MpcController::MpcController()
       state_.attitudeQuaternion.z = 0; // Quaternion z
       state_.attitudeQuaternion.w = 0; // Quaternion w
 
+      use_setpoint_ = false; // default: use trajectory points instead of setpoints for attitude
 }
 
 MpcController::~MpcController() {}
@@ -257,6 +258,15 @@ void MpcController::SetControllerGains(){
 
 void MpcController::SetTrajectoryPoint(const mav_msgs::EigenTrajectoryPoint& command_trajectory) {
     command_trajectory_= command_trajectory;
+    controller_active_= true;
+}
+
+void MpcController::SetSetPoint(double z, double pitch, double roll, double yaw) {
+    setpoint_z_ = z;
+    setpoint_pitch_ = pitch;
+    setpoint_roll_ = roll;
+    setpoint_yaw_ = yaw;
+    use_setpoint_ = true;
     controller_active_= true;
 }
 
@@ -477,7 +487,10 @@ void MpcController::HoveringController(double* omega) {
     assert(omega);
 
     double z_error, z_reference, dot_zeta;
-    z_reference = command_trajectory_.position_W[2];
+    if(!use_setpoint_)
+      z_reference = command_trajectory_.position_W[2];
+    else
+      z_reference = setpoint_z_;
     z_error = z_reference - state_.position.z;
 
     // Velocity along z-axis from body to inertial frame
@@ -663,7 +676,13 @@ void MpcController::AttitudeController(double* p_command, double* q_command) {
     Quaternion2Euler(&roll, &pitch, &yaw);
 
     double theta_command, phi_command;
-    XYController(&theta_command, &phi_command);
+    if(!use_setpoint_)
+      XYController(&theta_command, &phi_command);
+    else
+    {
+      theta_command = setpoint_pitch_;
+      phi_command = setpoint_roll_;
+    }
 
     double phi_error, theta_error;
     phi_error = phi_command - roll;

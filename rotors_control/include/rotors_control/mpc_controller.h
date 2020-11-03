@@ -51,6 +51,7 @@ namespace rotors_control {
 	          void SetOdometryWithoutStateEstimator(const EigenOdometry& odometry);
             void SetSensorData(const sensorData_t& sensors);
             void SetTrajectoryPoint(const mav_msgs::EigenTrajectoryPoint& command_trajectory);
+            void SetSetPoint(double z, double pitch, double roll, double yaw);
 	          void SetControllerGains();
             void CallbackAttitudeEstimation();
             void CallbackHightLevelControl();
@@ -116,6 +117,12 @@ namespace rotors_control {
             EigenOdometry odometry_;
             sensorData_t sensors_;
             state_t state_;
+
+            bool use_setpoint_;
+            double setpoint_z_;
+            double setpoint_pitch_;
+            double setpoint_roll_;
+            double setpoint_yaw_;
 
             void RateController(double* delta_phi, double* delta_theta, double* delta_psi);
             void AttitudeController(double* p_command, double* q_command);

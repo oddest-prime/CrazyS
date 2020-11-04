@@ -47,11 +47,12 @@ namespace rotors_control {
 
   class SetPointWithTime {
    public:
-    SetPointWithTime(long _timestamp, double _estimated_z, double _pitch, double _roll, double _yaw)
-        : timestamp(_timestamp), estimated_z(_estimated_z), pitch(_pitch), roll(_roll), yaw(_yaw) {
+    SetPointWithTime(long _timestamp, double _thrust, double _estimated_z, double _pitch, double _roll, double _yaw)
+        : timestamp(_timestamp), thrust(_thrust), estimated_z(_estimated_z), pitch(_pitch), roll(_roll), yaw(_yaw) {
     }
 
     long timestamp;
+    double thrust;
     double estimated_z;
     double pitch;
     double roll;
@@ -72,6 +73,10 @@ namespace rotors_control {
             bool enable_state_estimator_ = false;
             bool enable_mellinger_controller_ = false;
             bool enable_internal_model_controller_ = false;
+
+            std::vector<SetPointWithTime> setpoints_;
+            int setpoint_index_ = 0;
+            int setpoint_timeoffset_ = 0;
 
             MpcController position_controller_;
             sensorData_t sensors_;

@@ -48,8 +48,6 @@ PlaybackNode::PlaybackNode() {
 
     InitializeParams();
 
-    std::vector<SetPointWithTime> setpoints;
-
     std::string attitude_file;
     if (pnh_node.getParam("attitude_file", attitude_file))
       ROS_INFO("Got param 'attitude_file': %s", attitude_file.c_str());
@@ -59,18 +57,22 @@ PlaybackNode::PlaybackNode() {
       return;
     }
 
+    const float DEG_2_RAD = M_PI / 180.0;
     std::ifstream wp_file(attitude_file.c_str());
     if (wp_file.is_open()) {
-      double t, z, pitch, roll, yaw;
-      while (wp_file >> t >> z >> pitch >> roll >> yaw) { // Only read complete setpoints.
-        setpoints.push_back(SetPointWithTime(t, z, pitch, roll, yaw));
+      double t, thr, z, pitch, roll, yaw;
+      while (wp_file >> t >> thr >> z >> pitch >> roll >> yaw) { // Only read complete setpoints.
+        setpoints_.push_back(SetPointWithTime(t, thr, z, pitch * DEG_2_RAD, roll * DEG_2_RAD, yaw * DEG_2_RAD));
       }
       wp_file.close();
-      ROS_INFO("Read %d setpoints.", (int) setpoints.size());
+      ROS_INFO("Read %d setpoints.", (int) setpoints_.size());
     } else {
       ROS_ERROR_STREAM("Unable to open setpoints file: " << attitude_file);
       return;
     }
+    setpoint_index_ = 0;
+    SetPointWithTime& sp = setpoints_[0];
+    setpoint_timeoffset_ = sp.timestamp;
 
     // Topics subscribe
     cmd_multi_dof_joint_trajectory_sub_ = nh.subscribe(mav_msgs::default_topics::COMMAND_TRAJECTORY, 1,
@@ -260,16 +262,35 @@ void PlaybackNode::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_m
 
     ROS_INFO_ONCE("Playback got first odometry message.");
 
-    position_controller_.SetSetPoint(1, 0, 0, 0);
-
     //This functions allows us to put the odometry message into the odometry variable--> _position,
     //_orientation,_velocit_body,_angular_velocity
     EigenOdometry odometry;
     eigenOdometryFromMsg(odometry_msg, &odometry);
     position_controller_.SetOdometryWithoutStateEstimator(odometry);
 
-    ROS_DEBUG("Playback got odometry message: x=%f y=%f z=%f", odometry.position[0], odometry.position[1], odometry.position[2]);
+    float msec = odometry.timeStampSec * 1000.0 + odometry.timeStampNsec / (1000.0*1000.0);
 
+    ROS_INFO("Odometry message: %.0fms x=%f y=%f z=%f", msec, odometry.position[0], odometry.position[1], odometry.position[2]);
+
+    SetPointWithTime& sp = setpoints_[setpoint_index_];
+    while(setpoint_index_ < setpoints_.size() && sp.timestamp < msec + setpoint_timeoffset_)
+    {
+      setpoint_index_ ++;
+      sp = setpoints_[setpoint_index_];
+    }
+    if(setpoint_index_ < setpoints_.size())
+    {
+      float height = 0.1;
+      if(sp.thrust > 100)
+        height = 0.25;
+      position_controller_.SetSetPoint(height, sp.pitch, sp.roll, sp.yaw);
+      ROS_INFO("set SetPoint: i=%d z=%f pitch=%f roll=%f yaw=%f", setpoint_index_, height, sp.pitch, sp.roll, 0.0);
+    }
+    else
+    {
+      position_controller_.SetSetPoint(0.1, 0.0, 0.0, 0.0);
+      ROS_INFO("set SetPoint: END z=%f pitch=%f roll=%f yaw=%f", 0.1, 0.0, 0.0, 0.0);
+    }
     Eigen::Vector4d ref_rotor_velocities;
     position_controller_.CalculateRotorVelocities(&ref_rotor_velocities);
 

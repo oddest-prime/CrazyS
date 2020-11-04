@@ -45,7 +45,7 @@
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneNumber" value="0"/>
       <param name="user_account" value="$(arg user_account)"/>
-      <param name="attitude_file" value="/crazyflie_ws/src/crazys/waypoints/my_attidude-20201103T13-49-12.csv"/>
+      <param name="attitude_file" value="/crazyflie_ws/src/crazys/waypoints/my_attitude-20201103T16-56-14.csv"/>
       <rosparam unless="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name).yaml" />
       <rosparam if="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name)_with_stateEstimator.yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />

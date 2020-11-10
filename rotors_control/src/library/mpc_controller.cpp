@@ -42,7 +42,7 @@
 
 
 #define M_PI                                     3.14159265358979323846  /* pi [rad]*/
-#define OMEGA_OFFSET                             6874  /* OMEGA OFFSET [PWM]*/
+#define OMEGA_OFFSET                             6474  /* OMEGA OFFSET [PWM]*/
 #define ANGULAR_MOTOR_COEFFICIENT                0.2685 /* ANGULAR_MOTOR_COEFFICIENT */
 #define MOTORS_INTERCEPT                         426.24 /* MOTORS_INTERCEPT [rad/s]*/
 #define MAX_PROPELLERS_ANGULAR_VELOCITY          2618 /* MAX PROPELLERS ANGULAR VELOCITY [rad/s]*/
@@ -700,7 +700,7 @@ void MpcController::AttitudeController(double* p_command, double* q_command) {
     if(dataStoring_active_){
       // Saving drone attitude in a file
       std::stringstream tempPQCommands;
-      tempPQCommands << *p_command << "," << *q_command << ","
+      tempPQCommands << *p_command << "," << *q_command << "," << phi_command << "," << theta_command << ","
               << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
 
       listPQCommands_.push_back(tempPQCommands.str());

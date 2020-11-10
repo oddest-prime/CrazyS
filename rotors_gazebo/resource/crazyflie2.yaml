@@ -1,5 +1,5 @@
 # Crazyflie 2.0 vehicle parameters
-mass: 0.027
+mass: 0.031
 inertia: {xx: 1.657171e-05, xy: 0.0, xz: 0.0, yy: 1.657171e-05, yz: 0.0, zz: 2.9261652e-05}
 
 # angle should be expressed in rad

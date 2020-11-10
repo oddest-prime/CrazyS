@@ -10,7 +10,7 @@
   <arg name="debug" default="false"/>
   <arg name="gui" default="true"/>
   <arg name="csvFilesStoring" default="true"/>
-  <arg name="csvFilesStoringTime" default="100.0"/> <!-- seconds -->
+  <arg name="csvFilesStoringTime" default="20.0"/> <!-- seconds -->
   <arg name="user_account" default="giuseppe"/>
   <!-- The following line causes gzmsg and gzerr messages to be printed to the console
       (even when Gazebo is started through roslaunch) -->
@@ -49,7 +49,7 @@
       <rosparam if="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name)_with_stateEstimator.yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
    </node>
-   <node name="waypoint_publisher_csv" pkg="rotors_gazebo" type="waypoint_publisher_csv" output="screen" args="/crazyflie_ws/src/crazys/waypoints/waypoints_hover_0.txt"/>
+   <node name="waypoint_publisher_csv" pkg="rotors_gazebo" type="waypoint_publisher_csv" output="screen" args="/crazyflie_ws/src/crazys/waypoints/waypoints_move_0.txt"/>
  />
    <!--node name="hovering_example" pkg="rotors_gazebo" type="hovering_example" output="screen" /-->
    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />

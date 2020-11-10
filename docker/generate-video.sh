@@ -13,6 +13,7 @@ ffmpeg -i /tmp/my_out2.mp4 -i /tmp/my_out1.mp4 -filter_complex "[0:v]crop=3440:1
 #ffmpeg -i /tmp/my_out2.mp4 -i /tmp/my_out1.mp4 -filter_complex vstack /tmp/my_out.mp4
 
 mv /tmp/my_out.mp4 /crazyflie_ws/src/crazys/video_`date +%Y-%m-%d_%H-%M-%S`.mp4
+mv /tmp/my_cam4.mp4 /crazyflie_ws/src/crazys/video_`date +%Y-%m-%d_%H-%M-%S`_cam4.mp4
 
 rm -f /tmp/my_*.mp4
 rm -rf /tmp/cam*

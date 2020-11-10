@@ -10,7 +10,7 @@
   <arg name="debug" default="false"/>
   <arg name="gui" default="true"/>
   <arg name="csvFilesStoring" default="true"/>
-  <arg name="csvFilesStoringTime" default="100.0"/> <!-- seconds -->
+  <arg name="csvFilesStoringTime" default="20.0"/> <!-- seconds -->
   <arg name="user_account" default="giuseppe"/>
   <!-- The following line causes gzmsg and gzerr messages to be printed to the console
       (even when Gazebo is started through roslaunch) -->
@@ -45,12 +45,12 @@
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneNumber" value="0"/>
       <param name="user_account" value="$(arg user_account)"/>
-      <param name="attitude_file" value="/crazyflie_ws/src/crazys/waypoints/my_attitude-20201103T16-56-14.csv"/>
-      <rosparam unless="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name).yaml" />
+      <param name="attitude_file" value="/crazyflie_ws/src/crazys/waypoints/my_attitude-20201110T18-16-56.csv"/>
+      <rosparam unless="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name)_playback.yaml" />
       <rosparam if="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name)_with_stateEstimator.yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
    </node>
-   <node name="waypoint_publisher_csv" pkg="rotors_gazebo" type="waypoint_publisher_csv" output="screen" args="/crazyflie_ws/src/crazys/waypoints/waypoints_hover_0.txt"/>
+   <node name="waypoint_publisher_csv" pkg="rotors_gazebo" type="waypoint_publisher_csv" output="screen" args="/crazyflie_ws/src/crazys/waypoints/waypoints_move_0.txt"/>
  />
    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />

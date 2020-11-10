@@ -280,16 +280,16 @@ void PlaybackNode::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_m
     }
     if(setpoint_index_ < setpoints_.size())
     {
-      float height = 0.1;
+      float height = 0.15;
       if(sp.thrust > 100)
-        height = 0.25;
+        height = 0.15;
       position_controller_.SetSetPoint(height, sp.pitch, sp.roll, sp.yaw);
       ROS_INFO("set SetPoint: i=%d z=%f pitch=%f roll=%f yaw=%f", setpoint_index_, height, sp.pitch, sp.roll, 0.0);
     }
     else
     {
-      position_controller_.SetSetPoint(0.1, 0.0, 0.0, 0.0);
-      ROS_INFO("set SetPoint: END z=%f pitch=%f roll=%f yaw=%f", 0.1, 0.0, 0.0, 0.0);
+      position_controller_.SetSetPoint(0.15, 0.0, 0.0, 0.0);
+      ROS_INFO("set SetPoint: END z=%f pitch=%f roll=%f yaw=%f", 0.15, 0.0, 0.0, 0.0);
     }
     Eigen::Vector4d ref_rotor_velocities;
     position_controller_.CalculateRotorVelocities(&ref_rotor_velocities);

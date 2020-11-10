@@ -25,7 +25,8 @@
   <xacro:property name="rotor_velocity_slowdown_sim" value="50" />
   <xacro:property name="use_mesh_file" value="true" />
   <xacro:property name="mesh_file" value="package://rotors_description/meshes/crazyflie2.dae" />
-  <xacro:property name="mass" value="0.025" /> <!-- [kg] -->
+  <!--xacro:property name="mass" value="0.025" /--> <!-- [kg] -->
+  <xacro:property name="mass" value="0.031" /> <!-- [kg], with passive marker board -->
   <xacro:property name="body_width" value="0.045" /> <!-- [m] -->
   <xacro:property name="body_height" value="0.03" /> <!-- [m] -->
   <xacro:property name="mass_rotor" value="0.0005" /> <!-- [kg] -->
@@ -41,7 +42,7 @@
   <xacro:property name="time_constant_down" value="0.025" /> <!-- [s] -->
   <xacro:property name="max_rot_velocity" value="3052" /> <!-- [rad/s] -->
   <xacro:property name="rotor_drag_coefficient" value="1.066428e-06" />
-  <xacro:property name="rolling_moment_coefficient" value="0" /> 
+  <xacro:property name="rolling_moment_coefficient" value="0" />
 
   <!-- Property Blocks -->
   <xacro:property name="body_inertia">

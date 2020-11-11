@@ -78,10 +78,10 @@ namespace rotors_control {
 
             // Lists for data saving
             std::vector<string> listPropellersVelocity_;
-            std::vector<string> listDroneAttiude_;
+            std::vector<string> listDroneAttitude_;
             std::vector<string> listPWM_;
             std::vector<string> listPWMComponents_;
-            std::vector<string> listCommandAttiude_;
+            std::vector<string> listCommandAttitude_;
             std::vector<string> listRCommand_;
             std::vector<string> listOmegaCommand_;
             std::vector<string> listXeYe_;

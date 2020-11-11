@@ -114,10 +114,10 @@ void MpcController::CallbackSaveData(const ros::TimerEvent& event){
       }
 
       ofstream filePropellersVelocity;
-      ofstream fileDroneAttiude;
+      ofstream fileDroneAttitude;
       ofstream filePWM;
       ofstream filePWMComponents;
-      ofstream fileCommandAttiude;
+      ofstream fileCommandAttitude;
       ofstream fileRCommand;
       ofstream fileOmegaCommand;
       ofstream fileXeYe;
@@ -129,10 +129,10 @@ void MpcController::CallbackSaveData(const ros::TimerEvent& event){
       ROS_DEBUG("CallbackSavaData function is working. Time: %f seconds, %f nanoseconds", odometry_.timeStampSec, odometry_.timeStampNsec);
 
       filePropellersVelocity.open("/crazyflie_ws/src/crazys/log_output/PropellersVelocity.csv", std::ios_base::app);
-      fileDroneAttiude.open("/crazyflie_ws/src/crazys/log_output/DroneAttiude.csv", std::ios_base::app);
+      fileDroneAttitude.open("/crazyflie_ws/src/crazys/log_output/DroneAttitude.csv", std::ios_base::app);
       filePWM.open("/crazyflie_ws/src/crazys/log_output/PWM.csv", std::ios_base::app);
       filePWMComponents.open("/crazyflie_ws/src/crazys/log_output/PWMComponents.csv", std::ios_base::app);
-      fileCommandAttiude.open("/crazyflie_ws/src/crazys/log_output/CommandAttitude.csv", std::ios_base::app);
+      fileCommandAttitude.open("/crazyflie_ws/src/crazys/log_output/CommandAttitude.csv", std::ios_base::app);
       fileRCommand.open("/crazyflie_ws/src/crazys/log_output/RCommand.csv", std::ios_base::app);
       fileOmegaCommand.open("/crazyflie_ws/src/crazys/log_output/OmegaCommand.csv", std::ios_base::app);
       fileXeYe.open("/crazyflie_ws/src/crazys/log_output/XeYe.csv", std::ios_base::app);
@@ -146,8 +146,8 @@ void MpcController::CallbackSaveData(const ros::TimerEvent& event){
           filePropellersVelocity << listPropellersVelocity_.at( n );
       }
 
-      for (unsigned n=0; n < listDroneAttiude_.size(); ++n) {
-          fileDroneAttiude << listDroneAttiude_.at( n );
+      for (unsigned n=0; n < listDroneAttitude_.size(); ++n) {
+          fileDroneAttitude << listDroneAttitude_.at( n );
       }
 
       for (unsigned n=0; n < listPWM_.size(); ++n) {
@@ -158,8 +158,8 @@ void MpcController::CallbackSaveData(const ros::TimerEvent& event){
           filePWMComponents << listPWMComponents_.at( n );
       }
 
-      for (unsigned n=0; n < listCommandAttiude_.size(); ++n) {
-          fileCommandAttiude << listCommandAttiude_.at( n );
+      for (unsigned n=0; n < listCommandAttitude_.size(); ++n) {
+          fileCommandAttitude << listCommandAttitude_.at( n );
       }
 
       for (unsigned n=0; n < listRCommand_.size(); ++n) {
@@ -192,10 +192,10 @@ void MpcController::CallbackSaveData(const ros::TimerEvent& event){
 
       // Closing all opened files
       filePropellersVelocity.close();
-      fileDroneAttiude.close();
+      fileDroneAttitude.close();
       filePWM.close();
       filePWMComponents.close();
-      fileCommandAttiude.close();
+      fileCommandAttitude.close();
       fileRCommand.close();
       fileOmegaCommand.close();
       fileXeYe.close();
@@ -220,10 +220,10 @@ void MpcController::SetLaunchFileParameters(){
 
 		// Cleaning the string vector contents
     listPropellersVelocity_.clear();
-    listDroneAttiude_.clear();
+    listDroneAttitude_.clear();
     listPWM_.clear();
     listPWMComponents_.clear();
-    listCommandAttiude_.clear();
+    listCommandAttitude_.clear();
     listRCommand_.clear();
     listOmegaCommand_.clear();
     listXeYe_.clear();
@@ -430,13 +430,13 @@ void MpcController::XYController(double* theta_command, double* phi_command) {
 
     if(dataStoring_active_){
       // Saving drone attitude in a file
-      std::stringstream tempCommandAttiude;
-      tempCommandAttiude << *theta_command << "," << *phi_command << ","
+      std::stringstream tempCommandAttitude;
+      tempCommandAttitude << *theta_command << "," << *phi_command << ","
               << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
 
-      listCommandAttiude_.push_back(tempCommandAttiude.str());
+      listCommandAttitude_.push_back(tempCommandAttitude.str());
 
-      // Saving drone attitude in a file
+      // Saving drone position errors in a file
       std::stringstream tempXeYe;
       tempXeYe << xe << "," << ye << "," << e_vx << "," << e_vy << "," << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
 
@@ -528,7 +528,7 @@ void MpcController::HoveringController(double* omega) {
        tempDroneAttitude << roll << "," << pitch << "," << yaw << ","
                << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
 
-       listDroneAttiude_.push_back(tempDroneAttitude.str());
+       listDroneAttitude_.push_back(tempDroneAttitude.str());
 
      }
 
@@ -594,7 +594,7 @@ void MpcController::SetOdometryWithoutStateEstimator(const EigenOdometry& odomet
 
     if(dataStoring_active_){
 
-      // Saving drone attitude in a file
+      // Saving drone Position in a file
       std::stringstream tempDronePosition;
       tempDronePosition << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ","
               << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";

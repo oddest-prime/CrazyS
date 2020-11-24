@@ -183,12 +183,19 @@ Attiudecontroller.png: CommandAttitude.csv DroneAttitude.csv PQCommands.csv
 		set ylabel \"Attiudecontroller\" \n\
 		plot     \"CommandAttitude.csv\" using (column(3)+column(4)/1000000000):1 with lines title 'theta-command', \
 		   	 \"CommandAttitude.csv\" using (column(3)+column(4)/1000000000):2 with lines title 'phi-command', \
-			 \"DroneAttitude.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'pitch', \
-			 \"DroneAttitude.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'roll', \
-			 \"PQCommands.csv\" using (column(3)+column(4)/1000000000):1 with lines title 'p-command', \
-		 	 \"PQCommands.csv\" using (column(3)+column(4)/1000000000):2 with lines title 'q-command'" \
+			 \"DroneAttitude.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'pitch (theta)', \
+			 \"DroneAttitude.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'roll (phi)', \
+		 	 \"PQCommands.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'q-command (theta-command)', \
+			 \"PQCommands.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'p-command (phi-command)'" \
 	 | gnuplot  
 
 
+rm-csv:
+	rm -f *.csv
+
 clean:
-	rm *.png
+	rm -f *.png
+	
+clean-all: clean rm-csv
+
+

@@ -451,7 +451,112 @@ void MpcController::XYController(double* theta_command, double* phi_command) {
      ROS_DEBUG("E_x: %f, E_y: %f", xe, ye);
 }
 
-void MpcController::YawMpcController(double* r_command) {
+void MpcController::XYControllerMpc(double* theta_command, double* phi_command) {
+    assert(theta_command);
+    assert(phi_command);
+
+    double v, u;
+    u = state_.linearVelocity.x;
+    v = state_.linearVelocity.y;
+
+    double xe, ye;
+    ErrorBodyFrame(&xe, &ye);
+
+    double e_vx, e_vy;
+    e_vx = xe - u;
+    e_vy = ye - v;
+
+    e_vx = xe - u/20; // do not add velocity
+    e_vy = ye - v/20; // do not add velocity
+
+    int possible_action_cnt = 1000;
+    double possible_action_t = 0.5; // seconds
+    double possible_action;
+    double possible_action_error;
+    double possible_action_error_min;
+    int possible_action_error_min_i;
+
+    possible_action_error_min = 1000000000;
+    possible_action_error_min_i = possible_action_cnt/2;
+    for(int possible_action_i = 0; possible_action_i <= possible_action_cnt; possible_action_i ++)
+    {
+      possible_action = -MAX_THETA_COMMAND + (2*MAX_THETA_COMMAND)/possible_action_cnt * possible_action_i;
+      //ROS_INFO("i: %d, act: %f", possible_action_i, possible_action_x);
+      // s x = s x0 + v x0 *t + a x *t 2
+      possible_action_error = 0 - xe + u * possible_action_t + (tan(possible_action) * 9.81) * (possible_action_t*possible_action_t);
+      if(fabs(possible_action_error) < fabs(possible_action_error_min))
+      {
+        possible_action_error_min = possible_action_error;
+        possible_action_error_min_i = possible_action_i;
+      }
+    }
+    *theta_command = -MAX_THETA_COMMAND + (2*MAX_THETA_COMMAND)/possible_action_cnt * possible_action_error_min_i;
+//    ROS_INFO("x theta_command: %f, min_i: %d, err: %f", *theta_command, possible_action_error_min_i, possible_action_error_min);
+
+    possible_action_error_min = 1000000000;
+    possible_action_error_min_i = possible_action_cnt/2;
+    for(int possible_action_i = 0; possible_action_i <= possible_action_cnt; possible_action_i ++)
+    {
+      possible_action = -MAX_PHI_COMMAND + (2*MAX_PHI_COMMAND)/possible_action_cnt * possible_action_i;
+      //ROS_INFO("i: %d, act: %f", possible_action_i, possible_action_x);
+      // s x = s x0 + v x0 *t + a x *t 2
+      possible_action_error = ye - v * possible_action_t + (tan(possible_action) * 9.81) * (possible_action_t*possible_action_t);
+      if(fabs(possible_action_error) < fabs(possible_action_error_min))
+      {
+        possible_action_error_min = possible_action_error;
+        possible_action_error_min_i = possible_action_i;
+      }
+    }
+    *phi_command = -MAX_PHI_COMMAND + (2*MAX_PHI_COMMAND)/possible_action_cnt * possible_action_error_min_i;
+
+    /*
+    double theta_command_kp;
+    theta_command_kp = xy_gain_kp_.x() * e_vx;
+    theta_command_ki_ = theta_command_ki_ + (xy_gain_ki_.x() * e_vx * SAMPLING_TIME);
+    *theta_command  = theta_command_kp + theta_command_ki_;
+
+    double phi_command_kp;
+    phi_command_kp = xy_gain_kp_.y() * e_vy;
+    phi_command_ki_ = phi_command_ki_ + (xy_gain_ki_.y() * e_vy * SAMPLING_TIME);
+    *phi_command  = phi_command_kp + phi_command_ki_;
+    */
+
+    // Theta command is saturated considering the aircraft physical constraints
+    if(*theta_command > MAX_THETA_COMMAND)
+       *theta_command = MAX_THETA_COMMAND;
+    if(*theta_command < -MAX_THETA_COMMAND)
+       *theta_command = -MAX_THETA_COMMAND;
+
+    // Phi command is saturated considering the aircraft physical constraints
+    if(*phi_command > MAX_PHI_COMMAND)
+       *phi_command = MAX_PHI_COMMAND;
+    if(*phi_command < -MAX_PHI_COMMAND)
+       *phi_command = -MAX_PHI_COMMAND;
+
+    if(dataStoring_active_){
+      // Saving drone attitude in a file
+      std::stringstream tempCommandAttitude;
+      tempCommandAttitude << *theta_command << "," << *phi_command << ","
+              << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
+
+      listCommandAttitude_.push_back(tempCommandAttitude.str());
+
+      // Saving drone position errors in a file
+      std::stringstream tempXeYe;
+      tempXeYe << xe << "," << ye << "," << e_vx << "," << e_vy << "," << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
+
+      listXeYe_.push_back(tempXeYe.str());
+
+    }
+
+     //ROS_DEBUG("Theta_kp (mpc): %f, Theta_ki: %f", theta_command_kp, theta_command_ki_);
+     //ROS_DEBUG("Phi_kp (mpc): %f, Phi_ki: %f", phi_command_kp, phi_command_ki_);
+     ROS_INFO("Phi_c (mpc): %f, Theta_c: %f", *phi_command, *theta_command);
+     ROS_DEBUG("E_vx (mpc): %f, E_vy: %f", e_vx, e_vy);
+     ROS_DEBUG("E_x (mpc): %f, E_y: %f", xe, ye);
+}
+
+void MpcController::YawController(double* r_command) {
     assert(r_command);
 
     double roll, pitch, yaw;
@@ -639,7 +744,7 @@ void MpcController::RateController(double* delta_phi, double* delta_theta, doubl
     AttitudeController(&p_command, &q_command);
 
     double r_command;
-    YawMpcController(&r_command);
+    YawController(&r_command);
 
     double p_error, q_error, r_error;
     p_error = p_command - p;
@@ -677,7 +782,7 @@ void MpcController::AttitudeController(double* p_command, double* q_command) {
 
     double theta_command, phi_command;
     if(!use_setpoint_)
-      XYController(&theta_command, &phi_command);
+      XYControllerMpc(&theta_command, &phi_command);
     else
     {
       theta_command = setpoint_pitch_;

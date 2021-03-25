@@ -9,7 +9,25 @@ source /crazyflie_ws/devel/setup.bash
 
 catkin build
 
-roslaunch rotors_gazebo crazyflie2_hovering_swarm.launch gui:=false
+TIMEOUT=60
+
+roslaunch rotors_gazebo crazyflie2_hovering_swarm.launch gui:=false &
+
+sleep 1
+iter=1
+R_PID=`pgrep roslaunch`
+for i in `seq 1 $TIMEOUT`
+do
+    kill -0 $R_PID 2> /dev/null || break
+    echo "  [[ global sim timeout counter: $iter / $TIMEOUT ]]  "
+    iter=$((iter+1))
+    sleep 1
+done;
+echo $iter > /tmp/run.seconds
+echo ""
+echo "##  killing roslaunch";
+kill $R_PID 2> /dev/null
+sleep 5
 
 kill `pidof Xvfb`
 

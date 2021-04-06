@@ -9,7 +9,7 @@ source /crazyflie_ws/devel/setup.bash
 
 catkin build
 
-TIMEOUT=60
+TIMEOUT=300
 
 roslaunch rotors_gazebo crazyflie2_hovering_swarm.launch gui:=false &
 

@@ -10,9 +10,9 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu bionic main" > /etc/apt/
 ENV TZ=Europe/Vienna
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
     echo $TZ > /etc/timezone && \
-    apt install -y tzdata
+    apt-get update && apt install -y tzdata
 
-RUN apt-get install -y \
+RUN apt-get update && apt-get install -y \
     ros-melodic-desktop-full ros-melodic-joy ros-melodic-octomap-ros ros-melodic-mavlink ros-melodic-octomap-mapping \
     python-wstool python-catkin-tools protobuf-compiler libgoogle-glog-dev ros-melodic-control-toolbox \
     python-rosinstall python-rosinstall-generator build-essential \
@@ -21,7 +21,7 @@ RUN apt-get install -y \
     ros-melodic-rotors-gazebo-plugins ros-melodic-mav-planning-msgs ros-melodic-rotors-description ros-melodic-rotors-hil-interface \
     ffmpeg screen xvfb
 
-RUN apt-get -y remove ros-melodic-gazebo* gazebo* && \
+RUN apt-get update && apt-get -y remove ros-melodic-gazebo* gazebo* && \
     sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list' && \
     wget http://packages.osrfoundation.org/gazebo.key -O - | apt-key add - && \
     apt-get update && \

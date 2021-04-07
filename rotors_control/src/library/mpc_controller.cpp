@@ -551,7 +551,7 @@ void MpcController::XYControllerMpc(double* theta_command, double* phi_command) 
 
      //ROS_DEBUG("Theta_kp (mpc): %f, Theta_ki: %f", theta_command_kp, theta_command_ki_);
      //ROS_DEBUG("Phi_kp (mpc): %f, Phi_ki: %f", phi_command_kp, phi_command_ki_);
-     ROS_INFO("Phi_c (mpc): %f, Theta_c: %f", *phi_command, *theta_command);
+     ROS_DEBUG("Phi_c (mpc): %f, Theta_c: %f", *phi_command, *theta_command);
      ROS_DEBUG("E_vx (mpc): %f, E_vy: %f", e_vx, e_vy);
      ROS_DEBUG("E_x (mpc): %f, E_y: %f", xe, ye);
 }

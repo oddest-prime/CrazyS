@@ -32,6 +32,7 @@
 #include <mav_msgs/eigen_mav_msgs.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
+#include <std_msgs/Bool.h>
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
@@ -44,6 +45,19 @@
 
 
 namespace rotors_control {
+
+    class DroneStateWithTime {
+     public:
+      void SetId(int self, int other);
+      void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
+      void UpdateDistance(EigenOdometry* odometry);
+      float GetDistance(EigenOdometry* odometry);
+
+      int self_;
+      int other_;
+      float distance_;
+      EigenOdometry odometry_;
+    };
 
     class PositionControllerMpc{
         public:
@@ -59,9 +73,14 @@ namespace rotors_control {
             bool enable_state_estimator_ = false;
             bool enable_mellinger_controller_ = false;
             bool enable_internal_model_controller_ = false;
+            bool enable_swarm_ = false;
+
+            int droneNumber_;
 
             MpcController position_controller_;
             sensorData_t sensors_;
+            EigenOdometry odometry_;
+
             ros::Time imu_msg_head_stamp_;
 
             std::string namespace_;
@@ -80,8 +99,10 @@ namespace rotors_control {
             ros::Subscriber cmd_multi_dof_joint_trajectory_sub_;
             ros::Subscriber cmd_multi_dof_joint_trajectory_spline_sub_;
             ros::Subscriber odometry_sub_;
+            ros::Subscriber enable_sub_;
             ros::Subscriber imu_sub_;
             ros::Subscriber imu_ideal_sub_;
+            ros::Subscriber odom_sub_[3];
 
             //publisher
             ros::Publisher motor_velocity_reference_pub_;
@@ -94,11 +115,13 @@ namespace rotors_control {
             void MultiDofJointTrajectoryMellingerCallback(const mav_msgs::DroneState& drone_state_msg);
 
             void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
+            void EnableCallback(const std_msgs::BoolConstPtr& bool_msg);
             void MellingerOdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
 
             void IMUCallback(const sensor_msgs::ImuConstPtr& imu_msg);
             void IMUMellingerCallback(const sensor_msgs::ImuConstPtr& imu_msg); //When the Mellinger's controller is on
 
+            DroneStateWithTime dronestate[3];
     };
 }
 

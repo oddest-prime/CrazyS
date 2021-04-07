@@ -24,6 +24,7 @@
 #include <mav_msgs/default_topics.h>
 #include <ros/console.h>
 #include <sensor_msgs/Imu.h>
+#include <std_msgs/Bool.h>
 #include <time.h>
 #include <chrono>
 
@@ -34,6 +35,7 @@
 #define ATTITUDE_UPDATE_DT 0.004  /* ATTITUDE UPDATE RATE [s] - 500Hz */
 #define RATE_UPDATE_DT 0.002      /* RATE UPDATE RATE [s] - 250Hz */
 #define SAMPLING_TIME  0.01       /* SAMPLING CONTROLLER TIME [s] - 100Hz */
+#define N_DRONES      3           /* number of drones */
 
 namespace rotors_control {
 
@@ -58,9 +60,20 @@ PositionControllerMpc::PositionControllerMpc() {
     // Topics subscribe
     cmd_multi_dof_joint_trajectory_sub_ = nh.subscribe(mav_msgs::default_topics::COMMAND_TRAJECTORY, 1,
       &PositionControllerMpc::MultiDofJointTrajectoryCallback, this);
+    odometry_sub_ = nh.subscribe(mav_msgs::default_topics::ODOMETRY, 1, &PositionControllerMpc::OdometryCallback, this);
+    enable_sub_ = nh.subscribe("enable", 1, &PositionControllerMpc::EnableCallback, this);
 
-    odometry_sub_ = nh.subscribe(mav_msgs::default_topics::ODOMETRY, 1,
-      &PositionControllerMpc::OdometryCallback, this);
+    ros::NodeHandle nhq[N_DRONES] = { // NodeHandles for each drone (separate namespace)
+      ros::NodeHandle("/crazyflie2_0"),
+      ros::NodeHandle("/crazyflie2_1"),
+      ros::NodeHandle("/crazyflie2_2")
+    };
+    for (size_t i = 0; i < N_DRONES; i++)
+    {
+      dronestate[i].SetId(droneNumber_, i);
+      ROS_INFO("Setup subscriber %s.", nhq[i].getNamespace().c_str());
+      odom_sub_[i] = nhq[i].subscribe(mav_msgs::default_topics::ODOMETRY, 1, &DroneStateWithTime::OdometryCallback, &dronestate[i]);
+    }
 
     // To publish the propellers angular velocities
     motor_velocity_reference_pub_ = nh.advertise<mav_msgs::Actuators>(mav_msgs::default_topics::COMMAND_ACTUATORS, 1);
@@ -192,8 +205,9 @@ void PositionControllerMpc::InitializeParams() {
        ROS_ERROR("Failed to get param 'user'");
 
      if (pnh.getParam("droneNumber", droneNumber)){
-     ROS_INFO("Got param 'droneNumber': %d", droneNumber);
-     position_controller_.droneNumber_ = droneNumber;
+         ROS_INFO("Got param 'droneNumber': %d", droneNumber);
+         position_controller_.droneNumber_ = droneNumber;
+         droneNumber_ = droneNumber;
      }
      else
         ROS_ERROR("Failed to get param 'droneNumber'");
@@ -239,6 +253,13 @@ void PositionControllerMpc::IMUCallback(const sensor_msgs::ImuConstPtr& imu_msg)
 
 }
 
+void PositionControllerMpc::EnableCallback(const std_msgs::BoolConstPtr& bool_msg) {
+  ROS_INFO_ONCE("MpcController got first enable message.");
+
+  enable_swarm_ = bool_msg->data;
+}
+
+
 void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg) {
 
     ROS_INFO_ONCE("MpcController got first odometry message.");
@@ -247,9 +268,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
 	    //This functions allows us to put the odometry message into the odometry variable--> _position,
  	    //_orientation,_velocit_body,_angular_velocity
-	    EigenOdometry odometry;
-	    eigenOdometryFromMsg(odometry_msg, &odometry);
-	    position_controller_.SetOdometryWithStateEstimator(odometry);
+	    eigenOdometryFromMsg(odometry_msg, &odometry_);
+	    position_controller_.SetOdometryWithStateEstimator(odometry_);
 
     }
 
@@ -257,11 +277,56 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
       //This functions allows us to put the odometry message into the odometry variable--> _position,
       //_orientation,_velocit_body,_angular_velocity
-      EigenOdometry odometry;
-      eigenOdometryFromMsg(odometry_msg, &odometry);
-      position_controller_.SetOdometryWithoutStateEstimator(odometry);
+      eigenOdometryFromMsg(odometry_msg, &odometry_);
+      for (size_t i = 0; i < N_DRONES; i++)
+          dronestate[i].UpdateDistance(&odometry_);
 
-      ROS_DEBUG("MpcController got odometry message: x=%f y=%f z=%f", odometry.position[0], odometry.position[1], odometry.position[2]);
+      position_controller_.SetOdometryWithoutStateEstimator(odometry_);
+
+      ROS_INFO_ONCE("MpcController got odometry message: x=%f y=%f z=%f (%d)", odometry_.position[0], odometry_.position[1], odometry_.position[2], enable_swarm_);
+
+      if(enable_swarm_)
+      {
+          ROS_INFO_ONCE("MpcController starting swarm mode");
+
+          float min_sum = FLT_MAX;
+          int min_xi = 0;
+          int min_yi = 0;
+          for(int xi = -1; xi <= 1; xi ++)
+          {
+              for(int yi = -1; yi <= 1; yi ++)
+              {
+                  float cohesion_sum = 0;
+                  float separation_sum = 0;
+                  float total_sum = 0;
+                  for (size_t i = 0; i < N_DRONES; i++)
+                  {
+                      if(i == droneNumber_)
+                        continue;
+                      EigenOdometry potential_pos = odometry_;
+                      potential_pos.position[0] += (float)xi * 0.1;
+                      potential_pos.position[1] += (float)yi * 0.1;
+                      float dist = dronestate[i].GetDistance(&potential_pos);
+                      cohesion_sum += dist*dist;
+                      separation_sum += 1.0/(dist*dist);
+                  }
+                  total_sum = 20*cohesion_sum + separation_sum;
+                  if(total_sum < min_sum)
+                  {
+                      min_sum = total_sum;
+                      min_xi = xi;
+                      min_yi = yi;
+                  }
+              }
+          }
+          ROS_INFO("MpcController %d swarm direction xi=%d yi=%d zi= tsum=%f", droneNumber_, min_xi, min_yi, min_sum);
+          mav_msgs::EigenTrajectoryPoint new_setpoint;
+          new_setpoint.position_W = odometry_.position;
+          new_setpoint.position_W[0] += (float)min_xi * 0.1;
+          new_setpoint.position_W[1] += (float)min_yi * 0.1;
+          position_controller_.SetTrajectoryPoint(new_setpoint);
+    }
+
 
       Eigen::Vector4d ref_rotor_velocities;
       position_controller_.CalculateRotorVelocities(&ref_rotor_velocities);
@@ -309,6 +374,38 @@ void PositionControllerMpc::CallbackIMUUpdate(const ros::TimerEvent& event){
     }
 
 }
+
+
+void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg) {
+
+    ROS_INFO_ONCE("DroneStateWithTime got first odometry message.");
+    eigenOdometryFromMsg(odometry_msg, &odometry_);
+
+    ROS_DEBUG("DroneStateWithTime got odometry message: x=%f y=%f z=%f (self:%d, other:%d)", odometry_.position[0], odometry_.position[1], odometry_.position[2], self_, other_);
+}
+
+float DroneStateWithTime::GetDistance(EigenOdometry* odometry) {
+    if(self_ == other_)
+        return 0;
+
+    float distance_x = fabs(odometry_.position[0] - odometry->position[0]);
+    float distance_y = fabs(odometry_.position[1] - odometry->position[1]);
+    float distance_z = fabs(odometry_.position[2] - odometry->position[2]);
+    return sqrt(distance_x*distance_x + distance_y*distance_y + distance_z*distance_z);
+}
+
+void DroneStateWithTime::UpdateDistance(EigenOdometry* odometry) {
+    distance_ = this->GetDistance(odometry);
+
+    ROS_INFO_ONCE("DroneStateWithTime distance=%f (self:%d, other:%d)", distance_, self_, other_);
+}
+
+void DroneStateWithTime::SetId(int self, int other)
+{
+    self_ = self;
+    other_ = other;
+}
+
 
 
 }

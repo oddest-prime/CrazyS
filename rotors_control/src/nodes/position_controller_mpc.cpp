@@ -121,9 +121,16 @@ void PositionControllerMpc::MultiDofJointTrajectoryCallback(const trajectory_msg
   mav_msgs::eigenTrajectoryPointFromMsg(msg->points.front(), &eigen_reference);
   commands_.push_front(eigen_reference);
 
-  // We can trigger the first command immediately.
-  position_controller_.SetTrajectoryPoint(eigen_reference);
-  commands_.pop_front();
+  if(!enable_swarm_) // set target point if not in swarm mode
+  {
+    // We can trigger the first command immediately.
+    position_controller_.SetTrajectoryPoint(eigen_reference);
+    commands_.pop_front();
+  }
+  else
+  {
+    target_swarm_ = eigen_reference;
+  }
 
   if (n_commands >= 1) {
     waypointHasBeenPublished_ = true;
@@ -328,19 +335,27 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       float cohesion_sum = 0;
                       float separation_sum = 0;
                       float total_sum = 0;
+                      EigenOdometry potential_pos = odometry_;
+                      potential_pos.position[0] += (float)xi * 0.1;
+                      potential_pos.position[1] += (float)yi * 0.1;
+                      potential_pos.position[2] += (float)zi * 0.1;
                       for (size_t i = 0; i < droneCount_; i++)
                       {
                           if(i == droneNumber_)
                             continue;
-                          EigenOdometry potential_pos = odometry_;
-                          potential_pos.position[0] += (float)xi * 0.1;
-                          potential_pos.position[1] += (float)yi * 0.1;
-                          potential_pos.position[2] += (float)zi * 0.1;
                           float dist = dronestate[i].GetDistance(&potential_pos);
                           cohesion_sum += dist*dist;
                           separation_sum += 1.0/(dist*dist);
                       }
                       total_sum = 20*cohesion_sum + separation_sum;
+                      if(target_swarm_.position_W[2] != 0)
+                      {
+                        float target_distance_x = fabs(target_swarm_.position_W[0] - potential_pos.position[0]);
+                        float target_distance_y = fabs(target_swarm_.position_W[1] - potential_pos.position[1]);
+                        float target_distance_z = fabs(target_swarm_.position_W[2] - potential_pos.position[2]);
+                        total_sum += sqrt(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
+                        ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
+                      }
                       if(total_sum < min_sum)
                       {
                           min_sum = total_sum;
@@ -351,7 +366,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                   }
               }
           }
-          ROS_INFO("MpcController %d swarm direction xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
+          ROS_INFO_ONCE("MpcController %d swarm direction xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
           mav_msgs::EigenTrajectoryPoint new_setpoint;
           new_setpoint.position_W = odometry_.position;
           new_setpoint.position_W[0] += (float)min_xi * 0.1;

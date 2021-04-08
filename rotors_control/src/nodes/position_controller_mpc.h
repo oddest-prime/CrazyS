@@ -82,6 +82,8 @@ namespace rotors_control {
             sensorData_t sensors_;
             EigenOdometry odometry_;
 
+            mav_msgs::EigenTrajectoryPoint target_swarm_;
+
             ros::Time imu_msg_head_stamp_;
 
             std::string namespace_;

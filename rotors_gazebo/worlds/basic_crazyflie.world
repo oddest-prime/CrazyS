@@ -12,7 +12,8 @@
     <model name="camera1">
     <link name="link">
       <gravity>0</gravity>
-      <pose>-4 0 0.8 0 0 0</pose>
+      <pose>-4 0 1.2 0 0 0</pose> <!-- place a bit higher -->
+      <!--pose>-4 0 0.8 0 0 0</pose-->
       <inertial>
         <mass>0.1</mass>
       </inertial>
@@ -98,7 +99,8 @@
     <model name="camera3">
     <link name="link">
       <gravity>0</gravity>
-      <pose>0 -4 0.8 0 0 1.5708</pose>
+      <pose>0 -4 1.2 0 0 1.5708</pose> <!-- place a bit higher -->
+      <!--pose>0 -4 0.8 0 0 1.5708</pose-->
       <inertial>
         <mass>0.1</mass>
       </inertial>
@@ -142,7 +144,7 @@
     <link name="link">
       <gravity>0</gravity>
       <!--pose>x y z roll pitch yaw</pose-->
-      <pose>-3 -3 3 0 0.5 0.7854</pose> <!-- nice far away distance -->
+      <pose>-3 -3 4 0 0.5 0.7854</pose> <!-- nice far away distance -->
       <!--pose>-0.6 0.7 1.7 0 1 -0.7854</pose--> <!-- as in testing room at homeoffice -->
       <inertial>
         <mass>0.1</mass>

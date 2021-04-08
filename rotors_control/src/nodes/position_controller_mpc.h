@@ -43,6 +43,7 @@
 #include "rotors_control/mpc_controller.h"
 #include "rotors_control/crazyflie_complementary_filter.h"
 
+#define N_DRONES_MAX  20          /* maximum number of drones */
 
 namespace rotors_control {
 
@@ -105,7 +106,7 @@ namespace rotors_control {
             ros::Subscriber enable_sub_;
             ros::Subscriber imu_sub_;
             ros::Subscriber imu_ideal_sub_;
-            ros::Subscriber odom_sub_[3];
+            ros::Subscriber odom_sub_[N_DRONES_MAX];
 
             //publisher
             ros::Publisher motor_velocity_reference_pub_;
@@ -124,7 +125,7 @@ namespace rotors_control {
             void IMUCallback(const sensor_msgs::ImuConstPtr& imu_msg);
             void IMUMellingerCallback(const sensor_msgs::ImuConstPtr& imu_msg); //When the Mellinger's controller is on
 
-            DroneStateWithTime dronestate[3];
+            DroneStateWithTime dronestate[N_DRONES_MAX];
     };
 }
 

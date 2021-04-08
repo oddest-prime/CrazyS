@@ -35,7 +35,6 @@
 #define ATTITUDE_UPDATE_DT 0.004  /* ATTITUDE UPDATE RATE [s] - 500Hz */
 #define RATE_UPDATE_DT 0.002      /* RATE UPDATE RATE [s] - 250Hz */
 #define SAMPLING_TIME  0.01       /* SAMPLING CONTROLLER TIME [s] - 100Hz */
-#define N_DRONES_MAX  20          /* maximum number of drones */
 
 namespace rotors_control {
 
@@ -350,11 +349,11 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       total_sum = 20*cohesion_sum + separation_sum;
                       if(target_swarm_.position_W[2] != 0)
                       {
-                        float target_distance_x = fabs(target_swarm_.position_W[0] - potential_pos.position[0]);
-                        float target_distance_y = fabs(target_swarm_.position_W[1] - potential_pos.position[1]);
-                        float target_distance_z = fabs(target_swarm_.position_W[2] - potential_pos.position[2]);
-                        total_sum += sqrt(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
-                        ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
+                          float target_distance_x = fabs(target_swarm_.position_W[0] - potential_pos.position[0]);
+                          float target_distance_y = fabs(target_swarm_.position_W[1] - potential_pos.position[1]);
+                          float target_distance_z = fabs(target_swarm_.position_W[2] - potential_pos.position[2]);
+                          total_sum += 5*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
+                          ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
                       }
                       if(total_sum < min_sum)
                       {

@@ -144,14 +144,13 @@ int main(int argc, char** argv) {
   {
     trajectory_msg.header.stamp = ros::Time::now();
 
-    desired_position(0) = ((float)(i%2))/2;
-    desired_position(1) = floor((float)(i/2))/2;
-    desired_position(2) = 1.5 + ((float)(i%2))/5;
+    desired_position(0) = ((float)(i%5))/2;
+    desired_position(1) = floor((float)(i/5))/2;
+    desired_position(2) = 1.5 + ((float)(i%2))/3;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
 
-    ROS_INFO("Publishing waypoint on namespace %s: [%f, %f, %f] waiting %f seconds.",
-    nhq[i].getNamespace().c_str(), desired_position.x(),
-    desired_position.y(), desired_position.z(), 0);
+    ROS_INFO("Publishing waypoint on namespace %s: [%f, %f, %f].",
+    nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
 
     trajectory_pub[i].publish(trajectory_msg);
 
@@ -177,9 +176,8 @@ int main(int argc, char** argv) {
   mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
   for (size_t i = 0; i < droneCount; i++)
   {
-    ROS_INFO("Publishing swarm waypoint on namespace %s: [%f, %f, %f] waiting %f seconds.",
-    nhq[i].getNamespace().c_str(), desired_position.x(),
-    desired_position.y(), desired_position.z(), 0);
+    ROS_INFO("Publishing swarm waypoint on namespace %s: [%f, %f, %f].",
+    nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
     trajectory_pub[i].publish(trajectory_msg);
   }
 

@@ -146,7 +146,7 @@ int main(int argc, char** argv) {
 
     desired_position(0) = ((float)(i%5))/2;
     desired_position(1) = floor((float)(i/5))/2;
-    desired_position(2) = 1.5 + ((float)(i%2))/3;
+    desired_position(2) = 1.4 + ((float)(i%2))/5;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
 
     ROS_INFO("Publishing waypoint on namespace %s: [%f, %f, %f].",
@@ -172,7 +172,7 @@ int main(int argc, char** argv) {
   trajectory_msg.header.stamp = ros::Time::now();
   desired_position(0) = 0;
   desired_position(1) = 0;
-  desired_position(2) = 1;
+  desired_position(2) = 1.5;
   mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
   for (size_t i = 0; i < droneCount; i++)
   {

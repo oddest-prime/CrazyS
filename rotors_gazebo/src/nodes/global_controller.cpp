@@ -196,9 +196,10 @@ int main(int argc, char** argv) {
     trajectory_pub[i].publish(trajectory_msg);
   }
 
-  ros::spin();
-
-  ros::shutdown();
+  ros::Duration(30.0).sleep();
+  ros::spinOnce();
+  //  ros::spin();
+  ros::shutdown(); // end simulation
 
   return 0;
 }

@@ -325,11 +325,11 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           int min_xi = 0;
           int min_yi = 0;
           int min_zi = 0;
-          for(int xi = -1; xi <= 1; xi ++)
+          for(int xi = -2; xi <= 2; xi ++)
           {
-              for(int yi = -1; yi <= 1; yi ++)
+              for(int yi = -2; yi <= 2; yi ++)
               {
-                  for(int zi = -1; zi <= 1; zi ++)
+                  for(int zi = -2; zi <= 2; zi ++)
                   {
                       float cohesion_sum = 0;
                       float separation_sum = 0;
@@ -352,7 +352,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                           float target_distance_x = fabs(target_swarm_.position_W[0] - potential_pos.position[0]);
                           float target_distance_y = fabs(target_swarm_.position_W[1] - potential_pos.position[1]);
                           float target_distance_z = fabs(target_swarm_.position_W[2] - potential_pos.position[2]);
-                          total_sum += 30*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
+                          total_sum += 100*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
                           ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
                       }
                       if(total_sum < min_sum)

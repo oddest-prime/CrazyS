@@ -180,7 +180,22 @@ int main(int argc, char** argv) {
     nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
     trajectory_pub[i].publish(trajectory_msg);
   }
+/*
+  ros::Duration(10.0).sleep();
+  ros::spinOnce();
 
+  trajectory_msg.header.stamp = ros::Time::now();
+  desired_position(0) = 0;
+  desired_position(1) = 3;
+  desired_position(2) = 1;
+  mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
+  for (size_t i = 0; i < droneCount; i++)
+  {
+    ROS_INFO("Publishing swarm waypoint on namespace %s: [%f, %f, %f].",
+    nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
+    trajectory_pub[i].publish(trajectory_msg);
+  }
+*/
   ros::spin();
 
   ros::shutdown();

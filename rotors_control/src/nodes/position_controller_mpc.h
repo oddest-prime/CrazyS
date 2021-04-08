@@ -76,6 +76,7 @@ namespace rotors_control {
             bool enable_swarm_ = false;
 
             int droneNumber_;
+            int droneCount_;
 
             MpcController position_controller_;
             sensorData_t sensors_;

@@ -35,7 +35,7 @@
 #define ATTITUDE_UPDATE_DT 0.004  /* ATTITUDE UPDATE RATE [s] - 500Hz */
 #define RATE_UPDATE_DT 0.002      /* RATE UPDATE RATE [s] - 250Hz */
 #define SAMPLING_TIME  0.01       /* SAMPLING CONTROLLER TIME [s] - 100Hz */
-#define N_DRONES      3           /* number of drones */
+#define N_DRONES_MAX  20          /* maximum number of drones */
 
 namespace rotors_control {
 
@@ -63,12 +63,29 @@ PositionControllerMpc::PositionControllerMpc() {
     odometry_sub_ = nh.subscribe(mav_msgs::default_topics::ODOMETRY, 1, &PositionControllerMpc::OdometryCallback, this);
     enable_sub_ = nh.subscribe("enable", 1, &PositionControllerMpc::EnableCallback, this);
 
-    ros::NodeHandle nhq[N_DRONES] = { // NodeHandles for each drone (separate namespace)
+    ros::NodeHandle nhq[N_DRONES_MAX] = { // NodeHandles for each drone (separate namespace)
       ros::NodeHandle("/crazyflie2_0"),
       ros::NodeHandle("/crazyflie2_1"),
-      ros::NodeHandle("/crazyflie2_2")
+      ros::NodeHandle("/crazyflie2_2"),
+      ros::NodeHandle("/crazyflie2_3"),
+      ros::NodeHandle("/crazyflie2_4"),
+      ros::NodeHandle("/crazyflie2_5"),
+      ros::NodeHandle("/crazyflie2_6"),
+      ros::NodeHandle("/crazyflie2_7"),
+      ros::NodeHandle("/crazyflie2_8"),
+      ros::NodeHandle("/crazyflie2_9"),
+      ros::NodeHandle("/crazyflie2_10"),
+      ros::NodeHandle("/crazyflie2_11"),
+      ros::NodeHandle("/crazyflie2_12"),
+      ros::NodeHandle("/crazyflie2_13"),
+      ros::NodeHandle("/crazyflie2_14"),
+      ros::NodeHandle("/crazyflie2_15"),
+      ros::NodeHandle("/crazyflie2_16"),
+      ros::NodeHandle("/crazyflie2_17"),
+      ros::NodeHandle("/crazyflie2_18"),
+      ros::NodeHandle("/crazyflie2_19")
     };
-    for (size_t i = 0; i < N_DRONES; i++)
+    for (size_t i = 0; i < droneCount_; i++)
     {
       dronestate[i].SetId(droneNumber_, i);
       ROS_INFO("Setup subscriber %s.", nhq[i].getNamespace().c_str());
@@ -194,6 +211,7 @@ void PositionControllerMpc::InitializeParams() {
     //Reading the parameters come from the launch file
     bool dataStoringActive;
     int droneNumber;
+    int droneCount;
     double dataStoringTime;
     std::string user;
 
@@ -211,6 +229,14 @@ void PositionControllerMpc::InitializeParams() {
      }
      else
         ROS_ERROR("Failed to get param 'droneNumber'");
+
+     if (pnh.getParam("droneCount", droneCount)){
+        ROS_INFO("Got param 'droneCount': %d", droneCount);
+        droneCount_ = droneCount;
+     }
+     else
+        ROS_ERROR("Failed to get param 'droneCount'");
+
 
     if (pnh.getParam("csvFilesStoring", dataStoringActive)){
     ROS_INFO("Got param 'csvFilesStoring': %d", dataStoringActive);
@@ -278,7 +304,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
       //This functions allows us to put the odometry message into the odometry variable--> _position,
       //_orientation,_velocit_body,_angular_velocity
       eigenOdometryFromMsg(odometry_msg, &odometry_);
-      for (size_t i = 0; i < N_DRONES; i++)
+      for (size_t i = 0; i < droneCount_; i++)
           dronestate[i].UpdateDistance(&odometry_);
 
       position_controller_.SetOdometryWithoutStateEstimator(odometry_);
@@ -302,7 +328,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       float cohesion_sum = 0;
                       float separation_sum = 0;
                       float total_sum = 0;
-                      for (size_t i = 0; i < N_DRONES; i++)
+                      for (size_t i = 0; i < droneCount_; i++)
                       {
                           if(i == droneNumber_)
                             continue;

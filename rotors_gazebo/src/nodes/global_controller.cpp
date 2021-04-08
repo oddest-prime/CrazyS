@@ -33,7 +33,7 @@
 #include <std_msgs/Bool.h>
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
 
-#define N_DRONES      3           /* number of drones */
+#define N_DRONES_MAX  20          /* maximum number of drones */
 
 bool sim_running = false;
 
@@ -60,26 +60,50 @@ class WaypointWithTime {
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "global_controller");
-  ros::NodeHandle nh;
 
   ROS_INFO("Started global_controller.");
 
   ros::V_string args;
   ros::removeROSArgs(argc, argv, args);
 
+  ros::NodeHandle pnh("~");
+  int droneCount;
+  if (pnh.getParam("droneCount", droneCount)){
+      ROS_INFO("Got param 'droneCount': %d", droneCount);
+  }
+  else
+     ROS_ERROR("Failed to get param 'droneCount'");
+
   std::vector<WaypointWithTime> waypoints;
   const float DEG_2_RAD = M_PI / 180.0;
 
   //waypoints.push_back(WaypointWithTime(t, x, y, z, yaw * DEG_2_RAD));
 
-  ros::NodeHandle nhq[N_DRONES] = { // NodeHandles for each drone (separate namespace)
+  ros::NodeHandle nhq[N_DRONES_MAX] = { // NodeHandles for each drone (separate namespace)
     ros::NodeHandle("/crazyflie2_0"),
     ros::NodeHandle("/crazyflie2_1"),
-    ros::NodeHandle("/crazyflie2_2")
+    ros::NodeHandle("/crazyflie2_2"),
+    ros::NodeHandle("/crazyflie2_3"),
+    ros::NodeHandle("/crazyflie2_4"),
+    ros::NodeHandle("/crazyflie2_5"),
+    ros::NodeHandle("/crazyflie2_6"),
+    ros::NodeHandle("/crazyflie2_7"),
+    ros::NodeHandle("/crazyflie2_8"),
+    ros::NodeHandle("/crazyflie2_9"),
+    ros::NodeHandle("/crazyflie2_10"),
+    ros::NodeHandle("/crazyflie2_11"),
+    ros::NodeHandle("/crazyflie2_12"),
+    ros::NodeHandle("/crazyflie2_13"),
+    ros::NodeHandle("/crazyflie2_14"),
+    ros::NodeHandle("/crazyflie2_15"),
+    ros::NodeHandle("/crazyflie2_16"),
+    ros::NodeHandle("/crazyflie2_17"),
+    ros::NodeHandle("/crazyflie2_18"),
+    ros::NodeHandle("/crazyflie2_19")
   };
-  ros::Publisher trajectory_pub[N_DRONES];
-  ros::Publisher enable_pub[N_DRONES];
-  for (size_t i = 0; i < N_DRONES; i++)
+  ros::Publisher trajectory_pub[N_DRONES_MAX];
+  ros::Publisher enable_pub[N_DRONES_MAX];
+  for (size_t i = 0; i < droneCount; i++)
   {
     ROS_INFO("Setup publisher %s.", nhq[i].getNamespace().c_str());
     trajectory_pub[i] = nhq[i].advertise<trajectory_msgs::MultiDOFJointTrajectory>(
@@ -116,13 +140,13 @@ int main(int argc, char** argv) {
   Eigen::Vector3d desired_position(0.3, 0.5, 1.0);
   double desired_yaw = 0.0;
 
-  for (size_t i = 0; i < N_DRONES; i++)
+  for (size_t i = 0; i < droneCount; i++)
   {
     trajectory_msg.header.stamp = ros::Time::now();
 
     desired_position(0) = ((float)(i%2))/2;
     desired_position(1) = floor((float)(i/2))/2;
-    desired_position(2) = 0.5 + ((float)(i%2))/10;
+    desired_position(2) = 1.5 + ((float)(i%2))/5;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
 
     ROS_INFO("Publishing waypoint on namespace %s: [%f, %f, %f] waiting %f seconds.",
@@ -136,7 +160,7 @@ int main(int argc, char** argv) {
   ros::Duration(3.0).sleep();
   ros::spinOnce();
 
-  for (size_t i = 0; i < N_DRONES; i++)
+  for (size_t i = 0; i < droneCount; i++)
   {
     enable_msg.data = true;
     ROS_INFO("Publishing enable on namespace %s: %d.", nhq[i].getNamespace().c_str(), enable_msg.data);

@@ -7,11 +7,13 @@ cd /crazyflie_ws
 source /opt/ros/melodic/setup.bash
 source /crazyflie_ws/devel/setup.bash
 
+catkin clean --yes
 catkin build
 
 TIMEOUT=300
 
-roslaunch rotors_gazebo crazyflie2_hovering_swarm.launch gui:=false &
+# roslaunch rotors_gazebo crazyflie2_hovering_swarm.launch gui:=false &
+roslaunch rotors_gazebo crazyflie2_swarm.launch gui:=false &
 
 sleep 1
 iter=1

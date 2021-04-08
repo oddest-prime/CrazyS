@@ -292,38 +292,45 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           float min_sum = FLT_MAX;
           int min_xi = 0;
           int min_yi = 0;
+          int min_zi = 0;
           for(int xi = -1; xi <= 1; xi ++)
           {
               for(int yi = -1; yi <= 1; yi ++)
               {
-                  float cohesion_sum = 0;
-                  float separation_sum = 0;
-                  float total_sum = 0;
-                  for (size_t i = 0; i < N_DRONES; i++)
+                  for(int zi = -1; zi <= 1; zi ++)
                   {
-                      if(i == droneNumber_)
-                        continue;
-                      EigenOdometry potential_pos = odometry_;
-                      potential_pos.position[0] += (float)xi * 0.1;
-                      potential_pos.position[1] += (float)yi * 0.1;
-                      float dist = dronestate[i].GetDistance(&potential_pos);
-                      cohesion_sum += dist*dist;
-                      separation_sum += 1.0/(dist*dist);
-                  }
-                  total_sum = 20*cohesion_sum + separation_sum;
-                  if(total_sum < min_sum)
-                  {
-                      min_sum = total_sum;
-                      min_xi = xi;
-                      min_yi = yi;
+                      float cohesion_sum = 0;
+                      float separation_sum = 0;
+                      float total_sum = 0;
+                      for (size_t i = 0; i < N_DRONES; i++)
+                      {
+                          if(i == droneNumber_)
+                            continue;
+                          EigenOdometry potential_pos = odometry_;
+                          potential_pos.position[0] += (float)xi * 0.1;
+                          potential_pos.position[1] += (float)yi * 0.1;
+                          potential_pos.position[2] += (float)zi * 0.1;
+                          float dist = dronestate[i].GetDistance(&potential_pos);
+                          cohesion_sum += dist*dist;
+                          separation_sum += 1.0/(dist*dist);
+                      }
+                      total_sum = 20*cohesion_sum + separation_sum;
+                      if(total_sum < min_sum)
+                      {
+                          min_sum = total_sum;
+                          min_xi = xi;
+                          min_yi = yi;
+                          min_zi = zi;
+                      }
                   }
               }
           }
-          ROS_INFO("MpcController %d swarm direction xi=%d yi=%d zi= tsum=%f", droneNumber_, min_xi, min_yi, min_sum);
+          ROS_INFO("MpcController %d swarm direction xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
           mav_msgs::EigenTrajectoryPoint new_setpoint;
           new_setpoint.position_W = odometry_.position;
           new_setpoint.position_W[0] += (float)min_xi * 0.1;
           new_setpoint.position_W[1] += (float)min_yi * 0.1;
+          new_setpoint.position_W[2] += (float)min_zi * 0.1;
           position_controller_.SetTrajectoryPoint(new_setpoint);
     }
 

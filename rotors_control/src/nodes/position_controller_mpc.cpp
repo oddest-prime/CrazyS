@@ -335,9 +335,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       float separation_sum = 0;
                       float total_sum = 0;
                       EigenOdometry potential_pos = odometry_;
-                      potential_pos.position[0] += (float)xi * 0.1;
-                      potential_pos.position[1] += (float)yi * 0.1;
-                      potential_pos.position[2] += (float)zi * 0.1;
+                      potential_pos.position[0] += (float)xi * 0.07;
+                      potential_pos.position[1] += (float)yi * 0.07;
+                      potential_pos.position[2] += (float)zi * 0.07;
                       for (size_t i = 0; i < droneCount_; i++)
                       {
                           if(i == droneNumber_)
@@ -368,9 +368,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           ROS_INFO_ONCE("MpcController %d swarm direction xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
           mav_msgs::EigenTrajectoryPoint new_setpoint;
           new_setpoint.position_W = odometry_.position;
-          new_setpoint.position_W[0] += (float)min_xi * 0.1;
-          new_setpoint.position_W[1] += (float)min_yi * 0.1;
-          new_setpoint.position_W[2] += (float)min_zi * 0.1;
+          new_setpoint.position_W[0] += (float)min_xi * 0.07;
+          new_setpoint.position_W[1] += (float)min_yi * 0.07;
+          new_setpoint.position_W[2] += (float)min_zi * 0.07;
           position_controller_.SetTrajectoryPoint(new_setpoint);
     }
 

@@ -4,7 +4,7 @@
 	docker build . --tag crazys
 
 ## Run container without GUI and render video
-	docker run --rm --volume "$(pwd)":/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh
+	docker run --rm --volume "$(pwd)":/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD`
 
 ## Run container
 	docker run -it crazys

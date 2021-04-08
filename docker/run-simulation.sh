@@ -3,6 +3,13 @@
 Xvfb -shmem -screen 0 1280x1024x24 &
 export DISPLAY=:0
 
+hash="uu"
+if [ $# -ge 1 ]
+then
+  hash="$1"
+fi;
+echo "git hash: "$hash
+
 cd /crazyflie_ws
 source /opt/ros/melodic/setup.bash
 source /crazyflie_ws/devel/setup.bash
@@ -33,4 +40,4 @@ sleep 5
 
 kill `pidof Xvfb`
 
-/crazyflie_ws/src/crazys/docker/generate-video.sh
+/crazyflie_ws/src/crazys/docker/generate-video.sh "$hash"

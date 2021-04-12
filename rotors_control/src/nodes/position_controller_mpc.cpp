@@ -345,13 +345,13 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                             continue;
                           float dist = dronestate[i].GetDistance(&potential_pos);
                           cohesion_sum += dist*dist;
-                          if(dist < 10.0 && dist != 0) // neighbourhood for separation
+                          if(dist < 0.7 && dist != 0) // neighbourhood for separation
                           {
                             separation_cnt ++;
                             separation_sum += 1.0/(dist*dist);
                           }
                       }
-                      total_sum = 50.0*cohesion_sum / ((float)droneNumber_);
+                      total_sum = 20.0*cohesion_sum / ((float)droneCount_);
                       if(separation_cnt > 0)
                           total_sum += separation_sum / ((float)separation_cnt);
                       if(target_swarm_.position_W[2] != 0) // target point is available (z != 0)
@@ -359,7 +359,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                           float target_distance_x = fabs(target_swarm_.position_W[0] - potential_pos.position[0]);
                           float target_distance_y = fabs(target_swarm_.position_W[1] - potential_pos.position[1]);
                           float target_distance_z = fabs(target_swarm_.position_W[2] - potential_pos.position[2]);
-                          total_sum += 5.0*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
+                          total_sum += 25.0*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
                           ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
                       }
                       if(total_sum < min_sum)

@@ -353,7 +353,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       }
                       total_sum = 20.0*cohesion_sum / ((float)droneCount_);
                       if(separation_cnt > 0)
-                          total_sum += 5*separation_sum / ((float)separation_cnt);
+                          total_sum += 2.5*separation_sum / ((float)separation_cnt);
                       if(target_swarm_.position_W[2] != 0) // target point is available (z != 0)
                       {
                           float target_distance_x = fabs(target_swarm_.position_W[0] - potential_pos.position[0]);

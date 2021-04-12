@@ -126,20 +126,21 @@ void MpcController::CallbackSaveData(const ros::TimerEvent& event){
       ofstream fileDronePosition;
       ofstream fileTrajectory;
 
-      ROS_DEBUG("CallbackSavaData function is working. Time: %f seconds, %f nanoseconds", odometry_.timeStampSec, odometry_.timeStampNsec);
+      ROS_INFO("CallbackSavaData. droneNumber: %d, Time: %f seconds, %f nanoseconds, ",
+      droneNumber_, odometry_.timeStampSec, odometry_.timeStampNsec);
 
-      filePropellersVelocity.open("/crazyflie_ws/src/crazys/log_output/PropellersVelocity.csv", std::ios_base::app);
-      fileDroneAttitude.open("/crazyflie_ws/src/crazys/log_output/DroneAttitude.csv", std::ios_base::app);
-      filePWM.open("/crazyflie_ws/src/crazys/log_output/PWM.csv", std::ios_base::app);
-      filePWMComponents.open("/crazyflie_ws/src/crazys/log_output/PWMComponents.csv", std::ios_base::app);
-      fileCommandAttitude.open("/crazyflie_ws/src/crazys/log_output/CommandAttitude.csv", std::ios_base::app);
-      fileRCommand.open("/crazyflie_ws/src/crazys/log_output/RCommand.csv", std::ios_base::app);
-      fileOmegaCommand.open("/crazyflie_ws/src/crazys/log_output/OmegaCommand.csv", std::ios_base::app);
-      fileXeYe.open("/crazyflie_ws/src/crazys/log_output/XeYe.csv", std::ios_base::app);
-      fileDeltaCommands.open("/crazyflie_ws/src/crazys/log_output/DeltaCommands.csv", std::ios_base::app);
-      filePQCommands.open("/crazyflie_ws/src/crazys/log_output/PQCommands.csv", std::ios_base::app);
-      fileDronePosition.open("/crazyflie_ws/src/crazys/log_output/DronePosition.csv", std::ios_base::app);
-      fileTrajectory.open("/crazyflie_ws/src/crazys/log_output/Trajectory.csv", std::ios_base::app);
+      filePropellersVelocity.open(std::string("/crazyflie_ws/src/crazys/log_output/PropellersVelocity") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileDroneAttitude.open(std::string("/crazyflie_ws/src/crazys/log_output/DroneAttitude") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      filePWM.open(std::string("/crazyflie_ws/src/crazys/log_output/PWM") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      filePWMComponents.open(std::string("/crazyflie_ws/src/crazys/log_output/PWMComponents") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileCommandAttitude.open(std::string("/crazyflie_ws/src/crazys/log_output/CommandAttitude") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileRCommand.open(std::string("/crazyflie_ws/src/crazys/log_output/RCommand") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileOmegaCommand.open(std::string("/crazyflie_ws/src/crazys/log_output/OmegaCommand") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileXeYe.open(std::string("/crazyflie_ws/src/crazys/log_output/XeYe") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileDeltaCommands.open(std::string("/crazyflie_ws/src/crazys/log_output/DeltaCommands") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      filePQCommands.open(std::string("/crazyflie_ws/src/crazys/log_output/PQCommands") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileDronePosition.open(std::string("/crazyflie_ws/src/crazys/log_output/DronePosition") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileTrajectory.open(std::string("/crazyflie_ws/src/crazys/log_output/Trajectory") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
 
       // Saving control signals in a file
       for (unsigned n=0; n < listPropellersVelocity_.size(); ++n) {

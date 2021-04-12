@@ -21,8 +21,8 @@ TIMEOUT=1500
 
 # roslaunch rotors_gazebo crazyflie2_hovering_swarm.launch gui:=false &
 
-# roslaunch rotors_gazebo crazyflie2_swarm15.launch gui:=false &
-roslaunch rotors_gazebo crazyflie2_swarm.launch gui:=false &
+roslaunch rotors_gazebo crazyflie2_swarm15.launch gui:=false &
+# roslaunch rotors_gazebo crazyflie2_swarm.launch gui:=false &
 
 sleep 1
 iter=1

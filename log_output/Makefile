@@ -1,6 +1,6 @@
 all: DronePosition.png DronePositionTrajectory.png DroneAttitude.png XeYe.png DeltaCommands.png OmegaCommand.png RCommand.png PQCommands.png AttiudeCommands.png PropellersVelocity.png XYcontroller.png Attiudecontroller.png
 
-DronePosition.png: DronePosition.csv
+DronePosition.png: DronePosition0.csv
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -10,12 +10,12 @@ DronePosition.png: DronePosition.csv
 		 \n\
 		set output \"$@\" \n\
 		set ylabel \"DronePosition (given by ground-truth odometry)\" \n\
-		plot     \"DronePosition.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'X-Pos', \
-			 \"DronePosition.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'Y-Pos', \
-			 \"DronePosition.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'Z-Pos'" \
+		plot     \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'X-Pos', \
+			 \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'Y-Pos', \
+			 \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'Z-Pos'" \
 	 | gnuplot  
 
-DronePositionTrajectory.png: DronePosition.csv Trajectory.csv
+DronePositionTrajectory.png: DronePosition0.csv Trajectory0.csv
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -25,15 +25,15 @@ DronePositionTrajectory.png: DronePosition.csv Trajectory.csv
 		 \n\
 		set output \"$@\" \n\
 		set ylabel \"DronePosition (given by ground-truth odometry) and Trajectory (set-point commands)\" \n\
-		plot     \"DronePosition.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'X-Pos', \
-			 \"DronePosition.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'Y-Pos', \
-			 \"DronePosition.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'Z-Pos', \
-			 \"Trajectory.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'X-command', \
-		 	 \"Trajectory.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'Y-command', \
-		 	 \"Trajectory.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'Z-command'" \
+		plot     \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'X-Pos', \
+			 \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'Y-Pos', \
+			 \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'Z-Pos', \
+			 \"Trajectory0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'X-command', \
+		 	 \"Trajectory0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'Y-command', \
+		 	 \"Trajectory0.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'Z-command'" \
 	 | gnuplot  
 
-DroneAttitude.png: DroneAttitude.csv
+DroneAttitude.png: DroneAttitude0.csv
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -43,12 +43,12 @@ DroneAttitude.png: DroneAttitude.csv
 		 \n\
 		set output \"$@\" \n\
 		set ylabel \"Drone attitude (given by ground-truth odometry (?))\" \n\
-		plot     \"DroneAttitude.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'roll', \
-			 \"DroneAttitude.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'pitch', \
-			 \"DroneAttitude.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'yaw'" \
+		plot     \"DroneAttitude0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'roll', \
+			 \"DroneAttitude0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'pitch', \
+			 \"DroneAttitude0.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'yaw'" \
 	 | gnuplot  
 
-XeYe.png: XeYe.csv
+XeYe.png: XeYe0.csv
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -58,13 +58,13 @@ XeYe.png: XeYe.csv
 		 \n\
 		set output \"$@\" \n\
 		set ylabel \"Drone position and velocity errors (of XYController)\" \n\
-		plot     \"XeYe.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'X-error', \
-			 \"XeYe.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'Y-error', \
-			 \"XeYe.csv\" using (column(5)+column(6)/1000000000):3 with lines title 'X-velocity-error', \
-			 \"XeYe.csv\" using (column(5)+column(6)/1000000000):4 with lines title 'Y-velocity-error'" \
+		plot     \"XeYe0.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'X-error', \
+			 \"XeYe0.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'Y-error', \
+			 \"XeYe0.csv\" using (column(5)+column(6)/1000000000):3 with lines title 'X-velocity-error', \
+			 \"XeYe0.csv\" using (column(5)+column(6)/1000000000):4 with lines title 'Y-velocity-error'" \
 	 | gnuplot  
 
-DeltaCommands.png: DeltaCommands.csv
+DeltaCommands.png: DeltaCommands0.csv
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -74,12 +74,12 @@ DeltaCommands.png: DeltaCommands.csv
 		 \n\
 		set output \"$@\" \n\
 		set ylabel \"Delta Commands (of RateController)\" \n\
-		plot     \"DeltaCommands.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'delta-phi', \
-			 \"DeltaCommands.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'delta-theta', \
-			 \"DeltaCommands.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'delta-psi'" \
+		plot     \"DeltaCommands0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'delta-phi', \
+			 \"DeltaCommands0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'delta-theta', \
+			 \"DeltaCommands0.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'delta-psi'" \
 	 | gnuplot  
 
-OmegaCommand.png: OmegaCommand.csv
+OmegaCommand.png: OmegaCommand0.csv
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -89,10 +89,10 @@ OmegaCommand.png: OmegaCommand.csv
 		 \n\
 		set output \"$@\" \n\
 		set ylabel \"Omega Command (of HoveringController)\" \n\
-		plot     \"OmegaCommand.csv\" using (column(2)+column(3)/1000000000):1 with lines title 'omega-command'" \
+		plot     \"OmegaCommand0.csv\" using (column(2)+column(3)/1000000000):1 with lines title 'omega-command'" \
 	 | gnuplot  
 
-RCommand.png: RCommand.csv
+RCommand.png: RCommand0.csv
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -102,10 +102,10 @@ RCommand.png: RCommand.csv
 		 \n\
 		set output \"$@\" \n\
 		set ylabel \"R Command (of YawMpcController)\" \n\
-		plot     \"RCommand.csv\" using (column(2)+column(3)/1000000000):1 with lines title 'r-command'" \
+		plot     \"RCommand0.csv\" using (column(2)+column(3)/1000000000):1 with lines title 'r-command'" \
 	 | gnuplot  
 
-PQCommands.png: PQCommands.csv
+PQCommands.png: PQCommands0.csv
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -115,11 +115,11 @@ PQCommands.png: PQCommands.csv
 		 \n\
 		set output \"$@\" \n\
 		set ylabel \"PQ Commands (of AttitudeController)\" \n\
-		plot     \"PQCommands.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'p-command', \
-	 		\"PQCommands.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'q-command'" \
+		plot     \"PQCommands0.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'p-command', \
+	 		\"PQCommands0.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'q-command'" \
 	 | gnuplot  
 
-AttiudeCommands.png: PQCommands.csv DroneAttitude.csv DronePosition.csv
+AttiudeCommands.png: PQCommands0.csv DroneAttitude0.csv DronePosition0.csv
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -129,15 +129,15 @@ AttiudeCommands.png: PQCommands.csv DroneAttitude.csv DronePosition.csv
 		 \n\
 		set output \"$@\" \n\
 		set ylabel \"Attitude and Commands\" \n\
-		plot     \"PQCommands.csv\" using (column(5)+column(6)/1000000000):3 with lines title 'phi-command', \
-			 \"PQCommands.csv\" using (column(5)+column(6)/1000000000):4 with lines title 'theta-command', \
-			 \"DroneAttitude.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'pitch', \
-			 \"DroneAttitude.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'roll', \
-			 \"DronePosition.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'X-Pos', \
-			 \"DronePosition.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'Y-Pos'" \
+		plot     \"PQCommands0.csv\" using (column(5)+column(6)/1000000000):3 with lines title 'phi-command', \
+			 \"PQCommands0.csv\" using (column(5)+column(6)/1000000000):4 with lines title 'theta-command', \
+			 \"DroneAttitude0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'pitch', \
+			 \"DroneAttitude0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'roll', \
+			 \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'X-Pos', \
+			 \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'Y-Pos'" \
 	 | gnuplot  
 
-PropellersVelocity.png: PropellersVelocity.csv
+PropellersVelocity.png: PropellersVelocity0.csv
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -147,13 +147,13 @@ PropellersVelocity.png: PropellersVelocity.csv
 		 \n\
 		set output \"$@\" \n\
 		set ylabel \"Propellers velocity\" \n\
-		plot     \"PropellersVelocity.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'A', \
-			 \"PropellersVelocity.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'B', \
-			 \"PropellersVelocity.csv\" using (column(5)+column(6)/1000000000):3 with lines title 'C', \
-			 \"PropellersVelocity.csv\" using (column(5)+column(6)/1000000000):4 with lines title 'D'" \
+		plot     \"PropellersVelocity0.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'A', \
+			 \"PropellersVelocity0.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'B', \
+			 \"PropellersVelocity0.csv\" using (column(5)+column(6)/1000000000):3 with lines title 'C', \
+			 \"PropellersVelocity0.csv\" using (column(5)+column(6)/1000000000):4 with lines title 'D'" \
 	 | gnuplot  
 
-XYcontroller.png: XeYe.csv CommandAttitude.csv
+XYcontroller.png: XeYe0.csv CommandAttitude0.csv
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -163,15 +163,15 @@ XYcontroller.png: XeYe.csv CommandAttitude.csv
 		 \n\
 		set output \"$@\" \n\
 		set ylabel \"XYcontroller\" \n\
-		plot     \"XeYe.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'error-x', \
-			 \"XeYe.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'error-y', \
-			 \"XeYe.csv\" using (column(5)+column(6)/1000000000):3 with lines title 'error-Vx', \
-			 \"XeYe.csv\" using (column(5)+column(6)/1000000000):4 with lines title 'error-Vy', \
-			 \"CommandAttitude.csv\" using (column(3)+column(4)/1000000000):1 with lines title 'theta-command', \
-			 \"CommandAttitude.csv\" using (column(3)+column(4)/1000000000):2 with lines title 'phi-command'" \
+		plot     \"XeYe0.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'error-x', \
+			 \"XeYe0.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'error-y', \
+			 \"XeYe0.csv\" using (column(5)+column(6)/1000000000):3 with lines title 'error-Vx', \
+			 \"XeYe0.csv\" using (column(5)+column(6)/1000000000):4 with lines title 'error-Vy', \
+			 \"CommandAttitude0.csv\" using (column(3)+column(4)/1000000000):1 with lines title 'theta-command', \
+			 \"CommandAttitude0.csv\" using (column(3)+column(4)/1000000000):2 with lines title 'phi-command'" \
 	 | gnuplot  
 	 
-Attiudecontroller.png: CommandAttitude.csv DroneAttitude.csv PQCommands.csv
+Attiudecontroller.png: CommandAttitude0.csv DroneAttitude0.csv PQCommands0.csv
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -181,17 +181,17 @@ Attiudecontroller.png: CommandAttitude.csv DroneAttitude.csv PQCommands.csv
 		 \n\
 		set output \"$@\" \n\
 		set ylabel \"Attiudecontroller\" \n\
-		plot     \"CommandAttitude.csv\" using (column(3)+column(4)/1000000000):1 with lines title 'theta-command', \
-		   	 \"CommandAttitude.csv\" using (column(3)+column(4)/1000000000):2 with lines title 'phi-command', \
-			 \"DroneAttitude.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'pitch (theta)', \
-			 \"DroneAttitude.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'roll (phi)', \
-		 	 \"PQCommands.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'q-command (theta-command)', \
-			 \"PQCommands.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'p-command (phi-command)'" \
+		plot     \"CommandAttitude0.csv\" using (column(3)+column(4)/1000000000):1 with lines title 'theta-command', \
+		   	 \"CommandAttitude0.csv\" using (column(3)+column(4)/1000000000):2 with lines title 'phi-command', \
+			 \"DroneAttitude0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'pitch (theta)', \
+			 \"DroneAttitude0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'roll (phi)', \
+		 	 \"PQCommands0.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'q-command (theta-command)', \
+			 \"PQCommands0.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'p-command (phi-command)'" \
 	 | gnuplot  
 
 
 rm-csv:
-	rm -f *.csv
+	rm -f *0.csv
 
 clean:
 	rm -f *.png

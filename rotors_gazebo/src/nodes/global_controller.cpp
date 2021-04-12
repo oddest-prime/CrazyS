@@ -140,12 +140,18 @@ int main(int argc, char** argv) {
   Eigen::Vector3d desired_position(0.3, 0.5, 1.0);
   double desired_yaw = 0.0;
 
+  int modulus = 5;
+  if(droneCount < 10)
+    modulus = 4;
+  if(droneCount < 5)
+    modulus = 3;
+
   for (size_t i = 0; i < droneCount; i++)
   {
     trajectory_msg.header.stamp = ros::Time::now();
 
-    desired_position(0) = ((float)(i%5))/2;
-    desired_position(1) = floor((float)(i/5))/2;
+    desired_position(0) = ((float)(i%modulus))/2;
+    desired_position(1) = floor((float)(i/modulus))/2;
     desired_position(2) = 1.4 + ((float)(i%2))/5;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
 

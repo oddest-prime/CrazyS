@@ -325,7 +325,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           int min_xi = 0;
           int min_yi = 0;
           int min_zi = 0;
-          for(int xi = -2; xi <= 2; xi ++)
+          for(int xi = -2; xi <= 2; xi ++) // iterate over all possible next actions in x-, y- and z-dimension
           {
               for(int yi = -2; yi <= 2; yi ++)
               {
@@ -333,6 +333,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                   {
                       float cohesion_sum = 0;
                       float separation_sum = 0;
+                      int separation_cnt = 0;
                       float total_sum = 0;
                       EigenOdometry potential_pos = odometry_;
                       potential_pos.position[0] += (float)xi * 0.07;
@@ -344,15 +345,21 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                             continue;
                           float dist = dronestate[i].GetDistance(&potential_pos);
                           cohesion_sum += dist*dist;
-                          separation_sum += 1.0/(dist*dist);
+                          if(dist < 0.7 && dist != 0) // neighbourhood for separation
+                          {
+                            separation_cnt ++;
+                            separation_sum += 1.0/(dist*dist);
+                          }
                       }
-                      total_sum = 20*cohesion_sum + separation_sum;
-                      if(target_swarm_.position_W[2] != 0)
+                      total_sum = 20*cohesion_sum / ((float)droneNumber_); //  .. /4
+                      if(separation_cnt > 0)
+                          total_sum += separation_sum / ((float)separation_cnt);
+                      if(target_swarm_.position_W[2] != 0) // target point is available (z != 0)
                       {
                           float target_distance_x = fabs(target_swarm_.position_W[0] - potential_pos.position[0]);
                           float target_distance_y = fabs(target_swarm_.position_W[1] - potential_pos.position[1]);
                           float target_distance_z = fabs(target_swarm_.position_W[2] - potential_pos.position[2]);
-                          total_sum += 100*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
+                          total_sum += 20*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
                           ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
                       }
                       if(total_sum < min_sum)

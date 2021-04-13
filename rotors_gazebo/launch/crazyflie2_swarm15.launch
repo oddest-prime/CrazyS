@@ -9,8 +9,8 @@
   <arg name="paused" value="true"/>
   <arg name="debug" default="false"/>
   <arg name="gui" default="false"/>
-  <arg name="csvFilesStoring" default="false"/>
-  <arg name="csvFilesStoringTime" default="15.0"/> <!-- seconds -->
+  <arg name="csvFilesStoring" default="distance"/> <!-- possible values: "true", "false", "distance" -->
+  <arg name="csvFilesStoringTime" default="55.0"/> <!-- seconds -->
   <arg name="user_account" default="giuseppe"/>
   <!-- The following line causes gzmsg and gzerr messages to be printed to the console
       (even when Gazebo is started through roslaunch) -->

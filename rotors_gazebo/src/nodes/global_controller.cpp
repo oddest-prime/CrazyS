@@ -61,7 +61,7 @@ class WaypointWithTime {
 int main(int argc, char** argv) {
   ros::init(argc, argv, "global_controller");
 
-  ROS_INFO("Started global_controller.");
+  ROS_INFO("global_controller: Started.");
 
   ros::V_string args;
   ros::removeROSArgs(argc, argv, args);
@@ -69,10 +69,10 @@ int main(int argc, char** argv) {
   ros::NodeHandle pnh("~");
   int droneCount;
   if (pnh.getParam("droneCount", droneCount)){
-      ROS_INFO("Got param 'droneCount': %d", droneCount);
+      ROS_INFO("global_controller: Got param 'droneCount': %d", droneCount);
   }
   else
-     ROS_ERROR("Failed to get param 'droneCount'");
+     ROS_ERROR("global_controller: Failed to get param 'droneCount'");
 
   std::vector<WaypointWithTime> waypoints;
   const float DEG_2_RAD = M_PI / 180.0;
@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
   ros::Publisher enable_pub[N_DRONES_MAX];
   for (size_t i = 0; i < droneCount; i++)
   {
-    ROS_INFO("Setup publisher %s.", nhq[i].getNamespace().c_str());
+    ROS_INFO("global_controller: Setup publisher %s.", nhq[i].getNamespace().c_str());
     trajectory_pub[i] = nhq[i].advertise<trajectory_msgs::MultiDOFJointTrajectory>(
           mav_msgs::default_topics::COMMAND_TRAJECTORY, 10);
     enable_pub[i] = nhq[i].advertise<std_msgs::Bool>("enable", 10);
@@ -117,24 +117,22 @@ int main(int argc, char** argv) {
 
   // Trying to unpause Gazebo for 10 seconds.
   while (i <= 10 && !unpaused) {
-    ROS_INFO("Wait for 1 second before trying to unpause Gazebo again.");
+    ROS_INFO("global_controller: Wait for 1 second before trying to unpause Gazebo again.");
     std::this_thread::sleep_for(std::chrono::seconds(1));
     unpaused = ros::service::call("/gazebo/unpause_physics", srv);
     ++i;
   }
 
   if (!unpaused) {
-    ROS_FATAL("Could not wake up Gazebo.");
+    ROS_FATAL("global_controller: Could not wake up Gazebo.");
     return -1;
   } else {
-    ROS_INFO("Unpaused the Gazebo simulation.");
+    ROS_INFO("global_controller: Unpaused the Gazebo simulation.");
   }
 
   ros::Time::sleepUntil(ros::Time(5.0));
   trajectory_msgs::MultiDOFJointTrajectory trajectory_msg;
   std_msgs::Bool enable_msg;
-
-  ROS_INFO("Start publishing waypoints (global).");
 
   // Default desired position and yaw.
   Eigen::Vector3d desired_position(0.3, 0.5, 1.0);
@@ -146,6 +144,7 @@ int main(int argc, char** argv) {
   if(droneCount == 4)
     modulus = 2;
 
+  ROS_INFO("global_controller: Go to starting position (hovering).");
   for (size_t i = 0; i < droneCount; i++) // go to starting position (hovering)
   {
     trajectory_msg.header.stamp = ros::Time::now();
@@ -155,7 +154,7 @@ int main(int argc, char** argv) {
     desired_position(2) = 1.4 + ((float)(i%2))/5;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
 
-    ROS_INFO("Publishing waypoint on namespace %s: [%f, %f, %f].",
+    ROS_INFO("global_controller: Publishing waypoint on namespace %s: [%f, %f, %f].",
     nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
 
     trajectory_pub[i].publish(trajectory_msg);
@@ -165,10 +164,11 @@ int main(int argc, char** argv) {
   ros::Duration(3.0).sleep();
   ros::spinOnce();
 
+  ROS_INFO("global_controller: Enable swarm mode.");
   for (size_t i = 0; i < droneCount; i++) // enable swarm mode
   {
     enable_msg.data = true;
-    ROS_INFO("Publishing enable on namespace %s: %d.", nhq[i].getNamespace().c_str(), enable_msg.data);
+    ROS_INFO("global_controller: Publishing enable on namespace %s: %d.", nhq[i].getNamespace().c_str(), enable_msg.data);
     enable_pub[i].publish(enable_msg);
   }
 
@@ -182,7 +182,7 @@ int main(int argc, char** argv) {
   mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
   for (size_t i = 0; i < droneCount; i++) // send target point to swarm
   {
-    ROS_INFO("Publishing swarm waypoint on namespace %s: [%f, %f, %f].",
+    ROS_INFO("global_controller: Publishing swarm target on namespace %s: [%f, %f, %f].",
     nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
     trajectory_pub[i].publish(trajectory_msg);
   }
@@ -197,7 +197,7 @@ int main(int argc, char** argv) {
   mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
   for (size_t i = 0; i < droneCount; i++) // send target point to swarm
   {
-    ROS_INFO("Publishing swarm waypoint on namespace %s: [%f, %f, %f].",
+    ROS_INFO("global_controller: Publishing swarm target on namespace %s: [%f, %f, %f].",
     nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
     trajectory_pub[i].publish(trajectory_msg);
   }
@@ -205,6 +205,7 @@ int main(int argc, char** argv) {
   ros::Duration(30.0).sleep();
   ros::spinOnce();
   //  ros::spin();
+  ROS_INFO("global_controller: End simulation.");
   ros::shutdown(); // end simulation
 
   return 0;

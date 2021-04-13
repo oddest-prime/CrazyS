@@ -417,9 +417,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                           total_sum += 25.0*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
                           ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
                       }
-                      // keep moving term
-                      float move_dist = sqrt(fabs(xi)*fabs(xi) + fabs(yi)*fabs(yi) + fabs(zi)*fabs(zi));
-                      total_sum += 1.0/(move_dist*move_dist);
+                      // keep moving term (leads to wobbly behaviour)
+                      //float move_dist = sqrt(fabs(xi)*fabs(xi) + fabs(yi)*fabs(yi) + fabs(zi)*fabs(zi));
+                      //total_sum += 1.0/(move_dist*move_dist);
 
                       if(total_sum < min_sum)
                       {

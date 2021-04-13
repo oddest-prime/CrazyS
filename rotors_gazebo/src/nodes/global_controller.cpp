@@ -143,10 +143,10 @@ int main(int argc, char** argv) {
   int modulus = 5;
   if(droneCount < 10)
     modulus = 4;
-  if(droneCount < 5)
-    modulus = 3;
+  if(droneCount == 4)
+    modulus = 2;
 
-  for (size_t i = 0; i < droneCount; i++)
+  for (size_t i = 0; i < droneCount; i++) // go to starting position (hovering)
   {
     trajectory_msg.header.stamp = ros::Time::now();
 
@@ -165,7 +165,7 @@ int main(int argc, char** argv) {
   ros::Duration(3.0).sleep();
   ros::spinOnce();
 
-  for (size_t i = 0; i < droneCount; i++)
+  for (size_t i = 0; i < droneCount; i++) // enable swarm mode
   {
     enable_msg.data = true;
     ROS_INFO("Publishing enable on namespace %s: %d.", nhq[i].getNamespace().c_str(), enable_msg.data);
@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
   desired_position(1) = 0;
   desired_position(2) = 1.5;
   mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
-  for (size_t i = 0; i < droneCount; i++)
+  for (size_t i = 0; i < droneCount; i++) // send target point to swarm
   {
     ROS_INFO("Publishing swarm waypoint on namespace %s: [%f, %f, %f].",
     nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
   desired_position(1) = 1.5;
   desired_position(2) = 1.5;
   mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
-  for (size_t i = 0; i < droneCount; i++)
+  for (size_t i = 0; i < droneCount; i++) // send target point to swarm
   {
     ROS_INFO("Publishing swarm waypoint on namespace %s: [%f, %f, %f].",
     nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());

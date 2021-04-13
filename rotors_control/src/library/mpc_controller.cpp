@@ -126,7 +126,7 @@ void MpcController::CallbackSaveData(const ros::TimerEvent& event){
       ofstream fileDronePosition;
       ofstream fileTrajectory;
 
-      ROS_INFO("CallbackSavaData. droneNumber: %d, Time: %f seconds, %f nanoseconds, ",
+      ROS_INFO("CallbackSavaData MpcController. droneNumber: %d, Time: %f seconds, %f nanoseconds, ",
       droneNumber_, odometry_.timeStampSec, odometry_.timeStampNsec);
 
       filePropellersVelocity.open(std::string("/crazyflie_ws/src/crazys/log_output/PropellersVelocity") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);

@@ -20,13 +20,21 @@
 
 #include "position_controller_mpc.h"
 
-#include <ros/ros.h>
 #include <mav_msgs/default_topics.h>
 #include <ros/console.h>
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Bool.h>
+
+#include <math.h>
+#include <ros/ros.h>
 #include <time.h>
 #include <chrono>
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <sstream>
+#include <iterator>
 
 #include "rotors_control/parameters_ros.h"
 #include "rotors_control/stabilizer_types.h"
@@ -102,6 +110,33 @@ PositionControllerMpc::PositionControllerMpc() {
 }
 
 PositionControllerMpc::~PositionControllerMpc(){}
+
+//The callback saves data come from simulation into csv files
+void PositionControllerMpc::CallbackSaveData(const ros::TimerEvent& event){
+
+      if(!dataStoring_active_){
+         return;
+      }
+
+      ofstream fileDistance;
+
+      ROS_INFO("CallbackSavaData PositionControllerMpc. droneNumber: %d, Time: %f seconds, %f nanoseconds, ",
+      droneNumber_);
+
+      fileDistance.open(std::string("/crazyflie_ws/src/crazys/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+
+      // Saving control signals in a file
+      for (unsigned n=0; n < listDistance_.size(); ++n) {
+          fileDistance << listDistance_.at( n );
+      }
+
+      // Closing all opened files
+      fileDistance.close();
+
+      // To have a one shot storing
+      dataStoring_active_ = false;
+
+}
 
 void PositionControllerMpc::MultiDofJointTrajectoryCallback(const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& msg) {
   // Clear all pending commands.
@@ -215,7 +250,7 @@ void PositionControllerMpc::InitializeParams() {
     ROS_INFO_ONCE("[Position Controller] Set controller gains and vehicle parameters");
 
     //Reading the parameters come from the launch file
-    bool dataStoringActive;
+    std::string dataStoringActive;
     int droneNumber;
     int droneCount;
     double dataStoringTime;
@@ -245,18 +280,28 @@ void PositionControllerMpc::InitializeParams() {
 
 
     if (pnh.getParam("csvFilesStoring", dataStoringActive)){
-    ROS_INFO("Got param 'csvFilesStoring': %d", dataStoringActive);
-    position_controller_.dataStoring_active_ = dataStoringActive;
+        ROS_INFO("Got param 'csvFilesStoring': %s", dataStoringActive.c_str());
+
+        position_controller_.dataStoring_active_ = false;
+        if(dataStoringActive == "true")
+            position_controller_.dataStoring_active_ = true;
+
+        dataStoring_active_ = true;
+        if(dataStoringActive == "true" || dataStoringActive == "distance")
+            dataStoring_active_ = true;
     }
     else
        ROS_ERROR("Failed to get param 'csvFilesStoring'");
 
     if (pnh.getParam("csvFilesStoringTime", dataStoringTime)){
-    ROS_INFO("Got param 'csvFilesStoringTime': %f", dataStoringTime);
-    position_controller_.dataStoringTime_ = dataStoringTime;
+        ROS_INFO("Got param 'csvFilesStoringTime': %f", dataStoringTime);
+        position_controller_.dataStoringTime_ = dataStoringTime;
     }
     else
        ROS_ERROR("Failed to get param 'csvFilesStoringTime'");
+
+    ros::NodeHandle nh;
+    timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &PositionControllerMpc::CallbackSaveData, this, false, true);
 
     position_controller_.SetLaunchFileParameters();
 
@@ -321,10 +366,14 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
       {
           ROS_INFO_ONCE("MpcController starting swarm mode");
 
+          std::stringstream tempDistance;
+          tempDistance << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+
           float min_sum = FLT_MAX;
           int min_xi = 0;
           int min_yi = 0;
           int min_zi = 0;
+
           for(int xi = -2; xi <= 2; xi ++) // iterate over all possible next actions in x-, y- and z-dimension
           {
               for(int yi = -2; yi <= 2; yi ++)
@@ -339,21 +388,27 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       potential_pos.position[0] += (float)xi * 0.07;
                       potential_pos.position[1] += (float)yi * 0.07;
                       potential_pos.position[2] += (float)zi * 0.07;
-                      for (size_t i = 0; i < droneCount_; i++)
+                      for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
                       {
-                          if(i == droneNumber_)
-                            continue;
                           float dist = dronestate[i].GetDistance(&potential_pos);
+                          if(dataStoring_active_ && xi == 0 && yi == 0 && zi == 0) // save distance to log file for current position
+                              tempDistance << dist << ",";
+
+                          if(i == droneNumber_) // skip for own quadcopter
+                            continue;
                           cohesion_sum += dist*dist;
-                          if(dist < 0.7 && dist != 0) // neighbourhood for separation
+                          if(dist < 0.85 && dist != 0) // neighbourhood for separation
                           {
                             separation_cnt ++;
                             separation_sum += 1.0/(dist*dist);
                           }
                       }
+                      // coehesion term
                       total_sum = 20.0*cohesion_sum / ((float)droneCount_);
+                      // separation term
                       if(separation_cnt > 0)
                           total_sum += 2.5*separation_sum / ((float)separation_cnt);
+                      // target direction term
                       if(target_swarm_.position_W[2] != 0) // target point is available (z != 0)
                       {
                           float target_distance_x = fabs(target_swarm_.position_W[0] - potential_pos.position[0]);
@@ -362,6 +417,10 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                           total_sum += 25.0*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
                           ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
                       }
+                      // keep moving term
+                      float move_dist = sqrt(fabs(xi)*fabs(xi) + fabs(yi)*fabs(yi) + fabs(zi)*fabs(zi));
+                      total_sum += 1.0/(move_dist*move_dist);
+
                       if(total_sum < min_sum)
                       {
                           min_sum = total_sum;
@@ -379,6 +438,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           new_setpoint.position_W[1] += (float)min_yi * 0.07;
           new_setpoint.position_W[2] += (float)min_zi * 0.07;
           position_controller_.SetTrajectoryPoint(new_setpoint);
+
+          tempDistance << "\n";
+          listDistance_.push_back(tempDistance.str());
     }
 
 

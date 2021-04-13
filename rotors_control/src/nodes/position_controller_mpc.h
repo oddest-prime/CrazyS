@@ -75,6 +75,7 @@ namespace rotors_control {
             bool enable_mellinger_controller_ = false;
             bool enable_internal_model_controller_ = false;
             bool enable_swarm_ = false;
+            bool dataStoring_active_;
 
             int droneNumber_;
             int droneCount_;
@@ -93,11 +94,13 @@ namespace rotors_control {
             ros::Timer timer_Attitude_;
             ros::Timer timer_highLevelControl;
             ros::Timer timer_IMUUpdate;
+            ros::Timer timer_saveData;
 
             //Callback functions to compute the errors among axis and angles
             void CallbackAttitudeEstimation(const ros::TimerEvent& event);
             void CallbackHightLevelControl(const ros::TimerEvent& event);
             void CallbackIMUUpdate(const ros::TimerEvent& event);
+            void CallbackSaveData(const ros::TimerEvent& event);
 
             //subscribers
             ros::Subscriber cmd_multi_dof_joint_trajectory_sub_;
@@ -126,6 +129,9 @@ namespace rotors_control {
             void IMUMellingerCallback(const sensor_msgs::ImuConstPtr& imu_msg); //When the Mellinger's controller is on
 
             DroneStateWithTime dronestate[N_DRONES_MAX];
+
+            // Lists for data saving
+            std::vector<string> listDistance_;
     };
 }
 

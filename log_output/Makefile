@@ -189,9 +189,36 @@ Attiudecontroller.png: CommandAttitude0.csv DroneAttitude0.csv PQCommands0.csv
 			 \"PQCommands0.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'p-command (phi-command)'" \
 	 | gnuplot  
 
+Distance.png: Distance0.csv Distance1.csv Distance2.csv Distance3.csv
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		 \n\
+		set output \"$@\" \n\
+		set ylabel \"Attiudecontroller\" \n\
+		plot     \"Distance0.csv\" using (column(1)+column(2)/1000000000):3 with lines title 'dist 0-0', \
+		   	 \"Distance0.csv\" using (column(1)+column(2)/1000000000):4 with lines title 'dist 0-1', \
+		   	 \"Distance0.csv\" using (column(1)+column(2)/1000000000):5 with lines title 'dist 0-2', \
+		   	 \"Distance0.csv\" using (column(1)+column(2)/1000000000):6 with lines title 'dist 0-3', \
+		   	 \"Distance1.csv\" using (column(1)+column(2)/1000000000):3 with lines title 'dist 1-0', \
+		   	 \"Distance1.csv\" using (column(1)+column(2)/1000000000):4 with lines title 'dist 1-1', \
+		   	 \"Distance1.csv\" using (column(1)+column(2)/1000000000):5 with lines title 'dist 1-2', \
+		   	 \"Distance1.csv\" using (column(1)+column(2)/1000000000):6 with lines title 'dist 1-3', \
+		   	 \"Distance2.csv\" using (column(1)+column(2)/1000000000):3 with lines title 'dist 2-0', \
+		   	 \"Distance2.csv\" using (column(1)+column(2)/1000000000):4 with lines title 'dist 2-1', \
+		   	 \"Distance2.csv\" using (column(1)+column(2)/1000000000):5 with lines title 'dist 2-2', \
+		   	 \"Distance2.csv\" using (column(1)+column(2)/1000000000):6 with lines title 'dist 2-3', \
+		   	 \"Distance3.csv\" using (column(1)+column(2)/1000000000):3 with lines title 'dist 3-0', \
+		   	 \"Distance3.csv\" using (column(1)+column(2)/1000000000):4 with lines title 'dist 3-1', \
+		   	 \"Distance3.csv\" using (column(1)+column(2)/1000000000):5 with lines title 'dist 3-2', \
+		   	 \"Distance3.csv\" using (column(1)+column(2)/1000000000):6 with lines title 'dist 3-3'" \
+	 | gnuplot  
 
 rm-csv:
-	rm -f *0.csv
+	rm -f *.csv
 
 clean:
 	rm -f *.png

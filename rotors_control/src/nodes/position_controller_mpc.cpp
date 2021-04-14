@@ -369,6 +369,18 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           std::stringstream tempDistance;
           tempDistance << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
 
+          EigenOdometry swarm_center;
+          for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+          {
+              swarm_center.position[0] += dronestate[i].odometry_.position[0];
+              swarm_center.position[1] += dronestate[i].odometry_.position[1];
+              swarm_center.position[2] += dronestate[i].odometry_.position[2];
+          }
+          swarm_center.position[0] /= (float)droneCount_;
+          swarm_center.position[1] /= (float)droneCount_;
+          swarm_center.position[2] /= (float)droneCount_;
+          ROS_INFO_ONCE("MpcController %d swarm center x=%f y=%f z=%f", droneNumber_, swarm_center.position[0], swarm_center.position[1], swarm_center.position[2]);
+
           float min_sum = FLT_MAX;
           int min_xi = 0;
           int min_yi = 0;
@@ -420,6 +432,13 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       // keep moving term (leads to wobbly behaviour)
                       //float move_dist = sqrt(fabs(xi)*fabs(xi) + fabs(yi)*fabs(yi) + fabs(zi)*fabs(zi));
                       //total_sum += 1.0/(move_dist*move_dist);
+
+                      // keep moving term (normal to swarm center)
+                      EigenOdometry center_vector = Difference(&swarm_center, &odometry_);
+                      EigenOdometry move_vector = Difference(&potential_pos, &odometry_);
+                      EigenOdometry prod_vector = CrossProduct(&center_vector, &move_vector);
+                      total_sum += 0.01/SquaredScalarLength(&prod_vector);
+                      ROS_INFO("MpcController %d coh=%f sep=%f ssl=%f", droneNumber_, cohesion_sum, separation_sum, SquaredScalarLength(&prod_vector));
 
                       if(total_sum < min_sum)
                       {
@@ -522,7 +541,28 @@ void DroneStateWithTime::SetId(int self, int other)
     other_ = other;
 }
 
+EigenOdometry CrossProduct(EigenOdometry* a, EigenOdometry* b)
+{
+    EigenOdometry r;
+    r.position[0] = a->position[1]*b->position[2] - a->position[2]*b->position[1];
+    r.position[1] = a->position[2]*b->position[0] - a->position[0]*b->position[2];
+    r.position[2] = a->position[0]*b->position[1] - a->position[1]*b->position[0];
+    return r;
+}
 
+EigenOdometry Difference(EigenOdometry* a, EigenOdometry* b)
+{
+    EigenOdometry r;
+    r.position[0] = a->position[0] - b->position[0];
+    r.position[1] = a->position[1] - b->position[1];
+    r.position[2] = a->position[2] - b->position[2];
+    return r;
+}
+
+float SquaredScalarLength(EigenOdometry* a)
+{
+    return (float) (a->position[0]*a->position[0] + a->position[1]*a->position[1] + a->position[2]*a->position[2]);
+}
 
 }
 

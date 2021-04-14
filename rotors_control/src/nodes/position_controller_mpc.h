@@ -47,6 +47,10 @@
 
 namespace rotors_control {
 
+    EigenOdometry CrossProduct(EigenOdometry* a, EigenOdometry* b);
+    EigenOdometry Difference(EigenOdometry* a, EigenOdometry* b);
+    float SquaredScalarLength(EigenOdometry* a);
+
     class DroneStateWithTime {
      public:
       void SetId(int self, int other);

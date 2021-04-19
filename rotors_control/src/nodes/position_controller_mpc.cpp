@@ -394,7 +394,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                   {
                       float cohesion_sum = 0;
                       float separation_sum = 0;
-                      int separation_cnt = 0;
+                      int neighbourhood_cnt = 0;
                       float total_sum = 0;
                       EigenOdometry potential_pos = odometry_;
                       potential_pos.position[0] += (float)xi * 0.07;
@@ -408,18 +408,23 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
                           if(i == droneNumber_) // skip for own quadcopter
                             continue;
-                          cohesion_sum += dist*dist;
+//                          cohesion_sum += dist*dist;
                           if(dist < 0.85 && dist != 0) // neighbourhood for separation
                           {
-                            separation_cnt ++;
+                            neighbourhood_cnt ++;
+                            cohesion_sum += dist*dist;
                             separation_sum += 1.0/(dist*dist);
                           }
                       }
                       // coehesion term
-                      total_sum = 20.0*cohesion_sum / ((float)droneCount_);
-                      // separation term
-                      if(separation_cnt > 0)
-                          total_sum += 2.5*separation_sum / ((float)separation_cnt);
+                      // total_sum = 20.0*cohesion_sum / ((float)droneCount_);
+                      if(neighbourhood_cnt > 0)
+                      {
+                          // coehesion term
+                          total_sum = 20.0*cohesion_sum / ((float)neighbourhood_cnt);
+                          // separation term
+                          total_sum += 2.5*separation_sum / ((float)neighbourhood_cnt);
+                      }
                       // target direction term
                       if(target_swarm_.position_W[2] != 0) // target point is available (z != 0)
                       {
@@ -437,8 +442,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       EigenOdometry center_vector = Difference(&swarm_center, &odometry_);
                       EigenOdometry move_vector = Difference(&potential_pos, &odometry_);
                       EigenOdometry prod_vector = CrossProduct(&center_vector, &move_vector);
-                      total_sum += 0.01/SquaredScalarLength(&prod_vector);
-                      ROS_INFO("MpcController %d coh=%f sep=%f ssl=%f", droneNumber_, cohesion_sum, separation_sum, SquaredScalarLength(&prod_vector));
+                      //total_sum += 0.01/SquaredScalarLength(&prod_vector);
+                      //ROS_INFO("MpcController %d coh=%f sep=%f ssl=%f", droneNumber_, cohesion_sum, separation_sum, SquaredScalarLength(&prod_vector));
 
                       if(total_sum < min_sum)
                       {

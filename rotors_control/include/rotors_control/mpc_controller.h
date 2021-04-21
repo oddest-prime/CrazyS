@@ -118,7 +118,7 @@ namespace rotors_control {
             sensorData_t sensors_;
             state_t state_;
 
-            bool use_setpoint_;
+            int controller_mode_;
             double setpoint_z_;
             double setpoint_pitch_;
             double setpoint_roll_;

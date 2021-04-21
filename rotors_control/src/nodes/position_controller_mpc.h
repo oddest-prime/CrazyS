@@ -32,7 +32,7 @@
 #include <mav_msgs/eigen_mav_msgs.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
-#include <std_msgs/Bool.h>
+#include <std_msgs/Int8.h>
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
@@ -45,10 +45,15 @@
 
 #define N_DRONES_MAX  20          /* maximum number of drones */
 
+#define SWARM_DISABLED            0
+#define SWARM_DECLARATIVE_SIMPLE  1
+#define SWARM_REYNOLDS            2
+
 namespace rotors_control {
 
     EigenOdometry CrossProduct(EigenOdometry* a, EigenOdometry* b);
     EigenOdometry Difference(EigenOdometry* a, EigenOdometry* b);
+    EigenOdometry Sum(EigenOdometry* a, EigenOdometry* b);
     float SquaredScalarLength(EigenOdometry* a);
 
     class DroneStateWithTime {
@@ -78,8 +83,8 @@ namespace rotors_control {
             bool enable_state_estimator_ = false;
             bool enable_mellinger_controller_ = false;
             bool enable_internal_model_controller_ = false;
-            bool enable_swarm_ = false;
             bool dataStoring_active_;
+            int enable_swarm_ = SWARM_DISABLED;
 
             int droneNumber_;
             int droneCount_;
@@ -126,7 +131,7 @@ namespace rotors_control {
             void MultiDofJointTrajectoryMellingerCallback(const mav_msgs::DroneState& drone_state_msg);
 
             void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
-            void EnableCallback(const std_msgs::BoolConstPtr& bool_msg);
+            void EnableCallback(const std_msgs::Int8ConstPtr& enable_msg);
             void MellingerOdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
 
             void IMUCallback(const sensor_msgs::ImuConstPtr& imu_msg);

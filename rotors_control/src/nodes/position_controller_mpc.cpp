@@ -155,7 +155,7 @@ void PositionControllerMpc::MultiDofJointTrajectoryCallback(const trajectory_msg
   mav_msgs::eigenTrajectoryPointFromMsg(msg->points.front(), &eigen_reference);
   commands_.push_front(eigen_reference);
 
-  if(!enable_swarm_) // set target point if not in swarm mode
+  if(enable_swarm_ == SWARM_DISABLED) // set target point if not in swarm mode
   {
     // We can trigger the first command immediately.
     position_controller_.SetTrajectoryPoint(eigen_reference);
@@ -330,10 +330,10 @@ void PositionControllerMpc::IMUCallback(const sensor_msgs::ImuConstPtr& imu_msg)
 
 }
 
-void PositionControllerMpc::EnableCallback(const std_msgs::BoolConstPtr& bool_msg) {
+void PositionControllerMpc::EnableCallback(const std_msgs::Int8ConstPtr& enable_msg) {
   ROS_INFO_ONCE("MpcController got first enable message.");
 
-  enable_swarm_ = bool_msg->data;
+  enable_swarm_ = enable_msg->data;
 }
 
 
@@ -362,9 +362,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
       ROS_INFO_ONCE("MpcController got odometry message: x=%f y=%f z=%f (%d)", odometry_.position[0], odometry_.position[1], odometry_.position[2], enable_swarm_);
 
-      if(enable_swarm_)
+      if(enable_swarm_ == SWARM_DECLARATIVE_SIMPLE)
       {
-          ROS_INFO_ONCE("MpcController starting swarm mode");
+          ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_DECLARATIVE_SIMPLE)");
 
           std::stringstream tempDistance;
           tempDistance << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
@@ -466,6 +466,60 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           tempDistance << "\n";
           listDistance_.push_back(tempDistance.str());
     }
+    else if(enable_swarm_ == SWARM_REYNOLDS)
+    {
+        ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_REYNOLDS)");
+
+        int neighbourhood_cnt = 0;
+        EigenOdometry cohesion_sum;
+        EigenOdometry separation_sum;
+        for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+        {
+            if(i == droneNumber_) // skip for own quadcopter
+              continue;
+
+            float dist = dronestate[i].GetDistance(&odometry_);
+            //if(dist < 0.85 && dist != 0) // neighbourhood
+            if(dist < 5.00 && dist != 0) // neighbourhood
+            {
+              neighbourhood_cnt ++;
+
+              cohesion_sum = Sum(&dronestate[i].odometry_, &cohesion_sum);
+
+              EigenOdometry separation_dist = Difference(&odometry_, &dronestate[i].odometry_);
+              float separation_len = sqrt(SquaredScalarLength(&separation_dist));
+              separation_dist.position[0] /= separation_len;
+              separation_dist.position[1] /= separation_len;
+              separation_dist.position[2] /= separation_len;
+              separation_sum = Sum(&separation_dist, &separation_sum);
+
+              ROS_INFO_ONCE("MpcController %d (i=%d) accel x=%f y=%f z=%f", droneNumber_, i, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2]);
+
+            }
+        }
+
+        EigenOdometry cohesion_accel;
+        float cohesion_factor = 0.35;
+        EigenOdometry separation_accel;
+        float separation_factor = 0.2;
+        if(neighbourhood_cnt != 0)
+        {
+          cohesion_accel.position[0] = cohesion_factor * (cohesion_sum.position[0] / (float)neighbourhood_cnt - odometry_.position[0]);
+          cohesion_accel.position[1] = cohesion_factor * (cohesion_sum.position[1] / (float)neighbourhood_cnt - odometry_.position[1]);
+          cohesion_accel.position[2] = cohesion_factor * (cohesion_sum.position[2] / (float)neighbourhood_cnt - odometry_.position[2]);
+          separation_accel.position[0] = separation_factor * (separation_sum.position[0] / (float)neighbourhood_cnt);
+          separation_accel.position[1] = separation_factor * (separation_sum.position[1] / (float)neighbourhood_cnt);
+          separation_accel.position[2] = separation_factor * (separation_sum.position[2] / (float)neighbourhood_cnt);
+        }
+        EigenOdometry accel = Sum(&cohesion_accel, &separation_accel);
+
+        ROS_INFO_ONCE("MpcController %d (|H|=%d) cohesion_accel x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, cohesion_accel.position[0], cohesion_accel.position[1], cohesion_accel.position[2]);
+        ROS_INFO_ONCE("MpcController %d (|H|=%d) separation_accel x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, separation_accel.position[0], separation_accel.position[1], separation_accel.position[2]);
+        ROS_INFO("MpcController %d (|H|=%d) accel x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, accel.position[0], accel.position[1], accel.position[2]);
+
+        position_controller_.SetSetPoint(1.5, atan(accel.position[0]), atan(0-accel.position[1]), 0);
+        // MpcController::SetSetPoint(double z, double pitch, double roll, double yaw) {
+    }
 
 
       Eigen::Vector4d ref_rotor_velocities;
@@ -561,6 +615,15 @@ EigenOdometry Difference(EigenOdometry* a, EigenOdometry* b)
     r.position[0] = a->position[0] - b->position[0];
     r.position[1] = a->position[1] - b->position[1];
     r.position[2] = a->position[2] - b->position[2];
+    return r;
+}
+
+EigenOdometry Sum(EigenOdometry* a, EigenOdometry* b)
+{
+    EigenOdometry r;
+    r.position[0] = a->position[0] + b->position[0];
+    r.position[1] = a->position[1] + b->position[1];
+    r.position[2] = a->position[2] + b->position[2];
     return r;
 }
 

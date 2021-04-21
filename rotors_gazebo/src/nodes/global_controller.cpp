@@ -30,10 +30,15 @@
 #include <ros/ros.h>
 #include <std_srvs/Empty.h>
 #include <sensor_msgs/Imu.h>
-#include <std_msgs/Bool.h>
+#include <std_msgs/Int8.h>
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
 
 #define N_DRONES_MAX  20          /* maximum number of drones */
+
+#define SWARM_DISABLED            0
+#define SWARM_DECLARATIVE_SIMPLE  1
+#define SWARM_REYNOLDS            2
+
 
 bool sim_running = false;
 
@@ -108,7 +113,7 @@ int main(int argc, char** argv) {
     ROS_INFO("global_controller: Setup publisher %s.", nhq[i].getNamespace().c_str());
     trajectory_pub[i] = nhq[i].advertise<trajectory_msgs::MultiDOFJointTrajectory>(
           mav_msgs::default_topics::COMMAND_TRAJECTORY, 10);
-    enable_pub[i] = nhq[i].advertise<std_msgs::Bool>("enable", 10);
+    enable_pub[i] = nhq[i].advertise<std_msgs::Int8>("enable", 10);
   }
 
   std_srvs::Empty srv;
@@ -132,7 +137,7 @@ int main(int argc, char** argv) {
 
   ros::Time::sleepUntil(ros::Time(5.0));
   trajectory_msgs::MultiDOFJointTrajectory trajectory_msg;
-  std_msgs::Bool enable_msg;
+  std_msgs::Int8 enable_msg;
 
   // Default desired position and yaw.
   Eigen::Vector3d desired_position(0.3, 0.5, 1.0);
@@ -167,7 +172,8 @@ int main(int argc, char** argv) {
   ROS_INFO("global_controller: Enable swarm mode.");
   for (size_t i = 0; i < droneCount; i++) // enable swarm mode
   {
-    enable_msg.data = true;
+//    enable_msg.data = SWARM_DECLARATIVE_SIMPLE;
+    enable_msg.data = SWARM_REYNOLDS;
     ROS_INFO("global_controller: Publishing enable on namespace %s: %d.", nhq[i].getNamespace().c_str(), enable_msg.data);
     enable_pub[i].publish(enable_msg);
   }

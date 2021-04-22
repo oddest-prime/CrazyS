@@ -499,9 +499,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         }
 
         EigenOdometry cohesion_accel;
-        float cohesion_factor = 0.35;
+        float cohesion_factor = 0.35 * 15;
         EigenOdometry separation_accel;
-        float separation_factor = 0.2;
+        float separation_factor = 0.2 * 15;
         if(neighbourhood_cnt != 0)
         {
           cohesion_accel.position[0] = cohesion_factor * (cohesion_sum.position[0] / (float)neighbourhood_cnt - odometry_.position[0]);
@@ -517,8 +517,16 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         ROS_INFO_ONCE("MpcController %d (|H|=%d) separation_accel x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, separation_accel.position[0], separation_accel.position[1], separation_accel.position[2]);
         ROS_INFO("MpcController %d (|H|=%d) accel x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, accel.position[0], accel.position[1], accel.position[2]);
 
-        position_controller_.SetSetPoint(1.5, atan(accel.position[0]), atan(0-accel.position[1]), 0);
-        // MpcController::SetSetPoint(double z, double pitch, double roll, double yaw) {
+        //position_controller_.SetSetPoint(1.5, atan(accel.position[0]), atan(0-accel.position[1]), 0);
+        // MpcController::SetSetPoint(double z, double pitch, double roll, double yaw)
+
+        mav_msgs::EigenTrajectoryPoint new_setpoint;
+        new_setpoint.position_W = odometry_.position;
+        new_setpoint.position_W[0] += accel.position[0];
+        new_setpoint.position_W[1] += accel.position[1];
+        new_setpoint.position_W[2] += accel.position[2];
+        position_controller_.SetTrajectoryPoint(new_setpoint);
+
     }
 
 

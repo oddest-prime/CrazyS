@@ -474,7 +474,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
         ROS_INFO_ONCE("MpcController %d vel x=%f y=%f z=%f", droneNumber_, odometry_.velocity[0], odometry_.velocity[1], odometry_.velocity[2]);
         EigenOdometry integrated_velocity;
-        float weigthed_delta_t = 0.5;
+        float weigthed_delta_t = 0.7;
         integrated_velocity.position[0] = odometry_.velocity[0] * weigthed_delta_t;
         integrated_velocity.position[1] = odometry_.velocity[1] * weigthed_delta_t;
         integrated_velocity.position[2] = odometry_.velocity[2] * weigthed_delta_t;
@@ -517,7 +517,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         EigenOdometry separation_accel;
         float separation_factor = 0.1 * 7;
         EigenOdometry target_accel;
-        float target_factor = 0.05 * 7;
+        float target_factor = 0.1 * 7;
         if(neighbourhood_cnt != 0)
         {
           cohesion_accel.position[0] = cohesion_factor * (cohesion_sum.position[0] / (float)neighbourhood_cnt);

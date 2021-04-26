@@ -73,11 +73,28 @@ int main(int argc, char** argv) {
 
   ros::NodeHandle pnh("~");
   int droneCount;
-  if (pnh.getParam("droneCount", droneCount)){
-      ROS_INFO("global_controller: Got param 'droneCount': %d", droneCount);
-  }
+  if (pnh.getParam("droneCount", droneCount))
+    ROS_INFO("global_controller: Got param 'droneCount': %d", droneCount);
   else
-     ROS_ERROR("global_controller: Failed to get param 'droneCount'");
+    ROS_ERROR("global_controller: Failed to get param 'droneCount'");
+
+  float spacingX;
+  if (pnh.getParam("spacingX", spacingX))
+    ROS_INFO("global_controller: Got param 'spacingX': %f", spacingX);
+  else
+    ROS_ERROR("global_controller: Failed to get param 'spacingX'");
+
+  float spacingY;
+  if (pnh.getParam("spacingY", spacingY))
+    ROS_INFO("global_controller: Got param 'spacingY': %f", spacingY);
+  else
+    ROS_ERROR("global_controller: Failed to get param 'spacingY'");
+
+  float spacingZ;
+  if (pnh.getParam("spacingZ", spacingZ))
+    ROS_INFO("global_controller: Got param 'spacingZ': %f", spacingZ);
+  else
+    ROS_ERROR("global_controller: Failed to get param 'spacingZ'");
 
   std::vector<WaypointWithTime> waypoints;
   const float DEG_2_RAD = M_PI / 180.0;
@@ -154,9 +171,9 @@ int main(int argc, char** argv) {
   {
     trajectory_msg.header.stamp = ros::Time::now();
 
-    desired_position(0) = ((float)(i%modulus)) * 1.6; // * 0.5;
-    desired_position(1) = floor((float)(i/modulus)) * 1.6; // * 0.5;
-    desired_position(2) = 1.4 + ((float)(i%2)) * 0.2; //* 0.2;
+    desired_position(0) = ((float)(i%modulus)) * spacingX; // * 0.5;
+    desired_position(1) = floor((float)(i/modulus)) * spacingY; // * 0.5;
+    desired_position(2) = 1.4 + ((float)(i%2)) * spacingZ; //* 0.2;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
 
     ROS_INFO("global_controller: Publishing waypoint on namespace %s: [%f, %f, %f].",

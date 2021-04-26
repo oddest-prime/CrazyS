@@ -31,6 +31,9 @@
 
   <node name="global_controller" required="true" pkg="rotors_gazebo" type="global_controller" output="screen">
     <param name="droneCount" value="15"/>
+    <param name="spacingX" value="0.6"/>
+    <param name="spacingY" value="0.6"/>
+    <param name="spacingZ" value="0.2"/>
   </node>
 
   <group ns="$(arg mav_name)_0">

@@ -479,8 +479,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
               continue;
 
             float dist = dronestate[i].GetDistance(&odometry_);
-            //if(dist < 0.85 && dist != 0) // neighbourhood
-            if(dist < 50.00 && dist != 0) // global neighbourhood
+            if(dist < 0.5 && dist != 0) // neighbourhood distance
             {
               neighbourhood_cnt ++;
 

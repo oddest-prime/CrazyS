@@ -469,6 +469,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
     {
         ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_REYNOLDS)");
 
+        std::stringstream tempDistance;
+        tempDistance << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+
         ROS_INFO_ONCE("MpcController %d vel x=%f y=%f z=%f", droneNumber_, odometry_.velocity[0], odometry_.velocity[1], odometry_.velocity[2]);
         EigenOdometry integrated_velocity;
         float weigthed_delta_t = 0.5;
@@ -482,6 +485,10 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         EigenOdometry separation_sum;
         for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
         {
+            float dist_cur = dronestate[i].GetDistance(&odometry_);
+            if(dataStoring_active_) // save distance to log file for current position
+                tempDistance << dist_cur << ",";
+
             if(i == droneNumber_) // skip for own quadcopter
               continue;
 
@@ -540,6 +547,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         new_setpoint.position_W[2] += accel.position[2];
         position_controller_.SetTrajectoryPoint(new_setpoint);
 
+        tempDistance << "\n";
+        listDistance_.push_back(tempDistance.str());
     }
 
 

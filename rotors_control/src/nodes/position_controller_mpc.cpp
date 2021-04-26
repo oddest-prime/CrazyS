@@ -120,8 +120,7 @@ void PositionControllerMpc::CallbackSaveData(const ros::TimerEvent& event){
 
       ofstream fileDistance;
 
-      ROS_INFO("CallbackSavaData PositionControllerMpc. droneNumber: %d, Time: %f seconds, %f nanoseconds, ",
-      droneNumber_);
+      ROS_INFO("CallbackSavaData PositionControllerMpc. droneNumber: %d", droneNumber_);
 
       fileDistance.open(std::string("/crazyflie_ws/src/crazys/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
 
@@ -470,6 +469,14 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
     {
         ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_REYNOLDS)");
 
+        ROS_INFO_ONCE("MpcController %d vel x=%f y=%f z=%f", droneNumber_, odometry_.velocity[0], odometry_.velocity[1], odometry_.velocity[2]);
+        EigenOdometry integrated_velocity;
+        float weigthed_delta_t = 0.5;
+        integrated_velocity.position[0] = odometry_.velocity[0] * weigthed_delta_t;
+        integrated_velocity.position[1] = odometry_.velocity[1] * weigthed_delta_t;
+        integrated_velocity.position[2] = odometry_.velocity[2] * weigthed_delta_t;
+        EigenOdometry position_next = Sum(&odometry_, &integrated_velocity);
+
         int neighbourhood_cnt = 0;
         EigenOdometry cohesion_sum;
         EigenOdometry separation_sum;
@@ -478,22 +485,23 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
             if(i == droneNumber_) // skip for own quadcopter
               continue;
 
-            float dist = dronestate[i].GetDistance(&odometry_);
-            if(dist < 0.5 && dist != 0) // neighbourhood distance
+            float dist = dronestate[i].GetDistance(&position_next);
+            // if(dist < 0.5 && dist != 0) // neighbourhood distance
+            if(dist < 99 && dist != 0) // global neighbourhood
             {
               neighbourhood_cnt ++;
 
-              EigenOdometry cohesion_dist = Difference(&dronestate[i].odometry_, &odometry_);
+              EigenOdometry cohesion_dist = Difference(&dronestate[i].odometry_, &position_next);
               cohesion_sum = Sum(&cohesion_dist, &cohesion_sum);
 
-              EigenOdometry separation_dist = Difference(&odometry_, &dronestate[i].odometry_);
+              EigenOdometry separation_dist = Difference(&position_next, &dronestate[i].odometry_);
               float separation_len = (SquaredScalarLength(&separation_dist));
               separation_dist.position[0] /= separation_len;
               separation_dist.position[1] /= separation_len;
               separation_dist.position[2] /= separation_len;
               separation_sum = Sum(&separation_dist, &separation_sum);
 
-              ROS_INFO_ONCE("MpcController %d (i=%d) accel x=%f y=%f z=%f", droneNumber_, i, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2]);
+              ROS_INFO_ONCE("MpcController %d (i=%d) accel x=%f y=%f z=%f", droneNumber_, (int)i, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2]);
             }
         }
 
@@ -502,7 +510,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         EigenOdometry separation_accel;
         float separation_factor = 0.1 * 7;
         EigenOdometry target_accel;
-        float target_factor = 0.02 * 7;
+        float target_factor = 0.05 * 7;
         if(neighbourhood_cnt != 0)
         {
           cohesion_accel.position[0] = cohesion_factor * (cohesion_sum.position[0] / (float)neighbourhood_cnt);
@@ -512,9 +520,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           separation_accel.position[1] = separation_factor * (separation_sum.position[1] / (float)neighbourhood_cnt);
           separation_accel.position[2] = separation_factor * (separation_sum.position[2] / (float)neighbourhood_cnt);
         }
-        target_accel.position[0] = target_factor * (target_swarm_.position_W[0] - odometry_.position[0]);
-        target_accel.position[1] = target_factor * (target_swarm_.position_W[1] - odometry_.position[1]);
-        target_accel.position[2] = target_factor * (target_swarm_.position_W[2] - odometry_.position[2]);
+        target_accel.position[0] = target_factor * (target_swarm_.position_W[0] - position_next.position[0]);
+        target_accel.position[1] = target_factor * (target_swarm_.position_W[1] - position_next.position[1]);
+        target_accel.position[2] = target_factor * (target_swarm_.position_W[2] - position_next.position[2]);
         EigenOdometry accel = Sum(&cohesion_accel, &separation_accel);
         accel = Sum(&accel, &target_accel);
 

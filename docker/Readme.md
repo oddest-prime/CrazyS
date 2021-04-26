@@ -12,7 +12,8 @@
 ## Run container with GUI on host machine
 	docker run -it --device /dev/dri/ --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v "$(pwd)":/crazyflie_ws/src/crazys crazys
 ### Start simulation with GUI
-    roslaunch rotors_gazebo crazyflie2_swarm.launch gui:=true
+	roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=true
+	roslaunch rotors_gazebo crazyflie2_swarm4.launch gui:=true
 
 ## Other notes
 	export containerId=$(docker ps -l -q)

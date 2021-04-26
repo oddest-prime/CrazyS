@@ -154,9 +154,9 @@ int main(int argc, char** argv) {
   {
     trajectory_msg.header.stamp = ros::Time::now();
 
-    desired_position(0) = ((float)(i%modulus))/2;
-    desired_position(1) = floor((float)(i/modulus))/2;
-    desired_position(2) = 1.4 + ((float)(i%2))/5;
+    desired_position(0) = ((float)(i%modulus)) * 0.6; // * 0.5;
+    desired_position(1) = floor((float)(i/modulus)) * 0.6; // * 0.5;
+    desired_position(2) = 1.4 + ((float)(i%2)) * 0.2; //* 0.2;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
 
     ROS_INFO("global_controller: Publishing waypoint on namespace %s: [%f, %f, %f].",

@@ -480,33 +480,33 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
             float dist = dronestate[i].GetDistance(&odometry_);
             //if(dist < 0.85 && dist != 0) // neighbourhood
-            if(dist < 5.00 && dist != 0) // neighbourhood
+            if(dist < 50.00 && dist != 0) // global neighbourhood
             {
               neighbourhood_cnt ++;
 
-              cohesion_sum = Sum(&dronestate[i].odometry_, &cohesion_sum);
+              EigenOdometry cohesion_dist = Difference(&dronestate[i].odometry_, &odometry_);
+              cohesion_sum = Sum(&cohesion_dist, &cohesion_sum);
 
               EigenOdometry separation_dist = Difference(&odometry_, &dronestate[i].odometry_);
-              float separation_len = sqrt(SquaredScalarLength(&separation_dist));
+              float separation_len = (SquaredScalarLength(&separation_dist));
               separation_dist.position[0] /= separation_len;
               separation_dist.position[1] /= separation_len;
               separation_dist.position[2] /= separation_len;
               separation_sum = Sum(&separation_dist, &separation_sum);
 
               ROS_INFO_ONCE("MpcController %d (i=%d) accel x=%f y=%f z=%f", droneNumber_, i, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2]);
-
             }
         }
 
         EigenOdometry cohesion_accel;
-        float cohesion_factor = 0.35 * 15;
+        float cohesion_factor = 0.2 * 7;
         EigenOdometry separation_accel;
-        float separation_factor = 0.2 * 15;
+        float separation_factor = 0.1 * 7;
         if(neighbourhood_cnt != 0)
         {
-          cohesion_accel.position[0] = cohesion_factor * (cohesion_sum.position[0] / (float)neighbourhood_cnt - odometry_.position[0]);
-          cohesion_accel.position[1] = cohesion_factor * (cohesion_sum.position[1] / (float)neighbourhood_cnt - odometry_.position[1]);
-          cohesion_accel.position[2] = cohesion_factor * (cohesion_sum.position[2] / (float)neighbourhood_cnt - odometry_.position[2]);
+          cohesion_accel.position[0] = cohesion_factor * (cohesion_sum.position[0] / (float)neighbourhood_cnt);
+          cohesion_accel.position[1] = cohesion_factor * (cohesion_sum.position[1] / (float)neighbourhood_cnt);
+          cohesion_accel.position[2] = cohesion_factor * (cohesion_sum.position[2] / (float)neighbourhood_cnt);
           separation_accel.position[0] = separation_factor * (separation_sum.position[0] / (float)neighbourhood_cnt);
           separation_accel.position[1] = separation_factor * (separation_sum.position[1] / (float)neighbourhood_cnt);
           separation_accel.position[2] = separation_factor * (separation_sum.position[2] / (float)neighbourhood_cnt);

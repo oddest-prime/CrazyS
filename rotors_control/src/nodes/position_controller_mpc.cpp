@@ -481,7 +481,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         EigenOdometry position_next = Sum(&odometry_, &integrated_velocity);
 
         float abs_velocity = sqrt(SquaredScalarVelocity(&odometry_));
-        ROS_INFO("MpcController %d vel=%f", droneNumber_, abs_velocity);
+        ROS_INFO_ONCE("MpcController %d vel=%f", droneNumber_, abs_velocity);
 
         int neighbourhood_cnt = 0;
         EigenOdometry cohesion_sum;
@@ -527,6 +527,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         float cohesion_factor = 0.2 * global_factor;
         float separation_factor = (0.1 + abs_velocity / 5) * global_factor;
         float target_factor = 0.05 * global_factor;
+        float target_accel_limit = 0.1 * global_factor;
         if(neighbourhood_cnt != 0)
         {
           cohesion_accel.position[0] = cohesion_factor * (cohesion_sum.position[0] / (float)neighbourhood_cnt);
@@ -539,11 +540,21 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         target_accel.position[0] = target_factor * (target_swarm_.position_W[0] - position_next.position[0]);
         target_accel.position[1] = target_factor * (target_swarm_.position_W[1] - position_next.position[1]);
         target_accel.position[2] = target_factor * (target_swarm_.position_W[2] - position_next.position[2]);
+        float abs_target_accel = sqrt(SquaredScalarLength(&target_accel)); // length of vector
+        if(abs_target_accel > target_accel_limit) // if limit exceeded
+          target_accel_limit = target_accel_limit / abs_target_accel;
+        else
+          target_accel_limit = 1;
+        target_accel.position[0] *= target_accel_limit;
+        target_accel.position[1] *= target_accel_limit;
+        target_accel.position[2] *= target_accel_limit;
+
         EigenOdometry accel = Sum(&cohesion_accel, &separation_accel);
         accel = Sum(&accel, &target_accel);
 
         ROS_INFO_ONCE("MpcController %d (|H|=%d) cohesion_accel x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, cohesion_accel.position[0], cohesion_accel.position[1], cohesion_accel.position[2]);
         ROS_INFO_ONCE("MpcController %d (|H|=%d) separation_accel x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, separation_accel.position[0], separation_accel.position[1], separation_accel.position[2]);
+        ROS_INFO("MpcController %d target_accel=%f x=%f y=%f z=%f", droneNumber_, abs_target_accel, target_accel.position[0], target_accel.position[1], target_accel.position[2]);
         ROS_INFO_ONCE("MpcController %d (|H|=%d) accel x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, accel.position[0], accel.position[1], accel.position[2]);
 
         //position_controller_.SetSetPoint(1.5, atan(accel.position[0]), atan(0-accel.position[1]), 0);

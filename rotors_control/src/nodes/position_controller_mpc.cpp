@@ -524,8 +524,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         EigenOdometry target_accel;
         float global_factor = 5;
         // float cohesion_factor = 0.2 * global_factor;
-        float cohesion_factor = (0.2 + abs_velocity / 5) * global_factor;
-        float separation_factor = 0.1 * global_factor;
+        float cohesion_factor = 0.2 * global_factor;
+        float separation_factor = (0.1 + abs_velocity / 5) * global_factor;
         float target_factor = 0.05 * global_factor;
         if(neighbourhood_cnt != 0)
         {

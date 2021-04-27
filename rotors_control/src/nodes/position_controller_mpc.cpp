@@ -503,6 +503,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
               EigenOdometry separation_dist = Difference(&position_next, &dronestate[i].odometry_);
               float separation_len = (SquaredScalarLength(&separation_dist));
+              separation_len -= 0.1;
+              if(separation_len <= 0)
+                separation_len = 0.00001;
               separation_dist.position[0] /= separation_len;
               separation_dist.position[1] /= separation_len;
               separation_dist.position[2] /= separation_len;

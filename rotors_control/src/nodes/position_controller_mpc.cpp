@@ -496,8 +496,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
               continue;
 
             float dist = dronestate[i].GetDistance(&position_next);
-            // if(dist < 0.5 && dist != 0) // neighbourhood distance
-            if(dist < 99 && dist != 0) // global neighbourhood
+            // if(dist < 99 && dist != 0) // global neighbourhood
+            if(dist < 0.65 && dist != 0) // neighbourhood distance
             {
               neighbourhood_cnt ++;
 
@@ -523,7 +523,6 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         EigenOdometry separation_accel;
         EigenOdometry target_accel;
         float global_factor = 5;
-        // float cohesion_factor = 0.2 * global_factor;
         float cohesion_factor = 0.2 * global_factor;
         float separation_factor = (0.1 + abs_velocity / 5) * global_factor;
         float target_factor = 0.08 * global_factor;

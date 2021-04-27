@@ -55,6 +55,7 @@ namespace rotors_control {
     EigenOdometry Difference(EigenOdometry* a, EigenOdometry* b);
     EigenOdometry Sum(EigenOdometry* a, EigenOdometry* b);
     float SquaredScalarLength(EigenOdometry* a);
+    float SquaredScalarVelocity(EigenOdometry* a);
 
     class DroneStateWithTime {
      public:

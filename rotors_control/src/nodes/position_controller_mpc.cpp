@@ -480,6 +480,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         integrated_velocity.position[2] = odometry_.velocity[2] * weigthed_delta_t;
         EigenOdometry position_next = Sum(&odometry_, &integrated_velocity);
 
+        float abs_velocity = sqrt(SquaredScalarVelocity(&odometry_));
+        ROS_INFO("MpcController %d vel=%f", droneNumber_, abs_velocity);
+
         int neighbourhood_cnt = 0;
         EigenOdometry cohesion_sum;
         EigenOdometry separation_sum;
@@ -503,7 +506,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
               EigenOdometry separation_dist = Difference(&position_next, &dronestate[i].odometry_);
               float separation_len = sqrt(SquaredScalarLength(&separation_dist));
-              separation_len -= 0.2; // epsilon_D
+              separation_len -= 0; // epsilon_D = 0.2
               if(separation_len <= 0)
                 separation_len = 0.001;
               separation_len = separation_len*separation_len;
@@ -520,7 +523,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         EigenOdometry separation_accel;
         EigenOdometry target_accel;
         float global_factor = 5;
-        float cohesion_factor = 0.2 * global_factor;
+        // float cohesion_factor = 0.2 * global_factor;
+        float cohesion_factor = (0.2 + abs_velocity / 5) * global_factor;
         float separation_factor = 0.1 * global_factor;
         float target_factor = 0.05 * global_factor;
         if(neighbourhood_cnt != 0)
@@ -665,6 +669,11 @@ EigenOdometry Sum(EigenOdometry* a, EigenOdometry* b)
 float SquaredScalarLength(EigenOdometry* a)
 {
     return (float) (a->position[0]*a->position[0] + a->position[1]*a->position[1] + a->position[2]*a->position[2]);
+}
+
+float SquaredScalarVelocity(EigenOdometry* a)
+{
+    return (float) (a->velocity[0]*a->velocity[0] + a->velocity[1]*a->velocity[1] + a->velocity[2]*a->velocity[2]);
 }
 
 }

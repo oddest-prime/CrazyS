@@ -17,7 +17,7 @@ source /crazyflie_ws/devel/setup.bash
 catkin clean --yes
 catkin build
 
-TIMEOUT=1500
+TIMEOUT=2500
 
 # roslaunch rotors_gazebo crazyflie2_hovering_swarm.launch gui:=false &
 

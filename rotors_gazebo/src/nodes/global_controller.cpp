@@ -216,7 +216,7 @@ int main(int argc, char** argv) {
   trajectory_msg.header.stamp = ros::Time::now();
   desired_position(0) = 0;
   desired_position(1) = 5.0;
-  desired_position(2) = 0.0;
+  desired_position(2) = 1.5;
   mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
   for (size_t i = 0; i < droneCount; i++) // send target point to swarm
   {
@@ -229,9 +229,9 @@ int main(int argc, char** argv) {
   ros::spinOnce();
 
   trajectory_msg.header.stamp = ros::Time::now();
-  desired_position(0) = 0;
-  desired_position(1) = 0.0;
-  desired_position(2) = 5.0;
+  desired_position(0) = 5.0;
+  desired_position(1) = 0;
+  desired_position(2) = 1.5;
   mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
   for (size_t i = 0; i < droneCount; i++) // send target point to swarm
   {

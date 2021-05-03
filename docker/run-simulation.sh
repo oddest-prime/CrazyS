@@ -8,7 +8,13 @@ if [ $# -ge 1 ]
 then
   hash="$1"
 fi;
-echo "git hash: "$hash
+date_hash="`date +%Y-%m-%d_%H-%M-%S`_${hash}"
+echo "========================================================="
+echo "git hash: ${hash}"
+echo "date and hash: ${date_hash}"
+echo "========================================================="
+
+mkdir -p /crazyflie_ws/src/crazys/log_output
 
 cd /crazyflie_ws
 source /opt/ros/melodic/setup.bash
@@ -42,4 +48,5 @@ sleep 5
 
 kill `pidof Xvfb`
 
-/crazyflie_ws/src/crazys/docker/generate-video.sh "$hash"
+/crazyflie_ws/src/crazys/docker/generate-video.sh "${date_hash}"
+mv /crazyflie_ws/src/crazys/log_output /crazyflie_ws/src/crazys/log_${date_hash}

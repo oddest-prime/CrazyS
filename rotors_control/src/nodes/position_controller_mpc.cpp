@@ -413,8 +413,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       float separation_sum = 0;
                       float total_sum = 0;
                       EigenOdometry potential_pos = odometry_;
-                      // float eps_move = 0.07;
-                      float eps_move = 0.15;
+                      float eps_move = 0.07;
+                      // float eps_move = 0.15;
                       potential_pos.position[0] += (float)xi * eps_move;
                       potential_pos.position[1] += (float)yi * eps_move;
                       potential_pos.position[2] += (float)zi * eps_move;
@@ -446,7 +446,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                           float target_distance_x = fabs(target_swarm_.position_W[0] - potential_pos.position[0]);
                           float target_distance_y = fabs(target_swarm_.position_W[1] - potential_pos.position[1]);
                           float target_distance_z = fabs(target_swarm_.position_W[2] - potential_pos.position[2]);
-                          total_sum += 25.0*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
+                          total_sum += 50.0*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
+//                          total_sum += 25.0*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
                           ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
                       }
                       // keep moving term (leads to wobbly behaviour)

@@ -385,6 +385,24 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           int min_yi = 0;
           int min_zi = 0;
 
+          // calculate neighbourhood independently from potential position
+          int neighbourhood_cnt = 0;
+          bool neighbourhood_bool[N_DRONES_MAX];
+          for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+          {
+              float dist = dronestate[i].GetDistance(&odometry_);
+              if(dataStoring_active_) // save distance to log file for current position
+                  tempDistance << dist << ",";
+
+              if(dist < 0.85 && i != droneNumber_)
+              {
+                  neighbourhood_cnt ++;
+                  neighbourhood_bool[i] = true;
+              }
+              else
+                  neighbourhood_bool[i] = false;
+          }
+
           for(int xi = -2; xi <= 2; xi ++) // iterate over all possible next actions in x-, y- and z-dimension
           {
               for(int yi = -2; yi <= 2; yi ++)
@@ -393,24 +411,22 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                   {
                       float cohesion_sum = 0;
                       float separation_sum = 0;
-                      int neighbourhood_cnt = 0;
                       float total_sum = 0;
                       EigenOdometry potential_pos = odometry_;
-                      potential_pos.position[0] += (float)xi * 0.07;
-                      potential_pos.position[1] += (float)yi * 0.07;
-                      potential_pos.position[2] += (float)zi * 0.07;
+                      // float eps_move = 0.07;
+                      float eps_move = 0.07;
+                      potential_pos.position[0] += (float)xi * eps_move;
+                      potential_pos.position[1] += (float)yi * eps_move;
+                      potential_pos.position[2] += (float)zi * eps_move;
                       for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
                       {
                           float dist = dronestate[i].GetDistance(&potential_pos);
-                          if(dataStoring_active_ && xi == 0 && yi == 0 && zi == 0) // save distance to log file for current position
-                              tempDistance << dist << ",";
 
                           if(i == droneNumber_) // skip for own quadcopter
                             continue;
 //                          cohesion_sum += dist*dist;
-                          if(dist < 0.85 && dist != 0) // neighbourhood for separation
+                          if(neighbourhood_bool[i]) // neighbourhood for separation
                           {
-                            neighbourhood_cnt ++;
                             cohesion_sum += dist*dist;
                             separation_sum += 1.0/(dist*dist);
                           }

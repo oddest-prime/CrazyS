@@ -414,7 +414,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       float total_sum = 0;
                       EigenOdometry potential_pos = odometry_;
                       // float eps_move = 0.07;
-                      float eps_move = 0.07;
+                      float eps_move = 0.15;
                       potential_pos.position[0] += (float)xi * eps_move;
                       potential_pos.position[1] += (float)yi * eps_move;
                       potential_pos.position[2] += (float)zi * eps_move;

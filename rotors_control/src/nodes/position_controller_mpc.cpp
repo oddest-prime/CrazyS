@@ -413,8 +413,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       float separation_sum = 0;
                       float total_sum = 0;
                       EigenOdometry potential_pos = odometry_;
-                      float eps_move = 0.07;
-                      // float eps_move = 0.15;
+                      // float eps_move = 0.07;
+                      float eps_move = 0.12;
                       potential_pos.position[0] += (float)xi * eps_move;
                       potential_pos.position[1] += (float)yi * eps_move;
                       potential_pos.position[2] += (float)zi * eps_move;
@@ -438,7 +438,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                           // coehesion term
                           total_sum = 20.0*cohesion_sum / ((float)neighbourhood_cnt);
                           // separation term
-                          total_sum += 2.5*separation_sum / ((float)neighbourhood_cnt);
+                          total_sum += 3.5*separation_sum / ((float)neighbourhood_cnt);
                       }
                       // target direction term
                       if(target_swarm_.position_W[2] != 0) // target point is available (z != 0)

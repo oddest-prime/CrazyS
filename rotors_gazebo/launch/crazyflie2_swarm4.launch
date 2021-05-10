@@ -9,6 +9,7 @@
   <arg name="paused" value="true"/>
   <arg name="debug" default="false"/>
   <arg name="gui" default="false"/>
+  <arg name="swarm_mode" default="mpc1"/>
   <arg name="csvFilesStoring" default="distance"/> <!-- possible values: "true", "false", "distance" -->
   <arg name="csvFilesStoringTime" default="20.0"/> <!-- seconds -->
   <arg name="user_account" default="giuseppe"/>
@@ -34,6 +35,7 @@
     <param name="spacingX" value="2.6"/>
     <param name="spacingY" value="2.6"/>
     <param name="spacingZ" value="0.2"/>
+    <param name="swarmMode" value="$(arg swarm_mode)"/>
   </node>
 
   <group ns="$(arg mav_name)_0">

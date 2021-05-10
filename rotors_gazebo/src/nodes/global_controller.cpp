@@ -22,6 +22,7 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <string>
 
 #include <Eigen/Geometry>
 #include <mav_msgs/conversions.h>
@@ -95,6 +96,23 @@ int main(int argc, char** argv) {
     ROS_INFO("global_controller: Got param 'spacingZ': %f", spacingZ);
   else
     ROS_ERROR("global_controller: Failed to get param 'spacingZ'");
+
+  int swarm_mode = SWARM_DISABLED;
+  std::string swarmMode;
+  if (pnh.getParam("swarmMode", swarmMode))
+    ROS_INFO("global_controller: Got param 'swarmMode': %s", swarmMode.c_str());
+  else
+    ROS_ERROR("global_controller: Failed to get param 'swarmMode'");
+  if(swarmMode == "mpc1")
+  {
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_DECLARATIVE_SIMPLE");
+    swarm_mode = SWARM_DECLARATIVE_SIMPLE;
+  }
+  if(swarmMode == "reynolds")
+  {
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_REYNOLDS");
+    swarm_mode = SWARM_REYNOLDS;
+  }
 
   std::vector<WaypointWithTime> waypoints;
   const float DEG_2_RAD = M_PI / 180.0;
@@ -189,7 +207,7 @@ int main(int argc, char** argv) {
   ROS_INFO("global_controller: Enable swarm mode.");
   for (size_t i = 0; i < droneCount; i++) // enable swarm mode
   {
-    enable_msg.data = SWARM_DECLARATIVE_SIMPLE;
+    enable_msg.data = swarm_mode;
 //    enable_msg.data = SWARM_REYNOLDS;
     ROS_INFO("global_controller: Publishing enable on namespace %s: %d.", nhq[i].getNamespace().c_str(), enable_msg.data);
     enable_pub[i].publish(enable_msg);

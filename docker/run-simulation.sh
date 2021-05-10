@@ -16,8 +16,6 @@ echo "git hash: ${hash}"
 echo "date and hash: ${date_hash}"
 echo "========================================================="
 
-mkdir -p /crazyflie_ws/src/crazys/log_output
-
 cd /crazyflie_ws
 source /opt/ros/melodic/setup.bash
 source /crazyflie_ws/devel/setup.bash
@@ -38,6 +36,7 @@ echo "========================================================="
 echo "running ${date_hash_info}"
 echo "========================================================="
 
+mkdir -p /crazyflie_ws/src/crazys/log_output
 roslaunch rotors_gazebo crazyflie2_swarm15.launch gui:=false swarm_mode:=mpc1 & # big swarm with 15 quadcopters
 
 sleep 1
@@ -67,6 +66,7 @@ echo "========================================================="
 echo "running ${date_hash_info}"
 echo "========================================================="
 
+mkdir -p /crazyflie_ws/src/crazys/log_output
 roslaunch rotors_gazebo crazyflie2_swarm15.launch gui:=false swarm_mode:=reynolds & # big swarm with 15 quadcopters
 
 sleep 1

@@ -27,4 +27,4 @@ mv /tmp/my_out.mp4 /crazyflie_ws/src/crazys/video_${date_hash}.mp4
 #mv /tmp/my_cam4.mp4 /crazyflie_ws/src/crazys/video_`date +%Y-%m-%d_%H-%M-%S`_cam4.mp4
 
 rm -f /tmp/my_*.mp4
-rm -rf /tmp/cam*
+rm -rf /tmp/cam*/*.jpg

@@ -394,7 +394,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
               if(dataStoring_active_) // save distance to log file for current position
                   tempDistance << dist << ",";
 
-              if(dist < 0.85 && i != droneNumber_)
+              if(dist < 99.99 && i != droneNumber_) // global neighbourhood
+              //if(dist < 0.85 && i != droneNumber_) // neighbourhood distance
               {
                   neighbourhood_cnt ++;
                   neighbourhood_bool[i] = true;
@@ -518,8 +519,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
               continue;
 
             float dist = dronestate[i].GetDistance(&position_next);
-            // if(dist < 99 && dist != 0) // global neighbourhood
-            if(dist < 0.65 && dist != 0) // neighbourhood distance
+            if(dist < 99 && dist != 0) // global neighbourhood
+            // if(dist < 0.65 && dist != 0) // neighbourhood distance
             {
               neighbourhood_cnt ++;
 
@@ -572,12 +573,12 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         target_accel.position[2] *= target_accel_limit;
 
         EigenOdometry accel = Sum(&cohesion_accel, &separation_accel);
-        accel = Sum(&accel, &target_accel);
+        //accel = Sum(&accel, &target_accel);
 
         float abs_accel = sqrt(SquaredScalarLength(&accel)); // length of vector
         if(enable_swarm_ == SWARM_REYNOLDS_LIMITED) // limit acceleration for this controller
         {
-          float accel_limit = 0.1 * global_factor;
+          float accel_limit = 0.25; // * global_factor;
           if(abs_accel > accel_limit) // if limit exceeded
             accel_limit = accel_limit / abs_accel;
           else
@@ -585,6 +586,13 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           accel.position[0] *= accel_limit;
           accel.position[1] *= accel_limit;
           accel.position[2] *= accel_limit;
+        }
+        abs_accel = sqrt(SquaredScalarLength(&accel)); // recalculate length of vector
+        if(abs_accel < 0.1)
+        {
+          accel.position[0] = 0;
+          accel.position[1] = 0;
+          accel.position[2] = 0;
         }
 
         ROS_INFO_ONCE("MpcController %d (|H|=%d) cohesion_accel x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, cohesion_accel.position[0], cohesion_accel.position[1], cohesion_accel.position[2]);

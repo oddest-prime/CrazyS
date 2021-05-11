@@ -48,6 +48,7 @@
 #define SWARM_DISABLED            0
 #define SWARM_DECLARATIVE_SIMPLE  1
 #define SWARM_REYNOLDS            2
+#define SWARM_REYNOLDS_LIMITED    3
 
 namespace rotors_control {
 

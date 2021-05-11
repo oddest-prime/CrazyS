@@ -31,12 +31,10 @@ echo "========================================================="
 echo "build done."
 echo "========================================================="
 
-# roslaunch rotors_gazebo crazyflie2_hovering_swarm.launch gui:=false & # old version
-# roslaunch rotors_gazebo crazyflie2_swarm15.launch gui:=false & # big swarm with 15 quadcopters
-# roslaunch rotors_gazebo crazyflie2_swarm.launch gui:=false & # small swarm with 4 quadcopters
-
 mkdir -p /crazyflie_ws/src/crazys/log_output
-roslaunch rotors_gazebo crazyflie2_swarm15.launch gui:=false swarm_mode:=${mode} & # big swarm with 15 quadcopters
+roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=false swarm_mode:=${mode} & # simplified szenario with 2 quadcopters
+# roslaunch rotors_gazebo crazyflie2_swarm4.launch gui:=false swarm_mode:=${mode} & # small swarm with 4 quadcopters
+# roslaunch rotors_gazebo crazyflie2_swarm15.launch gui:=false swarm_mode:=${mode} & # big swarm with 15 quadcopters
 
 sleep 1
 iter=1
@@ -57,4 +55,3 @@ kill `pidof Xvfb`
 
 /crazyflie_ws/src/crazys/docker/generate-video.sh "${date_hash_mode}"
 mv /crazyflie_ws/src/crazys/log_output /crazyflie_ws/src/crazys/log_${date_hash_mode}
-

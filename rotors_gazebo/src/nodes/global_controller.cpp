@@ -39,6 +39,7 @@
 #define SWARM_DISABLED            0
 #define SWARM_DECLARATIVE_SIMPLE  1
 #define SWARM_REYNOLDS            2
+#define SWARM_REYNOLDS_LIMITED    3
 
 
 bool sim_running = false;
@@ -97,6 +98,24 @@ int main(int argc, char** argv) {
   else
     ROS_ERROR("global_controller: Failed to get param 'spacingZ'");
 
+  float offsetX = 0;
+  if (pnh.getParam("offsetX", offsetX))
+    ROS_INFO("global_controller: Got param 'offsetX': %f", offsetX);
+  else
+    ROS_INFO("global_controller: Failed to get param 'offsetX', using default: %f", offsetX);
+
+  float offsetY = 0;
+  if (pnh.getParam("offsetY", offsetY))
+    ROS_INFO("global_controller: Got param 'offsetY': %f", offsetY);
+  else
+    ROS_INFO("global_controller: Failed to get param 'offsetY', using default: %f", offsetY);
+
+  float offsetZ = 0;
+  if (pnh.getParam("offsetZ", offsetZ))
+    ROS_INFO("global_controller: Got param 'offsetZ': %f", offsetZ);
+  else
+    ROS_INFO("global_controller: Failed to get param 'offsetZ', using default: %f", offsetZ);
+
   int swarm_mode = SWARM_DISABLED;
   std::string swarmMode;
   if (pnh.getParam("swarmMode", swarmMode))
@@ -112,6 +131,11 @@ int main(int argc, char** argv) {
   {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_REYNOLDS");
     swarm_mode = SWARM_REYNOLDS;
+  }
+  if(swarmMode == "reylimited")
+  {
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_REYNOLDS_LIMITED");
+    swarm_mode = SWARM_REYNOLDS_LIMITED;
   }
 
   std::vector<WaypointWithTime> waypoints;
@@ -189,9 +213,9 @@ int main(int argc, char** argv) {
   {
     trajectory_msg.header.stamp = ros::Time::now();
 
-    desired_position(0) = ((float)(i%modulus)) * spacingX; // * 0.5;
-    desired_position(1) = floor((float)(i/modulus)) * spacingY; // * 0.5;
-    desired_position(2) = 1.4 + ((float)(i%2)) * spacingZ; //* 0.2;
+    desired_position(0) = ((float)(i%modulus)) * spacingX + offsetX; // * 0.5;
+    desired_position(1) = floor((float)(i/modulus)) * spacingY + offsetY; // * 0.5;
+    desired_position(2) = 1.4 + ((float)(i%2)) * spacingZ + offsetZ; //* 0.2;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
 
     ROS_INFO("global_controller: Publishing waypoint on namespace %s: [%f, %f, %f].",

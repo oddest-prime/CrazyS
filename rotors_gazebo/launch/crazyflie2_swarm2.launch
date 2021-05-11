@@ -32,9 +32,11 @@
 
   <node name="global_controller" required="true" pkg="rotors_gazebo" type="global_controller" output="screen">
     <param name="droneCount" value="2"/>
-    <param name="spacingX" value="1.5"/>
+    <param name="spacingX" value="2.0"/>
     <param name="spacingY" value="1.5"/>
-    <param name="spacingZ" value="0.1"/>
+    <param name="spacingZ" value="0.0"/>
+    <param name="offsetX" value="-1.0"/>
+    <param name="offsetY" value="0.0"/>
     <param name="swarmMode" value="$(arg swarm_mode)"/>
   </node>
 
@@ -48,7 +50,7 @@
       <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
-      <arg name="x" value="0.0"/>
+      <arg name="x" value="-1.0"/>
       <arg name="y" value="0.0"/>
     </include>
    <!-- The Crazyflie position controller -->
@@ -82,7 +84,7 @@
       <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
-      <arg name="x" value="0.5"/>
+      <arg name="x" value="1.0"/>
       <arg name="y" value="0.0"/>
     </include>
    <!-- The Crazyflie position controller -->

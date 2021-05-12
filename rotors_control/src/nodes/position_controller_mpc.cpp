@@ -406,6 +406,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
           // float eps_move = 0.07;
           float eps_move = 0.12;
+          float eps_move = 0.25;
           for(int xi = -2; xi <= 2; xi ++) // iterate over all possible next actions in x-, y- and z-dimension
           {
               for(int yi = -2; yi <= 2; yi ++)

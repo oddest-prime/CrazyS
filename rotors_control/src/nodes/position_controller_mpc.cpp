@@ -404,6 +404,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                   neighbourhood_bool[i] = false;
           }
 
+          // float eps_move = 0.07;
+          float eps_move = 0.12;
           for(int xi = -2; xi <= 2; xi ++) // iterate over all possible next actions in x-, y- and z-dimension
           {
               for(int yi = -2; yi <= 2; yi ++)
@@ -414,8 +416,6 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       float separation_sum = 0;
                       float total_sum = 0;
                       EigenOdometry potential_pos = odometry_;
-                      // float eps_move = 0.07;
-                      float eps_move = 0.12;
                       potential_pos.position[0] += (float)xi * eps_move;
                       potential_pos.position[1] += (float)yi * eps_move;
                       potential_pos.position[2] += (float)zi * eps_move;
@@ -475,9 +475,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           ROS_INFO_ONCE("MpcController %d swarm direction xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
           mav_msgs::EigenTrajectoryPoint new_setpoint;
           new_setpoint.position_W = odometry_.position;
-          new_setpoint.position_W[0] += (float)min_xi * 0.07;
-          new_setpoint.position_W[1] += (float)min_yi * 0.07;
-          new_setpoint.position_W[2] += (float)min_zi * 0.07;
+          new_setpoint.position_W[0] += (float)min_xi * eps_move;
+          new_setpoint.position_W[1] += (float)min_yi * eps_move;
+          new_setpoint.position_W[2] += (float)min_zi * eps_move;
           position_controller_.SetTrajectoryPoint(new_setpoint);
 
           tempDistance << "\n";

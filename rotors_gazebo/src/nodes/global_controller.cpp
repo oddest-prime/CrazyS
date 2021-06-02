@@ -40,6 +40,7 @@
 #define SWARM_DECLARATIVE_SIMPLE  1
 #define SWARM_REYNOLDS            2
 #define SWARM_REYNOLDS_LIMITED    3
+#define SWARM_REYNOLDS_VELOCITY   4
 
 
 bool sim_running = false;
@@ -137,6 +138,11 @@ int main(int argc, char** argv) {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_REYNOLDS_LIMITED");
     swarm_mode = SWARM_REYNOLDS_LIMITED;
   }
+  if(swarmMode == "reyvelocity")
+  {
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_REYNOLDS_VELOCITY");
+    swarm_mode = SWARM_REYNOLDS_VELOCITY;
+  }
 
   std::vector<WaypointWithTime> waypoints;
   const float DEG_2_RAD = M_PI / 180.0;
@@ -216,10 +222,13 @@ int main(int argc, char** argv) {
     desired_position(0) = ((float)(i%modulus)) * spacingX + offsetX; // * 0.5;
     desired_position(1) = floor((float)(i/modulus)) * spacingY + offsetY; // * 0.5;
     desired_position(2) = 1.4 + ((float)(i%2)) * spacingZ + offsetZ; //* 0.2;
+    desired_yaw = 0; // not rotated
+//    desired_yaw = ((float)(i%2)) * (3.141592 / 4); // 45 degrees rotated
+//    desired_yaw = ((float)(i%2)) * (3.141592 / 2); // 90 degrees rotated
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
 
-    ROS_INFO("global_controller: Publishing waypoint on namespace %s: [%f, %f, %f].",
-    nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
+    ROS_INFO("global_controller: Publishing waypoint on namespace %s: [x=%f, y=%f, z=%f, yaw=%f].",
+    nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z(), desired_yaw);
 
     trajectory_pub[i].publish(trajectory_msg);
 
@@ -244,7 +253,7 @@ int main(int argc, char** argv) {
   desired_position(0) = 0;
   desired_position(1) = 0;
   desired_position(2) = 1.5;
-  mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
+  mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
   for (size_t i = 0; i < droneCount; i++) // send target point to swarm
   {
     ROS_INFO("global_controller: Publishing swarm target on namespace %s: [%f, %f, %f].",
@@ -259,7 +268,7 @@ int main(int argc, char** argv) {
   desired_position(0) = 0;
   desired_position(1) = 5.0;
   desired_position(2) = 1.5;
-  mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
+  mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
   for (size_t i = 0; i < droneCount; i++) // send target point to swarm
   {
     ROS_INFO("global_controller: Publishing swarm target on namespace %s: [%f, %f, %f].",
@@ -274,7 +283,7 @@ int main(int argc, char** argv) {
   desired_position(0) = 5.0;
   desired_position(1) = 0;
   desired_position(2) = 1.5;
-  mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
+  mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
   for (size_t i = 0; i < droneCount; i++) // send target point to swarm
   {
     ROS_INFO("global_controller: Publishing swarm target on namespace %s: [%f, %f, %f].",

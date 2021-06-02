@@ -49,12 +49,15 @@
 #define SWARM_DECLARATIVE_SIMPLE  1
 #define SWARM_REYNOLDS            2
 #define SWARM_REYNOLDS_LIMITED    3
+#define SWARM_REYNOLDS_VELOCITY   4
 
 namespace rotors_control {
 
     EigenOdometry CrossProduct(EigenOdometry* a, EigenOdometry* b);
     EigenOdometry Difference(EigenOdometry* a, EigenOdometry* b);
     EigenOdometry Sum(EigenOdometry* a, EigenOdometry* b);
+    EigenOdometry DifferenceVelocity(EigenOdometry* a, EigenOdometry* b);
+    EigenOdometry SumVelocity(EigenOdometry* a, EigenOdometry* b);
     float SquaredScalarLength(EigenOdometry* a);
     float SquaredScalarVelocity(EigenOdometry* a);
 

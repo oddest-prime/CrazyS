@@ -565,7 +565,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         float target_accel_limit = 0.07 * global_factor;
         if(enable_swarm_ == SWARM_REYNOLDS_VELOCITY)
         {
-          velocity_factor = 0.5 * global_factor;
+          velocity_factor = 0.2 * global_factor;
         }
         if(neighbourhood_cnt != 0)
         {

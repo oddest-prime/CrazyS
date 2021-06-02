@@ -32,9 +32,9 @@ echo "build done."
 echo "========================================================="
 
 mkdir -p /crazyflie_ws/src/crazys/log_output
-roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=false swarm_mode:=${mode} & # simplified szenario with 2 quadcopters
+# roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=false swarm_mode:=${mode} & # simplified szenario with 2 quadcopters
 # roslaunch rotors_gazebo crazyflie2_swarm4.launch gui:=false swarm_mode:=${mode} & # small swarm with 4 quadcopters
-# roslaunch rotors_gazebo crazyflie2_swarm15.launch gui:=false swarm_mode:=${mode} & # big swarm with 15 quadcopters
+roslaunch rotors_gazebo crazyflie2_swarm15.launch gui:=false swarm_mode:=${mode} & # big swarm with 15 quadcopters
 
 sleep 1
 iter=1

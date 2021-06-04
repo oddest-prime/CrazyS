@@ -441,7 +441,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                           // coehesion term
                           total_sum = 20.0*cohesion_sum / ((float)neighbourhood_cnt);
                           // separation term
-                          total_sum += 5.0*separation_sum / ((float)neighbourhood_cnt);
+                          total_sum += 20.0*separation_sum / ((float)neighbourhood_cnt);
                       }
                       // target direction term
                       if(target_swarm_.position_W[2] != 0) // target point is available (z != 0)
@@ -594,7 +594,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         EigenOdometry accel = Sum(&cohesion_accel, &separation_accel);
         if(enable_swarm_ == SWARM_REYNOLDS_VELOCITY)
           accel = Sum(&accel, &velocity_accel);
-        //accel = Sum(&accel, &target_accel);
+        accel = Sum(&accel, &target_accel);
 
         float abs_accel = sqrt(SquaredScalarLength(&accel)); // length of vector
         if(enable_swarm_ == SWARM_REYNOLDS_LIMITED || enable_swarm_ == SWARM_REYNOLDS_VELOCITY) // limit acceleration for this controller

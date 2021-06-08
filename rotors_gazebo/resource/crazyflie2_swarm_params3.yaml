@@ -3,7 +3,7 @@ swarm: {
   neighbourhood_distance: 99.00, # global neighbourhood
   }
 mpc1: {
-  eps_move: 0.2,
+  eps_move: 0.3,
   n_move_max: 2,
   mpc_cohesion_weight: 20.0,
   mpc_separation_weight: 20.0,

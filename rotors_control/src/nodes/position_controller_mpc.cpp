@@ -246,7 +246,20 @@ void PositionControllerMpc::InitializeParams() {
 
     position_controller_.SetControllerGains();
 
-    ROS_INFO_ONCE("[Position Controller] Set controller gains and vehicle parameters");
+    GetRosParameter(pnh, "swarm/neighbourhood_distance", (float)99, &neighbourhood_distance_);
+    GetRosParameter(pnh, "mpc1/eps_move", (float)0.1, &eps_move_);
+    GetRosParameter(pnh, "mpc1/n_move_max", (int)2, &n_move_max_);
+    GetRosParameter(pnh, "mpc1/mpc_cohesion_weight", (float)1.0, &mpc_cohesion_weight_);
+    GetRosParameter(pnh, "mpc1/mpc_separation_weight", (float)1.0, &mpc_separation_weight_);
+    GetRosParameter(pnh, "mpc1/mpc_target_weight", (float)1.0, &mpc_target_weight_);
+
+    ROS_INFO_ONCE("[Swarm Controller] GetRosParameter values:");
+    ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
+    ROS_INFO_ONCE("  mpc1/eps_move=%f", eps_move_);
+    ROS_INFO_ONCE("  mpc1/n_move_max=%d", n_move_max_);
+    ROS_INFO_ONCE("  mpc1/mpc_cohesion_weight=%f", mpc_cohesion_weight_);
+    ROS_INFO_ONCE("  mpc1/mpc_separation_weight=%f", mpc_separation_weight_);
+    ROS_INFO_ONCE("  mpc1/mpc_target_weight=%f", mpc_target_weight_);
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
@@ -395,7 +408,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
               if(dataStoring_active_) // save distance to log file for current position
                   tempDistance << dist << ",";
 
-              if(dist < 99.99 && i != droneNumber_) // global neighbourhood
+              if(dist < neighbourhood_distance_ && i != droneNumber_) // global neighbourhood
               //if(dist < 0.85 && i != droneNumber_) // neighbourhood distance
               {
                   neighbourhood_cnt ++;
@@ -406,21 +419,21 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           }
 
           // float eps_move = 0.07;
-          float eps_move = 0.12;
+          // float eps_move = 0.12;
           // float eps_move = 0.25;
-          for(int xi = -2; xi <= 2; xi ++) // iterate over all possible next actions in x-, y- and z-dimension
+          for(int xi = 0-n_move_max_; xi <= n_move_max_; xi ++) // iterate over all possible next actions in x-, y- and z-dimension
           {
-              for(int yi = -2; yi <= 2; yi ++)
+              for(int yi = 0-n_move_max_; yi <= n_move_max_; yi ++)
               {
-                  for(int zi = -2; zi <= 2; zi ++)
+                  for(int zi = 0-n_move_max_; zi <= n_move_max_; zi ++)
                   {
                       float cohesion_sum = 0;
                       float separation_sum = 0;
                       float total_sum = 0;
                       EigenOdometry potential_pos = odometry_;
-                      potential_pos.position[0] += (float)xi * eps_move;
-                      potential_pos.position[1] += (float)yi * eps_move;
-                      potential_pos.position[2] += (float)zi * eps_move;
+                      potential_pos.position[0] += (float)xi * eps_move_;
+                      potential_pos.position[1] += (float)yi * eps_move_;
+                      potential_pos.position[2] += (float)zi * eps_move_;
                       for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
                       {
                           float dist = dronestate[i].GetDistance(&potential_pos);
@@ -439,9 +452,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       if(neighbourhood_cnt > 0)
                       {
                           // coehesion term
-                          total_sum = 20.0*cohesion_sum / ((float)neighbourhood_cnt);
+                          total_sum = mpc_cohesion_weight_*cohesion_sum / ((float)neighbourhood_cnt);
                           // separation term
-                          total_sum += 20.0*separation_sum / ((float)neighbourhood_cnt);
+                          total_sum += mpc_separation_weight_*separation_sum / ((float)neighbourhood_cnt);
                       }
                       // target direction term
                       if(target_swarm_.position_W[2] != 0) // target point is available (z != 0)
@@ -449,7 +462,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                           float target_distance_x = fabs(target_swarm_.position_W[0] - potential_pos.position[0]);
                           float target_distance_y = fabs(target_swarm_.position_W[1] - potential_pos.position[1]);
                           float target_distance_z = fabs(target_swarm_.position_W[2] - potential_pos.position[2]);
-                          total_sum += 50.0*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
+                          total_sum += mpc_target_weight_*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
 //                          total_sum += 25.0*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
                           ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
                       }
@@ -477,9 +490,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           ROS_INFO_ONCE("MpcController %d swarm direction xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
           mav_msgs::EigenTrajectoryPoint new_setpoint;
           new_setpoint.position_W = odometry_.position;
-          new_setpoint.position_W[0] += (float)min_xi * eps_move;
-          new_setpoint.position_W[1] += (float)min_yi * eps_move;
-          new_setpoint.position_W[2] += (float)min_zi * eps_move;
+          new_setpoint.position_W[0] += (float)min_xi * eps_move_;
+          new_setpoint.position_W[1] += (float)min_yi * eps_move_;
+          new_setpoint.position_W[2] += (float)min_zi * eps_move_;
           position_controller_.SetTrajectoryPoint(new_setpoint);
 
           tempDistance << "\n";

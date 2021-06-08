@@ -98,6 +98,13 @@ namespace rotors_control {
             sensorData_t sensors_;
             EigenOdometry odometry_;
 
+            float neighbourhood_distance_;
+            float eps_move_;
+            int n_move_max_;
+            float mpc_cohesion_weight_;
+            float mpc_separation_weight_;
+            float mpc_target_weight_;
+
             mav_msgs::EigenTrajectoryPoint target_swarm_;
 
             ros::Time imu_msg_head_stamp_;

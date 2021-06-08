@@ -1,22 +1,26 @@
 #!/bin/bash
 
 TIMEOUT=2500
+TIMEOUT=500 # debug, faster runs...
 
 Xvfb -shmem -screen 0 1280x1024x24 &
 export DISPLAY=:0
 
 hash="uu"
 mode="mm"
-if [ $# -ge 2 ]
+params="pp"
+if [ $# -ge 3 ]
 then
   hash="$1"
   mode="$2"
+  params="$3"
 fi;
 date_hash="`date +%Y-%m-%d_%H-%M-%S`_${hash}"
-date_hash_mode="${date_hash}_${mode}"
+date_hash_mode="${date_hash}_${mode}_${params}"
 echo "========================================================="
 echo "git hash: ${hash}"
 echo "swarm mode: ${mode}"
+echo "swarm params: ${params}"
 echo "date, hash and mode: ${date_hash_mode}"
 echo "========================================================="
 
@@ -34,7 +38,7 @@ echo "========================================================="
 mkdir -p /crazyflie_ws/src/crazys/log_output
 # roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=false swarm_mode:=${mode} & # simplified szenario with 2 quadcopters
 # roslaunch rotors_gazebo crazyflie2_swarm4.launch gui:=false swarm_mode:=${mode} & # small swarm with 4 quadcopters
-roslaunch rotors_gazebo crazyflie2_swarm15.launch gui:=false swarm_mode:=${mode} & # big swarm with 15 quadcopters
+roslaunch rotors_gazebo crazyflie2_swarm15.launch gui:=false swarm_mode:=${mode} swarm_mode:=${swarm_params} & # big swarm with 15 quadcopters
 
 sleep 1
 iter=1

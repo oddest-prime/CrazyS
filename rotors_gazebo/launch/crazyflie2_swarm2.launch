@@ -10,6 +10,7 @@
   <arg name="debug" default="false"/>
   <arg name="gui" default="false"/>
   <arg name="swarm_mode" default="mpc1"/>
+  <arg name="swarm_params" default="swarm_params"/>
   <arg name="csvFilesStoring" default="distance"/> <!-- possible values: "true", "false", "distance" -->
   <arg name="csvFilesStoringTime" default="40.0"/> <!-- seconds -->
   <arg name="user_account" default="giuseppe"/>
@@ -64,6 +65,7 @@
       <rosparam unless="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name).yaml" />
       <rosparam if="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name)_with_stateEstimator.yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
+      <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <!--node name="waypoint_publisher_csv" required="true" pkg="rotors_gazebo" type="waypoint_publisher_csv" output="screen" args="/crazyflie_ws/src/crazys/waypoints/waypoints_swarm_5.txt"/>
  /-->
@@ -98,6 +100,7 @@
       <rosparam unless="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name).yaml" />
       <rosparam if="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name)_with_stateEstimator.yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
+      <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <!--node name="waypoint_publisher_csv" required="true" pkg="rotors_gazebo" type="waypoint_publisher_csv" output="screen" args="/crazyflie_ws/src/crazys/waypoints/waypoints_swarm_1.txt"/>
  /-->

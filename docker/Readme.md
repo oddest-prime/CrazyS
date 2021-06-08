@@ -13,6 +13,7 @@
 	docker run -it --device /dev/dri/ --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v "$(pwd)":/crazyflie_ws/src/crazys crazys
 ### Start simulation with GUI
 	roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=true swarm_mode:=mpc1
+	roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=true swarm_mode:=mpc1 swarm_params:=swarm_params2
 	roslaunch rotors_gazebo crazyflie2_swarm4.launch gui:=true
 
 ## Other notes

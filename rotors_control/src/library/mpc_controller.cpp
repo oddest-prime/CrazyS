@@ -132,18 +132,18 @@ void MpcController::CallbackSaveData(const ros::TimerEvent& event){
       ROS_INFO("CallbackSavaData MpcController. droneNumber: %d, Time: %f seconds, %f nanoseconds, ",
       droneNumber_, odometry_.timeStampSec, odometry_.timeStampNsec);
 
-      filePropellersVelocity.open(std::string("/crazyflie_ws/src/crazys/log_output/PropellersVelocity") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      fileDroneAttitude.open(std::string("/crazyflie_ws/src/crazys/log_output/DroneAttitude") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      filePWM.open(std::string("/crazyflie_ws/src/crazys/log_output/PWM") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      filePWMComponents.open(std::string("/crazyflie_ws/src/crazys/log_output/PWMComponents") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      fileCommandAttitude.open(std::string("/crazyflie_ws/src/crazys/log_output/CommandAttitude") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      fileRCommand.open(std::string("/crazyflie_ws/src/crazys/log_output/RCommand") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      fileOmegaCommand.open(std::string("/crazyflie_ws/src/crazys/log_output/OmegaCommand") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      fileXeYe.open(std::string("/crazyflie_ws/src/crazys/log_output/XeYe") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      fileDeltaCommands.open(std::string("/crazyflie_ws/src/crazys/log_output/DeltaCommands") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      filePQCommands.open(std::string("/crazyflie_ws/src/crazys/log_output/PQCommands") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      fileDronePosition.open(std::string("/crazyflie_ws/src/crazys/log_output/DronePosition") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      fileTrajectory.open(std::string("/crazyflie_ws/src/crazys/log_output/Trajectory") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      filePropellersVelocity.open(std::string("/tmp/log_output/PropellersVelocity") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileDroneAttitude.open(std::string("/tmp/log_output/DroneAttitude") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      filePWM.open(std::string("/tmp/log_output/PWM") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      filePWMComponents.open(std::string("/tmp/log_output/PWMComponents") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileCommandAttitude.open(std::string("/tmp/log_output/CommandAttitude") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileRCommand.open(std::string("/tmp/log_output/RCommand") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileOmegaCommand.open(std::string("/tmp/log_output/OmegaCommand") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileXeYe.open(std::string("/tmp/log_output/XeYe") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileDeltaCommands.open(std::string("/tmp/log_output/DeltaCommands") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      filePQCommands.open(std::string("/tmp/log_output/PQCommands") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileDronePosition.open(std::string("/tmp/log_output/DronePosition") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileTrajectory.open(std::string("/tmp/log_output/Trajectory") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
 
       // Saving control signals in a file
       for (unsigned n=0; n < listPropellersVelocity_.size(); ++n) {

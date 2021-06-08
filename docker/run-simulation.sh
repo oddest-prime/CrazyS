@@ -35,7 +35,7 @@ echo "========================================================="
 echo "build done."
 echo "========================================================="
 
-mkdir -p /crazyflie_ws/src/crazys/log_output
+mkdir -p /tmp/log_output
 # roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=false swarm_mode:=${mode} & # simplified szenario with 2 quadcopters
 # roslaunch rotors_gazebo crazyflie2_swarm4.launch gui:=false swarm_mode:=${mode} & # small swarm with 4 quadcopters
 roslaunch rotors_gazebo crazyflie2_swarm15.launch gui:=false swarm_mode:=${mode} swarm_mode:=${swarm_params} & # big swarm with 15 quadcopters
@@ -46,7 +46,7 @@ R_PID=`pgrep roslaunch`
 for i in `seq 1 $TIMEOUT`
 do
     kill -0 $R_PID 2> /dev/null || break
-    echo "  [[ global sim timeout counter: $iter / $TIMEOUT ]]  "
+    echo "  [[ ${date_hash_mode} - global sim timeout counter: $iter / $TIMEOUT ]]  "
     iter=$((iter+1))
     sleep 1
 done;
@@ -58,4 +58,4 @@ sleep 5
 kill `pidof Xvfb`
 
 /crazyflie_ws/src/crazys/docker/generate-video.sh "${date_hash_mode}"
-mv /crazyflie_ws/src/crazys/log_output /crazyflie_ws/src/crazys/log_${date_hash_mode}
+mv /tmp/log_output /crazyflie_ws/src/crazys/log_${date_hash_mode}

@@ -122,7 +122,7 @@ void PositionControllerMpc::CallbackSaveData(const ros::TimerEvent& event){
 
       ROS_INFO("CallbackSavaData PositionControllerMpc. droneNumber: %d", droneNumber_);
 
-      fileDistance.open(std::string("/crazyflie_ws/src/crazys/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileDistance.open(std::string("/tmp/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
 
       // Saving control signals in a file
       for (unsigned n=0; n < listDistance_.size(); ++n) {

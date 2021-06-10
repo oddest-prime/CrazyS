@@ -261,6 +261,9 @@ void PositionControllerMpc::InitializeParams() {
     ROS_INFO_ONCE("  mpc1/mpc_separation_weight=%f", mpc_separation_weight_);
     ROS_INFO_ONCE("  mpc1/mpc_target_weight=%f", mpc_target_weight_);
 
+    ROS_FATAL("debug");
+    ros::shutdown();
+
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
     int droneNumber;

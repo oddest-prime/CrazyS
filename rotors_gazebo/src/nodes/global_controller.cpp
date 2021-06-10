@@ -234,6 +234,9 @@ int main(int argc, char** argv) {
 
   }
 
+  ROS_FATAL("debug/global");
+  ros::shutdown();
+
   ros::Duration(3.0).sleep();
   ros::spinOnce();
 

@@ -1,7 +1,7 @@
 FROM ubuntu:bionic
 
-RUN apt-get update
-RUN apt-get install -y gnupg build-essential curl
+RUN apt-get update && \
+    apt-get install -y gnupg build-essential curl
 
 RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu bionic main" > /etc/apt/sources.list.d/ros-latest.list' && \
     curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add - \

@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
     ros-melodic-rqt-rotors ros-melodic-rotors-comm ros-melodic-mav-msgs ros-melodic-rotors-control \
     ros-melodic-rotors-gazebo ros-melodic-rotors-evaluation ros-melodic-rotors-joy-interface \
     ros-melodic-rotors-gazebo-plugins ros-melodic-mav-planning-msgs ros-melodic-rotors-description ros-melodic-rotors-hil-interface \
-    ffmpeg screen xvfb
+    ffmpeg screen xvfb imagemagick
 
 RUN apt-get update && apt-get -y remove ros-melodic-gazebo* gazebo* && \
     sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list' && \

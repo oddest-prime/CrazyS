@@ -24,6 +24,16 @@ echo "swarm params: ${params}"
 echo "date, hash and mode: ${date_hash_mode}"
 echo "========================================================="
 
+echo "========================================================="  > /tmp/video.info
+echo "git hash: ${hash}"                                         >> /tmp/video.info
+echo "swarm mode: ${mode}"                                       >> /tmp/video.info
+echo "swarm params: ${params}"                                   >> /tmp/video.info
+echo "date, hash and mode: ${date_hash_mode}"                    >> /tmp/video.info
+echo "=========================================================" >> /tmp/video.info
+echo "params file content:" >> /tmp/video.info
+echo "---------------------------------------------------------" >> /tmp/video.info
+cat /crazyflie_ws/src/crazys/rotors_gazebo/resource/crazyflie2_${params}.yaml  >> /tmp/video.info
+
 cd /crazyflie_ws
 source /opt/ros/melodic/setup.bash
 source /crazyflie_ws/devel/setup.bash
@@ -56,6 +66,9 @@ echo "##  killing roslaunch";
 kill $R_PID 2> /dev/null
 sleep 5
 kill `pidof Xvfb`
+
+echo "=========================================================" >> /tmp/video.info
+echo "run time: ${iter} seconds (max: $TIMEOUT)" >> /tmp/video.info
 
 /crazyflie_ws/src/crazys/docker/generate-video.sh "${date_hash_mode}"
 mv /tmp/log_output /crazyflie_ws/src/crazys/log_${date_hash_mode}

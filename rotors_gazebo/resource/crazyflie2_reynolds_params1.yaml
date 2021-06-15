@@ -1,0 +1,14 @@
+# Swarm controller parameters
+swarm: {
+  neighbourhood_distance: 99.00, # global neighbourhood
+  }
+reynolds: {
+  weighted_delta_t: 0.5,
+  global_factor: 5,
+  velocity_factor: 0.0, # SWARM_REYNOLDS_VELOCITY: 0.2
+  cohesion_factor: 0.4,
+  separation_factor: 0.1,
+  target_factor: 0.08,
+  target_accel_limit: 0.07,
+  accel_limit: 0.05
+  }

@@ -104,6 +104,15 @@ namespace rotors_control {
             float mpc_cohesion_weight_;
             float mpc_separation_weight_;
             float mpc_target_weight_;
+            float weighted_delta_t_;
+            float reynolds_global_factor_;
+            float reynolds_velocity_factor_;
+            float reynolds_cohesion_factor_;
+            float reynolds_separation_factor_;
+            float reynolds_target_factor_;
+            float reynolds_target_accel_limit_;
+            float reynolds_accel_limit_;
+
 
             mav_msgs::EigenTrajectoryPoint target_swarm_;
 

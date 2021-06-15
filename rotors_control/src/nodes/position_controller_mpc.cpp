@@ -253,6 +253,15 @@ void PositionControllerMpc::InitializeParams() {
     GetRosParameter(pnh, "mpc1/mpc_separation_weight", (float)1.0, &mpc_separation_weight_);
     GetRosParameter(pnh, "mpc1/mpc_target_weight", (float)1.0, &mpc_target_weight_);
 
+    GetRosParameter(pnh, "reynolds/weighted_delta_t", (float)0.5, &weighted_delta_t_);
+    GetRosParameter(pnh, "reynolds/global_factor", (float)0.5, &reynolds_global_factor_);
+    GetRosParameter(pnh, "reynolds/velocity_factor", (float)0.5, &reynolds_velocity_factor_);
+    GetRosParameter(pnh, "reynolds/cohesion_factor", (float)0.5, &reynolds_cohesion_factor_);
+    GetRosParameter(pnh, "reynolds/separation_factor", (float)0.5, &reynolds_separation_factor_);
+    GetRosParameter(pnh, "reynolds/target_factor", (float)0.5, &reynolds_target_factor_);
+    GetRosParameter(pnh, "reynolds/target_accel_limit", (float)0.5, &reynolds_target_accel_limit_);
+    GetRosParameter(pnh, "reynolds/accel_limit", (float)0.5, &reynolds_accel_limit_);
+
     ROS_INFO_ONCE("[Swarm Controller] GetRosParameter values:");
     ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
     ROS_INFO_ONCE("  mpc1/eps_move=%f", eps_move_);
@@ -260,6 +269,14 @@ void PositionControllerMpc::InitializeParams() {
     ROS_INFO_ONCE("  mpc1/mpc_cohesion_weight=%f", mpc_cohesion_weight_);
     ROS_INFO_ONCE("  mpc1/mpc_separation_weight=%f", mpc_separation_weight_);
     ROS_INFO_ONCE("  mpc1/mpc_target_weight=%f", mpc_target_weight_);
+    ROS_INFO_ONCE("  reynolds/weighted_delta_t=%f", weighted_delta_t_);
+    ROS_INFO_ONCE("  reynolds/global_factor=%f", reynolds_global_factor_);
+    ROS_INFO_ONCE("  reynolds/velocity_factor=%f", reynolds_velocity_factor_);
+    ROS_INFO_ONCE("  reynolds/cohesion_factor=%f", reynolds_cohesion_factor_);
+    ROS_INFO_ONCE("  reynolds/separation_factor=%f", reynolds_separation_factor_);
+    ROS_INFO_ONCE("  reynolds/target_factor=%f", reynolds_target_factor_);
+    ROS_INFO_ONCE("  reynolds/target_accel_limit=%f", reynolds_target_accel_limit_);
+    ROS_INFO_ONCE("  reynolds/accel_limit=%f", reynolds_accel_limit_);
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
@@ -513,12 +530,11 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
         ROS_INFO_ONCE("MpcController %d vel x=%f y=%f z=%f", droneNumber_, odometry_.velocity[0], odometry_.velocity[1], odometry_.velocity[2]);
         EigenOdometry integrated_velocity;
-        float weigthed_delta_t = 0.5;
-        integrated_velocity.position[0] = odometry_.velocity[0] * weigthed_delta_t;
-        integrated_velocity.position[1] = odometry_.velocity[1] * weigthed_delta_t;
-        integrated_velocity.position[2] = odometry_.velocity[2] * weigthed_delta_t;
+        integrated_velocity.position[0] = odometry_.velocity[0] * weighted_delta_t_;
+        integrated_velocity.position[1] = odometry_.velocity[1] * weighted_delta_t_;
+        integrated_velocity.position[2] = odometry_.velocity[2] * weighted_delta_t_;
         EigenOdometry position_next = Sum(&odometry_, &integrated_velocity);
-        if(enable_swarm_ == SWARM_REYNOLDS_LIMITED || enable_swarm_ == SWARM_REYNOLDS_VELOCITY) // do not use next position estimate for this controller
+        if(enable_swarm_ == SWARM_REYNOLDS_LIMITED || enable_swarm_ == SWARM_REYNOLDS_VELOCITY || weighted_delta_t_ < 0.001) // do not use next position estimate for this controller
           position_next = odometry_;
 
         float abs_velocity = sqrt(SquaredScalarVelocity(&odometry_));
@@ -538,8 +554,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
               continue;
 
             float dist = dronestate[i].GetDistance(&position_next);
-            if(dist < 99 && dist != 0) // global neighbourhood
-            // if(dist < 0.65 && dist != 0) // neighbourhood distance
+            if(dist < neighbourhood_distance_ && dist != 0) // global neighbourhood
             {
               neighbourhood_cnt ++;
 
@@ -550,11 +565,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
               cohesion_sum = Sum(&cohesion_dist, &cohesion_sum);
 
               EigenOdometry separation_dist = Difference(&position_next, &dronestate[i].odometry_);
-              float separation_len = sqrt(SquaredScalarLength(&separation_dist));
-              separation_len -= 0; // epsilon_D = 0.2
-              if(separation_len <= 0)
-                separation_len = 0.001;
-              separation_len = separation_len*separation_len;
+              float separation_len = SquaredScalarLength(&separation_dist);
               separation_dist.position[0] /= separation_len;
               separation_dist.position[1] /= separation_len;
               separation_dist.position[2] /= separation_len;
@@ -569,40 +580,37 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         EigenOdometry cohesion_accel;
         EigenOdometry separation_accel;
         EigenOdometry target_accel;
-        float global_factor = 5;
-        float velocity_factor = 0;
-        float cohesion_factor = 0.4 * global_factor;
-        float separation_factor = (0.1 + abs_velocity / 25) * global_factor;
-        //float separation_factor = 0.1 * global_factor;
-        float target_factor = 0.08 * global_factor;
-        float target_accel_limit = 0.07 * global_factor;
-        if(enable_swarm_ == SWARM_REYNOLDS_VELOCITY)
-        {
-          velocity_factor = 0.2 * global_factor;
-        }
+
+        reynolds_velocity_factor_ *= reynolds_global_factor_;
+        reynolds_cohesion_factor_ *= reynolds_global_factor_;
+        reynolds_separation_factor_ *= reynolds_global_factor_;
+        reynolds_target_factor_ *= reynolds_global_factor_;
+        reynolds_target_accel_limit_ *= reynolds_global_factor_;
+        reynolds_accel_limit_ *= reynolds_global_factor_;
+
         if(neighbourhood_cnt != 0)
         {
-          velocity_accel.position[0] = velocity_factor * (velocity_sum.velocity[0] / (float)neighbourhood_cnt);
-          velocity_accel.position[1] = velocity_factor * (velocity_sum.velocity[1] / (float)neighbourhood_cnt);
-          velocity_accel.position[2] = velocity_factor * (velocity_sum.velocity[2] / (float)neighbourhood_cnt);
-          cohesion_accel.position[0] = cohesion_factor * (cohesion_sum.position[0] / (float)neighbourhood_cnt);
-          cohesion_accel.position[1] = cohesion_factor * (cohesion_sum.position[1] / (float)neighbourhood_cnt);
-          cohesion_accel.position[2] = cohesion_factor * (cohesion_sum.position[2] / (float)neighbourhood_cnt);
-          separation_accel.position[0] = separation_factor * (separation_sum.position[0] / (float)neighbourhood_cnt);
-          separation_accel.position[1] = separation_factor * (separation_sum.position[1] / (float)neighbourhood_cnt);
-          separation_accel.position[2] = separation_factor * (separation_sum.position[2] / (float)neighbourhood_cnt);
+          velocity_accel.position[0] = reynolds_velocity_factor_ * (velocity_sum.velocity[0] / (float)neighbourhood_cnt);
+          velocity_accel.position[1] = reynolds_velocity_factor_ * (velocity_sum.velocity[1] / (float)neighbourhood_cnt);
+          velocity_accel.position[2] = reynolds_velocity_factor_ * (velocity_sum.velocity[2] / (float)neighbourhood_cnt);
+          cohesion_accel.position[0] = reynolds_cohesion_factor_ * (cohesion_sum.position[0] / (float)neighbourhood_cnt);
+          cohesion_accel.position[1] = reynolds_cohesion_factor_ * (cohesion_sum.position[1] / (float)neighbourhood_cnt);
+          cohesion_accel.position[2] = reynolds_cohesion_factor_ * (cohesion_sum.position[2] / (float)neighbourhood_cnt);
+          separation_accel.position[0] = reynolds_separation_factor_ * (separation_sum.position[0] / (float)neighbourhood_cnt);
+          separation_accel.position[1] = reynolds_separation_factor_ * (separation_sum.position[1] / (float)neighbourhood_cnt);
+          separation_accel.position[2] = reynolds_separation_factor_ * (separation_sum.position[2] / (float)neighbourhood_cnt);
         }
-        target_accel.position[0] = target_factor * (target_swarm_.position_W[0] - position_next.position[0]);
-        target_accel.position[1] = target_factor * (target_swarm_.position_W[1] - position_next.position[1]);
-        target_accel.position[2] = target_factor * (target_swarm_.position_W[2] - position_next.position[2]);
+        target_accel.position[0] = reynolds_target_factor_ * (target_swarm_.position_W[0] - position_next.position[0]);
+        target_accel.position[1] = reynolds_target_factor_ * (target_swarm_.position_W[1] - position_next.position[1]);
+        target_accel.position[2] = reynolds_target_factor_ * (target_swarm_.position_W[2] - position_next.position[2]);
         float abs_target_accel = sqrt(SquaredScalarLength(&target_accel)); // length of vector
-        if(abs_target_accel > target_accel_limit) // if limit exceeded
-          target_accel_limit = target_accel_limit / abs_target_accel;
+        if(abs_target_accel > reynolds_target_accel_limit_) // if limit exceeded
+          reynolds_target_accel_limit_ = reynolds_target_accel_limit_ / abs_target_accel;
         else
-          target_accel_limit = 1;
-        target_accel.position[0] *= target_accel_limit;
-        target_accel.position[1] *= target_accel_limit;
-        target_accel.position[2] *= target_accel_limit;
+          reynolds_target_accel_limit_ = 1;
+        target_accel.position[0] *= reynolds_target_accel_limit_;
+        target_accel.position[1] *= reynolds_target_accel_limit_;
+        target_accel.position[2] *= reynolds_target_accel_limit_;
 
         EigenOdometry accel = Sum(&cohesion_accel, &separation_accel);
         if(enable_swarm_ == SWARM_REYNOLDS_VELOCITY)
@@ -610,16 +618,16 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         accel = Sum(&accel, &target_accel);
 
         float abs_accel = sqrt(SquaredScalarLength(&accel)); // length of vector
-        if(enable_swarm_ == SWARM_REYNOLDS_LIMITED || enable_swarm_ == SWARM_REYNOLDS_VELOCITY) // limit acceleration for this controller
+        if(reynolds_accel_limit_ > 0.001) // limit acceleration for this controller
         {
           float accel_limit = 0.25; // * global_factor;
-          if(abs_accel > accel_limit) // if limit exceeded
-            accel_limit = accel_limit / abs_accel;
+          if(abs_accel > reynolds_accel_limit_) // if limit exceeded
+            reynolds_accel_limit_ = reynolds_accel_limit_ / abs_accel;
           else
-            accel_limit = 1;
-          accel.position[0] *= accel_limit;
-          accel.position[1] *= accel_limit;
-          accel.position[2] *= accel_limit;
+            reynolds_accel_limit_ = 1;
+          accel.position[0] *= reynolds_accel_limit_;
+          accel.position[1] *= reynolds_accel_limit_;
+          accel.position[2] *= reynolds_accel_limit_;
         }
         abs_accel = sqrt(SquaredScalarLength(&accel)); // recalculate length of vector
         if(abs_accel < 0.1)

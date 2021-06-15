@@ -262,6 +262,13 @@ void PositionControllerMpc::InitializeParams() {
     GetRosParameter(pnh, "reynolds/target_accel_limit", (float)0.5, &reynolds_target_accel_limit_);
     GetRosParameter(pnh, "reynolds/accel_limit", (float)0.5, &reynolds_accel_limit_);
 
+    reynolds_velocity_factor_ *= reynolds_global_factor_;
+    reynolds_cohesion_factor_ *= reynolds_global_factor_;
+    reynolds_separation_factor_ *= reynolds_global_factor_;
+    reynolds_target_factor_ *= reynolds_global_factor_;
+    reynolds_target_accel_limit_ *= reynolds_global_factor_;
+    reynolds_accel_limit_ *= reynolds_global_factor_;
+
     ROS_INFO_ONCE("[Swarm Controller] GetRosParameter values:");
     ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
     ROS_INFO_ONCE("  mpc1/eps_move=%f", eps_move_);
@@ -581,13 +588,6 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         EigenOdometry separation_accel;
         EigenOdometry target_accel;
 
-        reynolds_velocity_factor_ *= reynolds_global_factor_;
-        reynolds_cohesion_factor_ *= reynolds_global_factor_;
-        reynolds_separation_factor_ *= reynolds_global_factor_;
-        reynolds_target_factor_ *= reynolds_global_factor_;
-        reynolds_target_accel_limit_ *= reynolds_global_factor_;
-        reynolds_accel_limit_ *= reynolds_global_factor_;
-
         if(neighbourhood_cnt != 0)
         {
           velocity_accel.position[0] = reynolds_velocity_factor_ * (velocity_sum.velocity[0] / (float)neighbourhood_cnt);
@@ -604,13 +604,14 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         target_accel.position[1] = reynolds_target_factor_ * (target_swarm_.position_W[1] - position_next.position[1]);
         target_accel.position[2] = reynolds_target_factor_ * (target_swarm_.position_W[2] - position_next.position[2]);
         float abs_target_accel = sqrt(SquaredScalarLength(&target_accel)); // length of vector
-        if(abs_target_accel > reynolds_target_accel_limit_) // if limit exceeded
-          reynolds_target_accel_limit_ = reynolds_target_accel_limit_ / abs_target_accel;
+        float target_accel_limit = reynolds_target_accel_limit_; // * global_factor;
+        if(abs_target_accel > target_accel_limit) // if limit exceeded
+          target_accel_limit = target_accel_limit / abs_target_accel;
         else
-          reynolds_target_accel_limit_ = 1;
-        target_accel.position[0] *= reynolds_target_accel_limit_;
-        target_accel.position[1] *= reynolds_target_accel_limit_;
-        target_accel.position[2] *= reynolds_target_accel_limit_;
+          target_accel_limit = 1;
+        target_accel.position[0] *= target_accel_limit;
+        target_accel.position[1] *= target_accel_limit;
+        target_accel.position[2] *= target_accel_limit;
 
         EigenOdometry accel = Sum(&cohesion_accel, &separation_accel);
         if(enable_swarm_ == SWARM_REYNOLDS_VELOCITY)
@@ -620,14 +621,14 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         float abs_accel = sqrt(SquaredScalarLength(&accel)); // length of vector
         if(reynolds_accel_limit_ > 0.001) // limit acceleration for this controller
         {
-          float accel_limit = 0.25; // * global_factor;
-          if(abs_accel > reynolds_accel_limit_) // if limit exceeded
-            reynolds_accel_limit_ = reynolds_accel_limit_ / abs_accel;
+          float accel_limit = reynolds_accel_limit_; // * global_factor;
+          if(abs_accel > accel_limit) // if limit exceeded
+            accel_limit = accel_limit / abs_accel;
           else
-            reynolds_accel_limit_ = 1;
-          accel.position[0] *= reynolds_accel_limit_;
-          accel.position[1] *= reynolds_accel_limit_;
-          accel.position[2] *= reynolds_accel_limit_;
+            accel_limit = 1;
+          accel.position[0] *= accel_limit;
+          accel.position[1] *= accel_limit;
+          accel.position[2] *= accel_limit;
         }
         abs_accel = sqrt(SquaredScalarLength(&accel)); // recalculate length of vector
         if(abs_accel < 0.1)
@@ -637,10 +638,10 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           accel.position[2] = 0;
         }
 
-        ROS_INFO_ONCE("MpcController %d (|H|=%d) cohesion_accel x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, cohesion_accel.position[0], cohesion_accel.position[1], cohesion_accel.position[2]);
-        ROS_INFO_ONCE("MpcController %d (|H|=%d) separation_accel x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, separation_accel.position[0], separation_accel.position[1], separation_accel.position[2]);
-        ROS_INFO_ONCE("MpcController %d target_accel=%f x=%f y=%f z=%f", droneNumber_, abs_target_accel, target_accel.position[0], target_accel.position[1], target_accel.position[2]);
-        ROS_INFO_ONCE("MpcController %d (|H|=%d) accel=%f x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, abs_accel, accel.position[0], accel.position[1], accel.position[2]);
+        ROS_INFO("MpcController %d (|H|=%d) cohesion_accel x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, cohesion_accel.position[0], cohesion_accel.position[1], cohesion_accel.position[2]);
+        ROS_INFO("MpcController %d (|H|=%d) separation_accel x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, separation_accel.position[0], separation_accel.position[1], separation_accel.position[2]);
+        ROS_INFO("MpcController %d target_accel=%f x=%f y=%f z=%f", droneNumber_, abs_target_accel, target_accel.position[0], target_accel.position[1], target_accel.position[2]);
+        ROS_INFO("MpcController %d (|H|=%d) accel=%f x=%f y=%f z=%f", droneNumber_, neighbourhood_cnt, abs_accel, accel.position[0], accel.position[1], accel.position[2]);
 
         //position_controller_.SetSetPoint(1.5, atan(accel.position[0]), atan(0-accel.position[1]), 0);
         // MpcController::SetSetPoint(double z, double pitch, double roll, double yaw)

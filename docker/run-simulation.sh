@@ -6,19 +6,22 @@ TIMEOUT=2500
 Xvfb -shmem -screen 0 1280x1024x24 &
 export DISPLAY=:0
 
-launch_file="crazyflie2_swarm15.launch"  # big swarm with 15 quadcopters
-
 hash="uu"
+mode="ll"
 mode="mm"
 params="pp"
 if [ $# -ge 3 ]
 then
   hash="$1"
-  mode="$2"
-  params="$3"
+  launch="$2"
+  mode="$3"
+  params="$4"
 fi;
 date_hash="`date +%Y-%m-%d_%H-%M-%S`_${hash}"
 date_hash_mode="${date_hash}_${mode}_${params}"
+# launch_file="crazyflie2_swarm15.launch"  # big swarm with 15 quadcopters
+launch_file="crazyflie2_${launch}.launch"  # big swarm with 15 quadcopters
+
 echo "========================================================="
 echo "git hash: ${hash}"
 echo "swarm mode: ${mode}"

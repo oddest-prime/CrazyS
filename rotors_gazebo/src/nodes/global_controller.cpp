@@ -211,6 +211,8 @@ int main(int argc, char** argv) {
   int modulus = 5;
   if(droneCount < 10)
     modulus = 4;
+  if(droneCount == 9)
+    modulus = 3;
   if(droneCount == 4)
     modulus = 2;
 

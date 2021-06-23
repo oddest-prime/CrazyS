@@ -422,6 +422,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           int min_xi = 0;
           int min_yi = 0;
           int min_zi = 0;
+          float dist_min = FLT_MAX;
 
           // calculate neighbourhood independently from potential position
           int neighbourhood_cnt = 0;
@@ -429,17 +430,25 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
           {
               float dist = dronestate[i].GetDistance(&odometry_);
-              if(dataStoring_active_) // save distance to log file for current position
-                  tempDistance << dist << ",";
+              dist_min = min(dist, dist_min);
+              // if(dataStoring_active_) // save distance to log file for current position
+              //    tempDistance << dist << ",";
 
               if(dist < neighbourhood_distance_ && i != droneNumber_) // global neighbourhood
-              //if(dist < 0.85 && i != droneNumber_) // neighbourhood distance
               {
                   neighbourhood_cnt ++;
                   neighbourhood_bool[i] = true;
               }
               else
                   neighbourhood_bool[i] = false;
+          }
+          if(dataStoring_active_) // save minimum distance to log file for current position
+          {
+             tempDistance << dist_min << ",";
+
+             EigenOdometry center_vector = Difference(&swarm_center, &odometry_);
+             float dist_center = sqrt(SquaredScalarLength(&center_vector)); // length of vector, distance from the center_vector
+             tempDistance << dist_center << ",";
           }
 
           // float eps_move = 0.07;
@@ -495,9 +504,10 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       //total_sum += 1.0/(move_dist*move_dist);
 
                       // keep moving term (normal to swarm center)
-                      EigenOdometry center_vector = Difference(&swarm_center, &odometry_);
-                      EigenOdometry move_vector = Difference(&potential_pos, &odometry_);
-                      EigenOdometry prod_vector = CrossProduct(&center_vector, &move_vector);
+                      //EigenOdometry center_vector = Difference(&swarm_center, &odometry_);
+                      //EigenOdometry move_vector = Difference(&potential_pos, &odometry_);
+                      //EigenOdometry prod_vector = CrossProduct(&center_vector, &move_vector);
+
                       //total_sum += 0.01/SquaredScalarLength(&prod_vector);
                       //ROS_INFO("MpcController %d coh=%f sep=%f ssl=%f", droneNumber_, cohesion_sum, separation_sum, SquaredScalarLength(&prod_vector));
 
@@ -554,8 +564,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
         {
             float dist_cur = dronestate[i].GetDistance(&odometry_);
-            if(dataStoring_active_) // save distance to log file for current position
-                tempDistance << dist_cur << ",";
+            // if(dataStoring_active_) // save distance to log file for current position
+            //     tempDistance << dist_cur << ",";
 
             if(i == droneNumber_) // skip for own quadcopter
               continue;

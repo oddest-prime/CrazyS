@@ -50,6 +50,7 @@
 #define SWARM_REYNOLDS            2
 #define SWARM_REYNOLDS_LIMITED    3
 #define SWARM_REYNOLDS_VELOCITY   4
+#define SWARM_PHASE_ESTABLISHED   64
 
 namespace rotors_control {
 
@@ -162,6 +163,7 @@ namespace rotors_control {
 
             // Lists for data saving
             std::vector<string> listDistance_;
+            std::vector<string> listMetrics_;
     };
 }
 

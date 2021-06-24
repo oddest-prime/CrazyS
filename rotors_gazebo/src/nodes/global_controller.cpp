@@ -41,6 +41,7 @@
 #define SWARM_REYNOLDS            2
 #define SWARM_REYNOLDS_LIMITED    3
 #define SWARM_REYNOLDS_VELOCITY   4
+#define SWARM_PHASE_ESTABLISHED   64
 
 
 bool sim_running = false;
@@ -263,8 +264,20 @@ int main(int argc, char** argv) {
     trajectory_pub[i].publish(trajectory_msg);
   }
 
-  ros::Duration(20.0).sleep();
+  ros::Duration(10.0).sleep();
   ros::spinOnce();
+
+  ROS_INFO("global_controller: Consider swarm as established.");
+  for (size_t i = 0; i < droneCount; i++) // enable swarm mode
+  {
+    enable_msg.data = swarm_mode + SWARM_PHASE_ESTABLISHED;
+    ROS_INFO("global_controller: Publishing enable (established) on namespace %s: %d.", nhq[i].getNamespace().c_str(), enable_msg.data);
+    enable_pub[i].publish(enable_msg);
+  }
+
+  ros::Duration(10.0).sleep();
+  ros::spinOnce();
+
 
   trajectory_msg.header.stamp = ros::Time::now();
   desired_position(0) = 0;

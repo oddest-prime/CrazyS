@@ -119,18 +119,25 @@ void PositionControllerMpc::CallbackSaveData(const ros::TimerEvent& event){
       }
 
       ofstream fileDistance;
+      ofstream fileMetrics;
 
       ROS_INFO("CallbackSavaData PositionControllerMpc. droneNumber: %d", droneNumber_);
 
       fileDistance.open(std::string("/tmp/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileMetrics.open(std::string("/tmp/log_output/Metrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
 
-      // Saving control signals in a file
+      // Saving distances from every to every dron in a file
       for (unsigned n=0; n < listDistance_.size(); ++n) {
           fileDistance << listDistance_.at( n );
+      }
+      // Saving quality metrics in a file
+      for (unsigned n=0; n < listMetrics_.size(); ++n) {
+          fileMetrics << listMetrics_.at( n );
       }
 
       // Closing all opened files
       fileDistance.close();
+      fileMetrics.close();
 
       // To have a one shot storing
       dataStoring_active_ = false;
@@ -367,7 +374,7 @@ void PositionControllerMpc::IMUCallback(const sensor_msgs::ImuConstPtr& imu_msg)
 }
 
 void PositionControllerMpc::EnableCallback(const std_msgs::Int8ConstPtr& enable_msg) {
-  ROS_INFO_ONCE("MpcController got first enable message.");
+  ROS_INFO("MpcController got enable message: %d", enable_msg->data);
 
   enable_swarm_ = enable_msg->data;
 }
@@ -399,12 +406,14 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
       ROS_INFO_ONCE("MpcController got odometry message: x=%f y=%f z=%f (%d)", odometry_.position[0], odometry_.position[1], odometry_.position[2], enable_swarm_);
 
       // ################################################################################
-      if(enable_swarm_ == SWARM_DECLARATIVE_SIMPLE)
+      if(enable_swarm_ & SWARM_DECLARATIVE_SIMPLE)
       {
           ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_DECLARATIVE_SIMPLE)");
 
           std::stringstream tempDistance;
-          tempDistance << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+          tempDistance << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
+          std::stringstream tempMetrics;
+          tempMetrics << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
 
           EigenOdometry swarm_center;
           for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
@@ -430,9 +439,10 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
           {
               float dist = dronestate[i].GetDistance(&odometry_);
-              dist_min = min(dist, dist_min);
-              // if(dataStoring_active_) // save distance to log file for current position
-              //    tempDistance << dist << ",";
+              if(i != droneNumber_) // do not consider distance to own drone
+                dist_min = min(dist, dist_min);
+              if(dataStoring_active_) // save distance to log file for current position
+                  tempDistance << dist << ",";
 
               if(dist < neighbourhood_distance_ && i != droneNumber_) // global neighbourhood
               {
@@ -444,11 +454,11 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           }
           if(dataStoring_active_) // save minimum distance to log file for current position
           {
-             tempDistance << dist_min << ",";
+             tempMetrics << dist_min << ",";
 
              EigenOdometry center_vector = Difference(&swarm_center, &odometry_);
              float dist_center = sqrt(SquaredScalarLength(&center_vector)); // length of vector, distance from the center_vector
-             tempDistance << dist_center << ",";
+             tempMetrics << dist_center << ",";
           }
 
           // float eps_move = 0.07;
@@ -531,19 +541,21 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
           tempDistance << "\n";
           listDistance_.push_back(tempDistance.str());
+          tempMetrics << "\n";
+          listMetrics_.push_back(tempMetrics.str());
     }
     // ################################################################################
-    else if(enable_swarm_ == SWARM_REYNOLDS || enable_swarm_ == SWARM_REYNOLDS_LIMITED || enable_swarm_ == SWARM_REYNOLDS_VELOCITY)
+    else if(enable_swarm_ & SWARM_REYNOLDS || enable_swarm_ & SWARM_REYNOLDS_LIMITED || enable_swarm_ & SWARM_REYNOLDS_VELOCITY)
     {
-        if(enable_swarm_ == SWARM_REYNOLDS)
+        if(enable_swarm_ & SWARM_REYNOLDS)
           ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_REYNOLDS)");
-        if(enable_swarm_ == SWARM_REYNOLDS_LIMITED)
+        if(enable_swarm_ & SWARM_REYNOLDS_LIMITED)
           ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_REYNOLDS_LIMITED)");
-        if(enable_swarm_ == SWARM_REYNOLDS_VELOCITY)
+        if(enable_swarm_ & SWARM_REYNOLDS_VELOCITY)
           ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_REYNOLDS_VELOCITY)");
 
         std::stringstream tempDistance;
-        tempDistance << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+        tempDistance << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
 
         ROS_INFO_ONCE("MpcController %d vel x=%f y=%f z=%f", droneNumber_, odometry_.velocity[0], odometry_.velocity[1], odometry_.velocity[2]);
         EigenOdometry integrated_velocity;
@@ -551,7 +563,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         integrated_velocity.position[1] = odometry_.velocity[1] * weighted_delta_t_;
         integrated_velocity.position[2] = odometry_.velocity[2] * weighted_delta_t_;
         EigenOdometry position_next = Sum(&odometry_, &integrated_velocity);
-        if(enable_swarm_ == SWARM_REYNOLDS_LIMITED || enable_swarm_ == SWARM_REYNOLDS_VELOCITY || weighted_delta_t_ < 0.001) // do not use next position estimate for this controller
+        if(enable_swarm_ & SWARM_REYNOLDS_LIMITED || enable_swarm_ & SWARM_REYNOLDS_VELOCITY || weighted_delta_t_ < 0.001) // do not use next position estimate for this controller
           position_next = odometry_;
 
         float abs_velocity = sqrt(SquaredScalarVelocity(&odometry_));
@@ -624,7 +636,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         target_accel.position[2] *= target_accel_limit;
 
         EigenOdometry accel = Sum(&cohesion_accel, &separation_accel);
-        if(enable_swarm_ == SWARM_REYNOLDS_VELOCITY)
+        if(enable_swarm_ & SWARM_REYNOLDS_VELOCITY)
           accel = Sum(&accel, &velocity_accel);
         accel = Sum(&accel, &target_accel);
 
@@ -667,7 +679,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         listDistance_.push_back(tempDistance.str());
     }
     // ################################################################################
-    else if(enable_swarm_ == SWARM_REYNOLDS_VELOCITY && false)
+    else if(enable_swarm_ & SWARM_REYNOLDS_VELOCITY && false)
     {
         ROS_INFO_ONCE("MpcController starting OLD! swarm mode (SWARM_REYNOLDS_VELOCITY)");
 

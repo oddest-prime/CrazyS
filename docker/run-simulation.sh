@@ -82,5 +82,17 @@ echo "=========================================================" >> /tmp/video.i
 echo "run time: ${iter} seconds (max: $TIMEOUT)" >> /tmp/video.info
 echo "=========================================================" >> /tmp/video.info
 
+cp /crazyflie_ws/src/crazys/docker/Makefile /tmp/log_output/Makefile
+cd /tmp/log_output/
+make MetricsMerged.csv
+make MetricsMerged.png 2> Metrics.txt
+make all-metrics
+make all-distance
+
+echo "metrics file content:" >> /tmp/video.info
+echo "---------------------------------------------------------" >> /tmp/video.info
+grep "metric:" Metrics.txt >> /tmp/video.info
+echo "=========================================================" >> /tmp/video.info
+
 /crazyflie_ws/src/crazys/docker/generate-video.sh "${date_hash_mode}"
 mv /tmp/log_output /crazyflie_ws/src/crazys/log_${date_hash_mode}

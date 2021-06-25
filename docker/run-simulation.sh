@@ -94,5 +94,6 @@ echo "---------------------------------------------------------" >> /tmp/video.i
 grep "metric:" Metrics.txt >> /tmp/video.info
 echo "=========================================================" >> /tmp/video.info
 
+cp /tmp/video.info /tmp/log_output/simulation.info
 /crazyflie_ws/src/crazys/docker/generate-video.sh "${date_hash_mode}"
 mv /tmp/log_output /crazyflie_ws/src/crazys/log_${date_hash_mode}

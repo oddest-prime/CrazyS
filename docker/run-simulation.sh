@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TIMEOUT=2500
-# TIMEOUT=1500 # debug, faster runs...
+TIMEOUT=500 # debug, faster runs...
 
 Xvfb -shmem -screen 0 1280x1024x24 &
 export DISPLAY=:0
@@ -20,7 +20,7 @@ then
   extra="$5"
 fi;
 date_hash="`date +%Y-%m-%d_%H-%M-%S`_${hash}"
-date_hash_mode="${date_hash}_${mode}_${params}_${extra}"
+date_hash_mode="${date_hash}_${launch}_${mode}_${params}_${extra}"
 # launch_file="crazyflie2_swarm15.launch"  # big swarm with 15 quadcopters
 launch_file="crazyflie2_${launch}.launch"  # big swarm with 15 quadcopters
 

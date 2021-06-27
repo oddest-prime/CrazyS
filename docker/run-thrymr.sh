@@ -57,8 +57,6 @@ do
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 mpc1 mpc1_dyn_a "dyn-n_${dyn_n}_dyn_eps-${dyn_eps}" &
     wait
 
-    exit 1
-
     rm -rf rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
   done
 done

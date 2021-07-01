@@ -120,11 +120,13 @@ void PositionControllerMpc::CallbackSaveData(const ros::TimerEvent& event){
 
       ofstream fileDistance;
       ofstream fileMetrics;
+      ofstream fileState;
 
       ROS_INFO("CallbackSavaData PositionControllerMpc. droneNumber: %d", droneNumber_);
 
       fileDistance.open(std::string("/tmp/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
       fileMetrics.open(std::string("/tmp/log_output/Metrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileState.open(std::string("/tmp/log_output/State") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
 
       // Saving distances from every to every dron in a file
       for (unsigned n=0; n < listDistance_.size(); ++n) {
@@ -134,14 +136,18 @@ void PositionControllerMpc::CallbackSaveData(const ros::TimerEvent& event){
       for (unsigned n=0; n < listMetrics_.size(); ++n) {
           fileMetrics << listMetrics_.at( n );
       }
+      // Saving states in a file
+      for (unsigned n=0; n < listState_.size(); ++n) {
+          fileState << listState_.at( n );
+      }
 
       // Closing all opened files
       fileDistance.close();
       fileMetrics.close();
+      fileState.close();
 
       // To have a one shot storing
       dataStoring_active_ = false;
-
 }
 
 void PositionControllerMpc::MultiDofJointTrajectoryCallback(const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& msg) {
@@ -414,6 +420,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           tempDistance << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
           std::stringstream tempMetrics;
           tempMetrics << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
+          std::stringstream tempState;
+          tempState << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
 
           EigenOdometry swarm_center;
           for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
@@ -459,6 +467,11 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
              EigenOdometry center_vector = Difference(&swarm_center, &odometry_);
              float dist_center = sqrt(SquaredScalarLength(&center_vector)); // length of vector, distance from the center_vector
              tempMetrics << dist_center << ",";
+
+             float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_)); // calculate length of vector
+             tempState << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ",";
+             tempState << odometry_.velocity[0] << "," << odometry_.velocity[1] << "," << odometry_.velocity[2] << ",";
+             tempState << abs_state_velocity << ",";
           }
 
           // float eps_move = 0.07;
@@ -543,6 +556,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           listDistance_.push_back(tempDistance.str());
           tempMetrics << "\n";
           listMetrics_.push_back(tempMetrics.str());
+          tempState << "\n";
+          listState_.push_back(tempState.str());
     }
     // ################################################################################
     else if(enable_swarm_ & SWARM_REYNOLDS || enable_swarm_ & SWARM_REYNOLDS_LIMITED || enable_swarm_ & SWARM_REYNOLDS_VELOCITY)

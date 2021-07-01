@@ -164,6 +164,7 @@ namespace rotors_control {
             // Lists for data saving
             std::vector<string> listDistance_;
             std::vector<string> listMetrics_;
+            std::vector<string> listState_;
     };
 }
 

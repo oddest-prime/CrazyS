@@ -88,13 +88,20 @@ echo "=========================================================" >> /tmp/video.i
 cp /crazyflie_ws/src/crazys/docker/Makefile /tmp/log_output/Makefile
 cd /tmp/log_output/
 make MetricsMerged.csv
+make StateMerged.csv
 make MetricsMerged.png 2> Metrics.txt
+make StateMerged.png 2> States.txt
 make all-metrics
 make all-distance
+make all-state
 
 echo "metrics file content:" >> /tmp/video.info
 echo "---------------------------------------------------------" >> /tmp/video.info
 grep "metric:" Metrics.txt >> /tmp/video.info
+echo "---------------------------------------------------------" >> /tmp/video.info
+echo "states file content:" >> /tmp/video.info
+echo "---------------------------------------------------------" >> /tmp/video.info
+grep "metric:" States.txt >> /tmp/video.info
 echo "=========================================================" >> /tmp/video.info
 
 cp /tmp/video.info /tmp/log_output/simulation.info

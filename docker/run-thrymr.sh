@@ -37,6 +37,10 @@ cd ~/SWARM/crazys
 #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 mpc1 mpc1_params6 &
 #wait
 
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 mpc1 mpc1_params1 "centroid4" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 mpc1 mpc1_params1 "centroid9" &
+
+exit 0;
 # simulation batch per 2021-07-01 for different seperation weights
 for i in 2 # dyn_n
 do
@@ -71,7 +75,6 @@ do
 done
 
 exit 0;
-
 # this was the big simulation batch per 2021-06-29...
 for i in `seq 1 4` # dyn_n
 do

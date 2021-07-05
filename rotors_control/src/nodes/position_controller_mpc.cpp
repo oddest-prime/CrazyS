@@ -409,6 +409,49 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
       position_controller_.SetOdometryWithoutStateEstimator(odometry_);
 
+      // for logging into files
+      std::stringstream tempDistance;
+      tempDistance << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
+      std::stringstream tempMetrics;
+      tempMetrics << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
+      std::stringstream tempState;
+      tempState << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
+
+      // calculate swarm center, save distances to other drones
+      EigenOdometry swarm_center;
+      float dist_min = FLT_MAX;
+      for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+      {
+          swarm_center.position[0] += dronestate[i].odometry_.position[0];
+          swarm_center.position[1] += dronestate[i].odometry_.position[1];
+          swarm_center.position[2] += dronestate[i].odometry_.position[2];
+          if(i != droneNumber_) // sum without own drone
+          {
+              float dist = dronestate[i].GetDistance(&odometry_);
+              dist_min = min(dist, dist_min);
+              if(dataStoring_active_) // save distance to log file for current position
+                  tempDistance << dist << ",";
+          }
+      }
+      swarm_center.position[0] /= (float)droneCount_;
+      swarm_center.position[1] /= (float)droneCount_;
+      swarm_center.position[2] /= (float)droneCount_;
+      ROS_INFO_ONCE("MpcController %d swarm center x=%f y=%f z=%f", droneNumber_, swarm_center.position[0], swarm_center.position[1], swarm_center.position[2]);
+
+      if(dataStoring_active_) // save minimum distance to log file for current position
+      {
+         tempMetrics << dist_min << ",";
+
+         EigenOdometry center_vector = Difference(&swarm_center, &odometry_);
+         float dist_center = sqrt(SquaredScalarLength(&center_vector)); // length of vector, distance from the center_vector
+         tempMetrics << dist_center << ",";
+
+         float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_)); // calculate length of vector
+         tempState << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ",";
+         tempState << odometry_.velocity[0] << "," << odometry_.velocity[1] << "," << odometry_.velocity[2] << ",";
+         tempState << abs_state_velocity << ",";
+      }
+
       ROS_INFO_ONCE("MpcController got odometry message: x=%f y=%f z=%f (%d)", odometry_.position[0], odometry_.position[1], odometry_.position[2], enable_swarm_);
 
       // ################################################################################
@@ -416,30 +459,10 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
       {
           ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_DECLARATIVE_SIMPLE)");
 
-          std::stringstream tempDistance;
-          tempDistance << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
-          std::stringstream tempMetrics;
-          tempMetrics << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
-          std::stringstream tempState;
-          tempState << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
-
-          EigenOdometry swarm_center;
-          for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
-          {
-              swarm_center.position[0] += dronestate[i].odometry_.position[0];
-              swarm_center.position[1] += dronestate[i].odometry_.position[1];
-              swarm_center.position[2] += dronestate[i].odometry_.position[2];
-          }
-          swarm_center.position[0] /= (float)droneCount_;
-          swarm_center.position[1] /= (float)droneCount_;
-          swarm_center.position[2] /= (float)droneCount_;
-          ROS_INFO_ONCE("MpcController %d swarm center x=%f y=%f z=%f", droneNumber_, swarm_center.position[0], swarm_center.position[1], swarm_center.position[2]);
-
           float min_sum = FLT_MAX;
           int min_xi = 0;
           int min_yi = 0;
           int min_zi = 0;
-          float dist_min = FLT_MAX;
 
           // calculate neighbourhood independently from potential position
           int neighbourhood_cnt = 0;
@@ -447,10 +470,6 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
           {
               float dist = dronestate[i].GetDistance(&odometry_);
-              if(i != droneNumber_) // do not consider distance to own drone
-                dist_min = min(dist, dist_min);
-              if(dataStoring_active_) // save distance to log file for current position
-                  tempDistance << dist << ",";
 
               if(dist < neighbourhood_distance_ && i != droneNumber_) // global neighbourhood
               {
@@ -459,19 +478,6 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
               }
               else
                   neighbourhood_bool[i] = false;
-          }
-          if(dataStoring_active_) // save minimum distance to log file for current position
-          {
-             tempMetrics << dist_min << ",";
-
-             EigenOdometry center_vector = Difference(&swarm_center, &odometry_);
-             float dist_center = sqrt(SquaredScalarLength(&center_vector)); // length of vector, distance from the center_vector
-             tempMetrics << dist_center << ",";
-
-             float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_)); // calculate length of vector
-             tempState << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ",";
-             tempState << odometry_.velocity[0] << "," << odometry_.velocity[1] << "," << odometry_.velocity[2] << ",";
-             tempState << abs_state_velocity << ",";
           }
 
           // float eps_move = 0.07;
@@ -490,6 +496,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                       potential_pos.position[0] += (float)xi * eps_move_;
                       potential_pos.position[1] += (float)yi * eps_move_;
                       potential_pos.position[2] += (float)zi * eps_move_;
+                      EigenOdometry potential_center = potential_pos;
                       for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
                       {
                           float dist = dronestate[i].GetDistance(&potential_pos);
@@ -501,17 +508,26 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                           {
                             cohesion_sum += dist*dist;
                             separation_sum += 1.0/(dist*dist);
+
+                            potential_center.position[0] += dronestate[i].odometry_.position[0];
+                            potential_center.position[1] += dronestate[i].odometry_.position[1];
+                            potential_center.position[2] += dronestate[i].odometry_.position[2];
                           }
                       }
+                      potential_center.position[0] /= ((float)neighbourhood_cnt + 1);
+                      potential_center.position[1] /= ((float)neighbourhood_cnt + 1);
+                      potential_center.position[2] /= ((float)neighbourhood_cnt + 1);
+
                       // coehesion term
                       // total_sum = 20.0*cohesion_sum / ((float)droneCount_);
                       if(neighbourhood_cnt > 0)
                       {
                           // coehesion term
-                          total_sum = mpc_cohesion_weight_*cohesion_sum / ((float)neighbourhood_cnt);
+                          total_sum = mpc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
                           // separation term
-                          total_sum += mpc_separation_weight_*separation_sum / ((float)neighbourhood_cnt);
+                          total_sum += mpc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
                       }
+/*
                       // target direction term
                       if(target_swarm_.position_W[2] != 0) // target point is available (z != 0)
                       {
@@ -522,14 +538,17 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 //                          total_sum += 25.0*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
                           ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
                       }
-                      // keep moving term (leads to wobbly behaviour)
-                      //float move_dist = sqrt(fabs(xi)*fabs(xi) + fabs(yi)*fabs(yi) + fabs(zi)*fabs(zi));
-                      //total_sum += 1.0/(move_dist*move_dist);
-
-                      // keep moving term (normal to swarm center)
-                      //EigenOdometry center_vector = Difference(&swarm_center, &odometry_);
-                      //EigenOdometry move_vector = Difference(&potential_pos, &odometry_);
-                      //EigenOdometry prod_vector = CrossProduct(&center_vector, &move_vector);
+*/
+                      // target direction term for centroid
+                      if(target_swarm_.position_W[2] != 0) // target point is available (z != 0)
+                      {
+                          float target_distance_x = fabs(target_swarm_.position_W[0] - potential_center.position[0]);
+                          float target_distance_y = fabs(target_swarm_.position_W[1] - potential_center.position[1]);
+                          float target_distance_z = fabs(target_swarm_.position_W[2] - potential_center.position[2]);
+                          total_sum += mpc_target_weight_*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
+                          ROS_INFO_ONCE("MpcController %d pot. center  x=%f y=%f z=%f (div %f)", droneNumber_, potential_center.position[0], potential_center.position[1], potential_center.position[2], ((float)neighbourhood_cnt + 1));
+                          ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
+                      }
 
                       //total_sum += 0.01/SquaredScalarLength(&prod_vector);
                       //ROS_INFO("MpcController %d coh=%f sep=%f ssl=%f", droneNumber_, cohesion_sum, separation_sum, SquaredScalarLength(&prod_vector));
@@ -541,6 +560,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                           min_yi = yi;
                           min_zi = zi;
                       }
+
+
                   }
               }
           }
@@ -551,13 +572,6 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           new_setpoint.position_W[1] += (float)min_yi * eps_move_;
           new_setpoint.position_W[2] += (float)min_zi * eps_move_;
           position_controller_.SetTrajectoryPoint(new_setpoint);
-
-          tempDistance << "\n";
-          listDistance_.push_back(tempDistance.str());
-          tempMetrics << "\n";
-          listMetrics_.push_back(tempMetrics.str());
-          tempState << "\n";
-          listState_.push_back(tempState.str());
     }
     // ################################################################################
     else if(enable_swarm_ & SWARM_REYNOLDS || enable_swarm_ & SWARM_REYNOLDS_LIMITED || enable_swarm_ & SWARM_REYNOLDS_VELOCITY)
@@ -717,6 +731,17 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
     }
 
+
+
+      if(dataStoring_active_) // save data for log files
+      {
+          tempDistance << "\n";
+          listDistance_.push_back(tempDistance.str());
+          tempMetrics << "\n";
+          listMetrics_.push_back(tempMetrics.str());
+          tempState << "\n";
+          listState_.push_back(tempState.str());
+      }
 
       Eigen::Vector4d ref_rotor_velocities;
       position_controller_.CalculateRotorVelocities(&ref_rotor_velocities);

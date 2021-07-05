@@ -37,11 +37,11 @@ cd ~/SWARM/crazys
 #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 mpc1 mpc1_params6 &
 #wait
 
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 mpc1 mpc1_params1 "centroid4" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 mpc1 mpc1_params1 "centroid9" &
+# check differenc for centroid version
+#docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 mpc1 mpc1_params1 "centroid4" &
+#docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 mpc1 mpc1_params1 "centroid9" &
 
-exit 0;
-# simulation batch per 2021-07-01 for different seperation weights
+# simulation batch per 2021-07-05 for different seperation and target weights (centroid mode)
 for i in 2 # dyn_n
 do
   for j in `seq 1 20` # dyn_eps
@@ -50,27 +50,48 @@ do
     dyn_eps=`echo "scale=2;$j * 2.0 / 100 / $i" | bc | awk '{printf "%.2f", $0}'`
     sep_a="6.0"
     sep_b="12.0"
-    echo "i = $i, j = $j, dyn_n = $dyn_n, dyn_eps = $dyn_eps, sep_a = $sep_a, sep_b = $sep_b"
+    tar_a="50.0"
+    tar_b="100.0"
+    echo "i = $i, j = $j, dyn_n = $dyn_n, dyn_eps = $dyn_eps, sep_a = $sep_a, sep_b = $sep_b, tar_a = $tar_a, tar_b = $tar_b"
 
     cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
     sed -i "s/__DYN_N__/$dyn_n/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
     sed -i "s/__DYN_EPS__/$dyn_eps/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
     sed -i "s/__DYN_SEP__/$sep_a/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
+    sed -i "s/__DYN_TAR__/$tar_a/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
 
     cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_b.yaml
     sed -i "s/__DYN_N__/$dyn_n/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_b.yaml
     sed -i "s/__DYN_EPS__/$dyn_eps/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_b.yaml
     sed -i "s/__DYN_SEP__/$sep_b/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_b.yaml
+    sed -i "s/__DYN_TAR__/$tar_a/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_b.yaml
 
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 mpc1 mpc1_dyn_a "dyn-n_${dyn_n}_dyn_eps-${dyn_eps}_sep-${sep_a}" &
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 mpc1 mpc1_dyn_b "dyn-n_${dyn_n}_dyn_eps-${dyn_eps}_sep-${sep_b}" &
+    cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_c.yaml
+    sed -i "s/__DYN_N__/$dyn_n/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_c.yaml
+    sed -i "s/__DYN_EPS__/$dyn_eps/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_c.yaml
+    sed -i "s/__DYN_SEP__/$sep_a/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_c.yaml
+    sed -i "s/__DYN_TAR__/$tar_b/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_c.yaml
 
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 mpc1 mpc1_dyn_a "dyn-n_${dyn_n}_dyn_eps-${dyn_eps}_sep-${sep_a}" &
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 mpc1 mpc1_dyn_b "dyn-n_${dyn_n}_dyn_eps-${dyn_eps}_sep-${sep_b}" &
+    cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_d.yaml
+    sed -i "s/__DYN_N__/$dyn_n/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_d.yaml
+    sed -i "s/__DYN_EPS__/$dyn_eps/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_d.yaml
+    sed -i "s/__DYN_SEP__/$sep_b/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_d.yaml
+    sed -i "s/__DYN_TAR__/$tar_b/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_d.yaml
+
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 mpc1 mpc1_dyn_a "dyn-n_${dyn_n}_dyn_eps-${dyn_eps}_sep-${sep_a}" &
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 mpc1 mpc1_dyn_b "dyn-n_${dyn_n}_dyn_eps-${dyn_eps}_sep-${sep_b}" &
+
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 mpc1 mpc1_dyn_a "dyn-n_${dyn_n}_dyn_eps-${dyn_eps}_sep-${sep_a}_tar-${tar_a}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 mpc1 mpc1_dyn_b "dyn-n_${dyn_n}_dyn_eps-${dyn_eps}_sep-${sep_b}_tar-${tar_a}" &
+    sleep 30 # delay compilation by 30 seconds in second two docker containers
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 mpc1 mpc1_dyn_c "dyn-n_${dyn_n}_dyn_eps-${dyn_eps}_sep-${sep_a}_tar-${tar_b}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 mpc1 mpc1_dyn_d "dyn-n_${dyn_n}_dyn_eps-${dyn_eps}_sep-${sep_b}_tar-${tar_b}" &
     wait
 
     rm -rf rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
     rm -rf rotors_gazebo/resource/crazyflie2_mpc1_dyn_b.yaml
+    rm -rf rotors_gazebo/resource/crazyflie2_mpc1_dyn_c.yaml
+    rm -rf rotors_gazebo/resource/crazyflie2_mpc1_dyn_d.yaml
   done
 done
 

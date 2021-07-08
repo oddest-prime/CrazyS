@@ -48,8 +48,10 @@ do
   for j in `seq 1 15` # dyn_eps
   do
     dyn_n="$i"
-    dyn_eps_a="0.08"
-    dyn_eps_b="0.12"
+    dyn_eps_a="0.06"
+    dyn_eps_b="0.08"
+    dyn_eps_c="0.12"
+    dyn_eps_d="0.15"
     dyn_scale=`echo "scale=2;$j * 3 / 1000 / $i" | bc | awk '{printf "%.2f", $0}'`
     echo "i = $i, j = $j, dyn_n = $dyn_n, dyn_eps_a = $dyn_eps_a, dyn_eps_b = $dyn_eps_b, dyn_scale = $dyn_scale"
 
@@ -61,21 +63,34 @@ do
     sed -i "s/__DYN_EPS__/$dyn_eps_b/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_b.yaml
     sed -i "s/__DYN_SCALE__/$dyn_scale/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_b.yaml
 
+    cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_c.yaml
+    sed -i "s/__DYN_EPS__/$dyn_eps_c/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_c.yaml
+    sed -i "s/__DYN_SCALE__/$dyn_scale/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_c.yaml
+
+    cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_d.yaml
+    sed -i "s/__DYN_EPS__/$dyn_eps_c/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_d.yaml
+    sed -i "s/__DYN_SCALE__/$dyn_scale/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_d.yaml
+
 #    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 mpc1 mpc1_dyn_a "dyn-n_${dyn_n}_dyn_eps-${dyn_eps}_sep-${sep_a}" &
 #    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 mpc1 mpc1_dyn_b "dyn-n_${dyn_n}_dyn_eps-${dyn_eps}_sep-${sep_b}" &
 
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradient mpc1_dyn_a "gradient9_dyn_eps-${dyn_eps_a}_scale-${dyn_scale}" &
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradient mpc1_dyn_b "gradient9_dyn_eps-${dyn_eps_b}_scale-${dyn_scale}" &
-    sleep 150 # delay compilation by 150 seconds in second two docker containers
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 gradient mpc1_dyn_a "gradient4_dyn_eps-${dyn_eps_a}_scale-${dyn_scale}" &
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 gradient mpc1_dyn_b "gradient4_dyn_eps-${dyn_eps_b}_scale-${dyn_scale}" &
-    sleep 150 # delay compilation by 150 seconds in second two docker containers
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradient mpc1_dyn_a "gradient9_dyn_eps-${dyn_eps_a}_scale-${dyn_scale}" &
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradient mpc1_dyn_b "gradient9_dyn_eps-${dyn_eps_b}_scale-${dyn_scale}" &
+    #sleep 150 # delay compilation by 150 seconds in second two docker containers
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 gradient mpc1_dyn_a "gradient4_dyn_eps-${dyn_eps_a}_scale-${dyn_scale}" &
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 gradient mpc1_dyn_b "gradient4_dyn_eps-${dyn_eps_b}_scale-${dyn_scale}" &
+    #sleep 150 # delay compilation by 150 seconds in second two docker containers
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 gradient mpc1_dyn_a "gradient2_dyn_eps-${dyn_eps_a}_scale-${dyn_scale}" &
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 gradient mpc1_dyn_b "gradient2_dyn_eps-${dyn_eps_b}_scale-${dyn_scale}" &
+    sleep 120 # delay compilation by 150 seconds in second two docker containers
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 gradient mpc1_dyn_c "gradient2_dyn_eps-${dyn_eps_c}_scale-${dyn_scale}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 gradient mpc1_dyn_d "gradient2_dyn_eps-${dyn_eps_d}_scale-${dyn_scale}" &
     wait
 
     rm -rf rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
     rm -rf rotors_gazebo/resource/crazyflie2_mpc1_dyn_b.yaml
+    rm -rf rotors_gazebo/resource/crazyflie2_mpc1_dyn_c.yaml
+    rm -rf rotors_gazebo/resource/crazyflie2_mpc1_dyn_d.yaml
   done
 done
 

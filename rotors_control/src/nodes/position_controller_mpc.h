@@ -119,6 +119,7 @@ namespace rotors_control {
             float reynolds_target_factor_;
             float reynolds_target_accel_limit_;
             float reynolds_accel_limit_;
+            float gradient_scale_factor_;
 
 
             mav_msgs::EigenTrajectoryPoint target_swarm_;

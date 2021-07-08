@@ -275,6 +275,8 @@ void PositionControllerMpc::InitializeParams() {
     GetRosParameter(pnh, "reynolds/target_accel_limit", (float)0.5, &reynolds_target_accel_limit_);
     GetRosParameter(pnh, "reynolds/accel_limit", (float)0.5, &reynolds_accel_limit_);
 
+    GetRosParameter(pnh, "gradient/scale_factor", (float)0.01, &gradient_scale_factor_);
+
     reynolds_velocity_factor_ *= reynolds_global_factor_;
     reynolds_cohesion_factor_ *= reynolds_global_factor_;
     reynolds_separation_factor_ *= reynolds_global_factor_;
@@ -297,6 +299,7 @@ void PositionControllerMpc::InitializeParams() {
     ROS_INFO_ONCE("  reynolds/target_factor=%f", reynolds_target_factor_);
     ROS_INFO_ONCE("  reynolds/target_accel_limit=%f", reynolds_target_accel_limit_);
     ROS_INFO_ONCE("  reynolds/accel_limit=%f", reynolds_accel_limit_);
+    ROS_INFO_ONCE("  gradient/scale_factor=%f", gradient_scale_factor_);
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
@@ -614,7 +617,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         ROS_INFO("MpcController %d coh x=%f y=%f z=%f w=%f", droneNumber_, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2], mpc_cohesion_weight_);
         ROS_INFO("MpcController %d sep x=%f y=%f z=%f w=%f", droneNumber_, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2], mpc_separation_weight_);
 
-        EigenOdometry gradient_sum = cohesion_sum + separation_sum;
+        EigenOdometry gradient_sum = (cohesion_sum + separation_sum) * gradient_scale_factor_;
         float gradient_abs = norm(gradient_sum); // length of vector
         float dist_limit = eps_move_ * n_move_max_;
         if(gradient_abs > dist_limit) // limit distance for this controller
@@ -628,6 +631,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           gradient_sum.position[1] = 0;
           gradient_sum.position[2] = 0;
         }
+        // gradient_abs = norm(gradient_sum); // length of vector
 
         ROS_INFO("MpcController %d sum x=%f y=%f z=%f l=%f", droneNumber_, gradient_sum.position[0], gradient_sum.position[1], gradient_sum.position[2], gradient_abs);
 

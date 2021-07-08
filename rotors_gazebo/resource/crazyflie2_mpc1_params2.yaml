@@ -9,3 +9,6 @@ mpc1: {
   mpc_separation_weight: 6.0,
   mpc_target_weight: 50.0
   }
+gradient: {
+  scale_factor: 0.02
+  }

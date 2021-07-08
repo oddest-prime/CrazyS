@@ -3,9 +3,17 @@ swarm: {
   neighbourhood_distance: 99.00, # global neighbourhood
   }
 mpc1: {
-  eps_move: __DYN_EPS__,
-  n_move_max: __DYN_N__,
+  eps_move: __DYN_EPS__, # 0.12 - 0.06,
+  n_move_max: 2, # 4,
   mpc_cohesion_weight: 20.0,
-  mpc_separation_weight: __DYN_SEP__, # 6.0
-  mpc_target_weight: __DYN_TAR__ # 50.0
+  mpc_separation_weight: 6.0,
+  mpc_target_weight: 50.0
+#  eps_move: __DYN_EPS__,
+#  n_move_max: __DYN_N__,
+#  mpc_cohesion_weight: 20.0,
+#  mpc_separation_weight: __DYN_SEP__, # 6.0
+#  mpc_target_weight: __DYN_TAR__ # 50.0
+  }
+gradient: {
+  scale_factor: __DYN_SCALE__
   }

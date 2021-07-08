@@ -38,6 +38,8 @@
     <param name="spacingZ" value="0.0"/>
     <param name="offsetX" value="-1.0"/>
     <param name="offsetY" value="0.0"/>
+    <param name="offsetZ" value="0.0"/>
+    <param name="randNoise" value="0.0"/>
     <param name="swarmMode" value="$(arg swarm_mode)"/>
   </node>
 

@@ -23,6 +23,8 @@
 #include <thread>
 #include <chrono>
 #include <string>
+#include <cstdlib>
+#include <ctime>
 
 #include <Eigen/Geometry>
 #include <mav_msgs/conversions.h>
@@ -39,8 +41,9 @@
 #define SWARM_DISABLED            0
 #define SWARM_DECLARATIVE_SIMPLE  1
 #define SWARM_REYNOLDS            2
-#define SWARM_REYNOLDS_LIMITED    3
-#define SWARM_REYNOLDS_VELOCITY   4
+#define SWARM_REYNOLDS_LIMITED    4
+#define SWARM_REYNOLDS_VELOCITY   8
+#define SWARM_GRADIENT            16
 #define SWARM_PHASE_ESTABLISHED   64
 
 
@@ -71,6 +74,8 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "global_controller");
 
   ROS_INFO("global_controller: Started.");
+
+  srand((unsigned) (time(0)));
 
   ros::V_string args;
   ros::removeROSArgs(argc, argv, args);
@@ -118,6 +123,12 @@ int main(int argc, char** argv) {
   else
     ROS_INFO("global_controller: Failed to get param 'offsetZ', using default: %f", offsetZ);
 
+  float randNoise = 0.3;
+  if (pnh.getParam("randNoise", randNoise))
+    ROS_INFO("global_controller: Got param 'randNoise': %f", randNoise);
+  else
+    ROS_INFO("global_controller: Failed to get param 'randNoise', using default: %f", randNoise);
+
   int swarm_mode = SWARM_DISABLED;
   std::string swarmMode;
   if (pnh.getParam("swarmMode", swarmMode))
@@ -143,6 +154,11 @@ int main(int argc, char** argv) {
   {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_REYNOLDS_VELOCITY");
     swarm_mode = SWARM_REYNOLDS_VELOCITY;
+  }
+  if(swarmMode == "gradient")
+  {
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_GRADIENT");
+    swarm_mode = SWARM_GRADIENT;
   }
 
   std::vector<WaypointWithTime> waypoints;
@@ -222,9 +238,9 @@ int main(int argc, char** argv) {
   {
     trajectory_msg.header.stamp = ros::Time::now();
 
-    desired_position(0) = ((float)(i%modulus)) * spacingX + offsetX; // * 0.5;
-    desired_position(1) = floor((float)(i/modulus)) * spacingY + offsetY; // * 0.5;
-    desired_position(2) = 1.4 + ((float)(i%2)) * spacingZ + offsetZ; //* 0.2;
+    desired_position(0) = ((float)(i%modulus)) * spacingX + offsetX +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); // * 0.5;
+    desired_position(1) = floor((float)(i/modulus)) * spacingY + offsetY +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); // * 0.5;
+    desired_position(2) = 1.4 + ((float)(i%2)) * spacingZ + offsetZ +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); //* 0.2;
     desired_yaw = 0; // not rotated
 //    desired_yaw = ((float)(i%2)) * (3.141592 / 4); // 45 degrees rotated
 //    desired_yaw = ((float)(i%2)) * (3.141592 / 2); // 90 degrees rotated

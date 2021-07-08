@@ -604,20 +604,38 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
             cohesion_sum = cohesion_sum + dronestate[i].odometry_;
             separation_sum = separation_sum + (dronestate[i].odometry_ - odometry_) / pow(norm_squared(dronestate[i].odometry_ - odometry_),2);
 
+            ROS_INFO("MpcController %d %d odo x=%f y=%f z=%f", droneNumber_, (int)i, odometry_.position[0], odometry_.position[1], odometry_.position[2]);
             ROS_INFO("MpcController %d %d coh x=%f y=%f z=%f", droneNumber_, (int)i, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2]);
             ROS_INFO("MpcController %d %d sep x=%f y=%f z=%f", droneNumber_, (int)i, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2]);
         }
         cohesion_sum = (odometry_ - cohesion_sum / neighbourhood_cnt) * 2*mpc_cohesion_weight_;
         separation_sum = (separation_sum / neighbourhood_cnt) * 2*mpc_separation_weight_;
 
-        ROS_INFO("MpcController %d coh x=%f y=%f z=%f", droneNumber_, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2]);
-        ROS_INFO("MpcController %d sep x=%f y=%f z=%f", droneNumber_, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2]);
+        ROS_INFO("MpcController %d coh x=%f y=%f z=%f w=%f", droneNumber_, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2], mpc_cohesion_weight_);
+        ROS_INFO("MpcController %d sep x=%f y=%f z=%f w=%f", droneNumber_, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2], mpc_separation_weight_);
+
+        EigenOdometry gradient_sum = cohesion_sum + separation_sum;
+        float gradient_abs = norm(gradient_sum); // length of vector
+        float dist_limit = eps_move_ * n_move_max_;
+        if(gradient_abs > dist_limit) // limit distance for this controller
+          dist_limit = dist_limit / gradient_abs;
+        else
+          dist_limit = 1;
+        gradient_sum = gradient_sum * dist_limit; // rescale vector
+        if(gradient_abs < eps_move_ * n_move_max_) // stepped function around 0
+        {
+          gradient_sum.position[0] = 0;
+          gradient_sum.position[1] = 0;
+          gradient_sum.position[2] = 0;
+        }
+
+        ROS_INFO("MpcController %d sum x=%f y=%f z=%f l=%f", droneNumber_, gradient_sum.position[0], gradient_sum.position[1], gradient_sum.position[2], gradient_abs);
 
         mav_msgs::EigenTrajectoryPoint new_setpoint;
         new_setpoint.position_W = odometry_.position;
-        new_setpoint.position_W[0] += 0;
-        new_setpoint.position_W[1] += 0;
-        new_setpoint.position_W[2] += 0;
+        new_setpoint.position_W[0] -= gradient_sum.position[0];
+        new_setpoint.position_W[1] -= gradient_sum.position[1];
+        new_setpoint.position_W[2] -= gradient_sum.position[2];
         position_controller_.SetTrajectoryPoint(new_setpoint);
     }
     // ################################################################################
@@ -916,18 +934,18 @@ EigenOdometry SumVelocity(EigenOdometry* a, EigenOdometry* b)
 EigenOdometry operator*(const EigenOdometry& a, const float& b)
 {
     EigenOdometry r;
-    r.velocity[0] = a.velocity[0] * b;
-    r.velocity[1] = a.velocity[1] * b;
-    r.velocity[2] = a.velocity[2] * b;
+    r.position[0] = a.position[0] * b;
+    r.position[1] = a.position[1] * b;
+    r.position[2] = a.position[2] * b;
     return r;
 }
 
 EigenOdometry operator/(const EigenOdometry& a, const float& b)
 {
     EigenOdometry r;
-    r.velocity[0] = a.velocity[0] / b;
-    r.velocity[1] = a.velocity[1] / b;
-    r.velocity[2] = a.velocity[2] / b;
+    r.position[0] = a.position[0] / b;
+    r.position[1] = a.position[1] / b;
+    r.position[2] = a.position[2] / b;
     return r;
 }
 

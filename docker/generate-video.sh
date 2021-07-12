@@ -4,6 +4,16 @@ date_hash="$1"
 
 rm /tmp/info.png -rf
 convert -page 3440x2160+150+100 -pointsize 50 -font Courier text:/tmp/video.info /tmp/info.png
+if test -e /tmp/info-0.png
+then
+  rm /tmp/info-*.png -rf
+  convert -page 3440x2160+150+100 -pointsize 40 -font Courier text:/tmp/video.info /tmp/info.png
+  if test -e /tmp/info-0.png
+  then
+    rm /tmp/info-*.png -rf
+    convert -page 3440x2160+150+100 -pointsize 30 -font Courier text:/tmp/video.info /tmp/info.png
+  fi
+fi
 
 ffmpeg -r 15 -pattern_type glob -i "/tmp/cam1/default_camera1_link_*.jpg" -c:v libx264 /tmp/my_cam1.mp4
 ffmpeg -r 15 -pattern_type glob -i "/tmp/cam2/default_camera2_link_*.jpg" -c:v libx264 /tmp/my_cam2.mp4

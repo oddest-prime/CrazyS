@@ -131,6 +131,7 @@ namespace rotors_control {
             void YawController(double* r_command);
             void XYController(double* theta_command, double* phi_command);
             void XYControllerMpc(double* theta_command, double* phi_command);
+            void XYControllerExplicit(double* theta_command, double* phi_command);
             void ControlMixer(double* PWM_1, double* PWM_2, double* PWM_3, double* PWM_4);
             void Quaternion2Euler(double* roll, double* pitch, double* yaw) const;
 

@@ -335,11 +335,11 @@ void PositionControllerMpc::InitializeParams() {
         ROS_INFO("Got param 'csvFilesStoring': %s", dataStoringActive.c_str());
 
         position_controller_.dataStoring_active_ = false;
-        if(dataStoringActive == "true")
+        if(dataStoringActive == "yes")
             position_controller_.dataStoring_active_ = true;
 
         dataStoring_active_ = true;
-        if(dataStoringActive == "true" || dataStoringActive == "distance")
+        if(dataStoringActive == "yes" || dataStoringActive == "distance")
             dataStoring_active_ = true;
     }
     else
@@ -432,7 +432,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
               dist_min = min(dist, dist_min);
               if(dataStoring_active_) // save distance to log file for current position
                   tempDistance << dist << ",";
-              ROS_INFO("MpcController %d distance to %d l=%f", droneNumber_, (int)i, dist);
+              ROS_INFO_ONCE("MpcController %d distance to %d l=%f", droneNumber_, (int)i, dist);
           }
       }
       swarm_center.position[0] /= (float)droneCount_;
@@ -634,13 +634,14 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         }
         // gradient_abs = norm(gradient_sum); // length of vector
 
-        ROS_INFO("MpcController %d sum x=%f y=%f z=%f l=%f", droneNumber_, gradient_sum.position[0], gradient_sum.position[1], gradient_sum.position[2], gradient_abs);
+        ROS_INFO_ONCE("MpcController %d sum x=%f y=%f z=%f l=%f", droneNumber_, gradient_sum.position[0], gradient_sum.position[1], gradient_sum.position[2], gradient_abs);
 
         mav_msgs::EigenTrajectoryPoint new_setpoint;
         new_setpoint.position_W = odometry_.position;
-        new_setpoint.position_W[0] -= gradient_sum.position[0];
+/*        new_setpoint.position_W[0] -= gradient_sum.position[0];
         new_setpoint.position_W[1] -= gradient_sum.position[1];
-        new_setpoint.position_W[2] -= gradient_sum.position[2];
+        new_setpoint.position_W[2] -= gradient_sum.position[2];*/
+        new_setpoint.position_W[0] += 0.1;
         position_controller_.SetTrajectoryPoint(new_setpoint);
     }
     // ################################################################################
@@ -789,7 +790,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
             if(i == droneNumber_) // skip for own quadcopter
               continue;
 
-            ROS_INFO("MpcController %d (i=%d) vel x=%f y=%f z=%f", droneNumber_, (int)i, dronestate[i].odometry_.velocity[0], dronestate[i].odometry_.velocity[1], dronestate[i].odometry_.velocity[2]);
+            ROS_INFO_ONCE("MpcController %d (i=%d) vel x=%f y=%f z=%f", droneNumber_, (int)i, dronestate[i].odometry_.velocity[0], dronestate[i].odometry_.velocity[1], dronestate[i].odometry_.velocity[2]);
         }
 
         mav_msgs::EigenTrajectoryPoint new_setpoint;

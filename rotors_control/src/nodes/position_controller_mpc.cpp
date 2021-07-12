@@ -626,7 +626,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         else
           dist_limit = 1;
         gradient_sum = gradient_sum * dist_limit; // rescale vector
-        if(gradient_abs < eps_move_ * n_move_max_) // stepped function around 0
+        if(gradient_abs < eps_move_) // stepped function around 0
         {
           gradient_sum.position[0] = 0;
           gradient_sum.position[1] = 0;

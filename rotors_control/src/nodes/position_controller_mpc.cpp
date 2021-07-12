@@ -432,6 +432,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
               dist_min = min(dist, dist_min);
               if(dataStoring_active_) // save distance to log file for current position
                   tempDistance << dist << ",";
+              ROS_INFO("MpcController %d distance to %d l=%f", droneNumber_, (int)i, dist);
           }
       }
       swarm_center.position[0] /= (float)droneCount_;
@@ -607,15 +608,15 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
             cohesion_sum = cohesion_sum + dronestate[i].odometry_;
             separation_sum = separation_sum + (dronestate[i].odometry_ - odometry_) / pow(norm_squared(dronestate[i].odometry_ - odometry_),2);
 
-            ROS_INFO("MpcController %d %d odo x=%f y=%f z=%f", droneNumber_, (int)i, odometry_.position[0], odometry_.position[1], odometry_.position[2]);
-            ROS_INFO("MpcController %d %d coh x=%f y=%f z=%f", droneNumber_, (int)i, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2]);
-            ROS_INFO("MpcController %d %d sep x=%f y=%f z=%f", droneNumber_, (int)i, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2]);
+            ROS_INFO_ONCE("MpcController %d %d odo x=%f y=%f z=%f", droneNumber_, (int)i, odometry_.position[0], odometry_.position[1], odometry_.position[2]);
+            ROS_INFO_ONCE("MpcController %d %d coh x=%f y=%f z=%f", droneNumber_, (int)i, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2]);
+            ROS_INFO_ONCE("MpcController %d %d sep x=%f y=%f z=%f", droneNumber_, (int)i, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2]);
         }
         cohesion_sum = (odometry_ - cohesion_sum / neighbourhood_cnt) * 2*mpc_cohesion_weight_;
         separation_sum = (separation_sum / neighbourhood_cnt) * 2*mpc_separation_weight_;
 
-        ROS_INFO("MpcController %d coh x=%f y=%f z=%f w=%f", droneNumber_, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2], mpc_cohesion_weight_);
-        ROS_INFO("MpcController %d sep x=%f y=%f z=%f w=%f", droneNumber_, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2], mpc_separation_weight_);
+        ROS_INFO_ONCE("MpcController %d coh x=%f y=%f z=%f w=%f", droneNumber_, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2], mpc_cohesion_weight_);
+        ROS_INFO_ONCE("MpcController %d sep x=%f y=%f z=%f w=%f", droneNumber_, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2], mpc_separation_weight_);
 
         EigenOdometry gradient_sum = (cohesion_sum + separation_sum) * gradient_scale_factor_;
         float gradient_abs = norm(gradient_sum); // length of vector

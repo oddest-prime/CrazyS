@@ -435,9 +435,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
               ROS_INFO_ONCE("MpcController %d distance to %d l=%f", droneNumber_, (int)i, dist);
           }
       }
-      swarm_center.position[0] /= (float)droneCount_;
-      swarm_center.position[1] /= (float)droneCount_;
-      swarm_center.position[2] /= (float)droneCount_;
+      swarm_center = swarm_center / (float)droneCount_;
       ROS_INFO_ONCE("MpcController %d swarm center x=%f y=%f z=%f", droneNumber_, swarm_center.position[0], swarm_center.position[1], swarm_center.position[2]);
 
       if(dataStoring_active_) // save minimum distance to log file for current position
@@ -598,8 +596,14 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
     {
         ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_GRADIENT)");
 
+        EigenOdometry target_swarm;
+        target_swarm.position[0] = target_swarm_.position_W[0];
+        target_swarm.position[1] = target_swarm_.position_W[1];
+        target_swarm.position[2] = target_swarm_.position_W[2];
+
         EigenOdometry cohesion_sum;
         EigenOdometry separation_sum;
+        EigenOdometry target_sum;
         for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
         {
             if(neighbourhood_bool[i] == false) // skip for non-neighbourhood
@@ -614,11 +618,14 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         }
         cohesion_sum = (odometry_ - cohesion_sum / neighbourhood_cnt) * 2*mpc_cohesion_weight_;
         separation_sum = (separation_sum / neighbourhood_cnt) * 2*mpc_separation_weight_;
+        target_sum = (swarm_center - target_swarm) * (2*mpc_target_weight_ / (neighbourhood_cnt + 1));
 
         ROS_INFO_ONCE("MpcController %d coh x=%f y=%f z=%f w=%f", droneNumber_, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2], mpc_cohesion_weight_);
         ROS_INFO_ONCE("MpcController %d sep x=%f y=%f z=%f w=%f", droneNumber_, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2], mpc_separation_weight_);
+        ROS_INFO("MpcController %d tar x=%f y=%f z=%f w=%f", droneNumber_, target_sum.position[0], target_sum.position[1], target_sum.position[2], mpc_target_weight_);
+        ROS_INFO("MpcController %d target_swarm x=%f y=%f z=%f", droneNumber_, target_swarm.position[0], target_swarm.position[1], target_swarm.position[2]);
 
-        EigenOdometry gradient_sum = (cohesion_sum + separation_sum) * gradient_scale_factor_;
+        EigenOdometry gradient_sum = (cohesion_sum + separation_sum + target_sum) * gradient_scale_factor_;
         float gradient_abs = norm(gradient_sum); // length of vector
         float dist_limit = eps_move_ * n_move_max_;
         if(gradient_abs > dist_limit) // limit distance for this controller
@@ -638,10 +645,10 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
         mav_msgs::EigenTrajectoryPoint new_setpoint;
         new_setpoint.position_W = odometry_.position;
-/*        new_setpoint.position_W[0] -= gradient_sum.position[0];
+        new_setpoint.position_W[0] -= gradient_sum.position[0];
         new_setpoint.position_W[1] -= gradient_sum.position[1];
-        new_setpoint.position_W[2] -= gradient_sum.position[2];*/
-        new_setpoint.position_W[0] += 0.1;
+        new_setpoint.position_W[2] -= gradient_sum.position[2];
+        // new_setpoint.position_W[0] += 0.1; // Debug: testing innner loop controller
         position_controller_.SetTrajectoryPoint(new_setpoint);
     }
     // ################################################################################

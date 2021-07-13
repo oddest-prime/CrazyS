@@ -618,7 +618,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         }
         cohesion_sum = (odometry_ - cohesion_sum / neighbourhood_cnt) * 2*mpc_cohesion_weight_;
         separation_sum = (separation_sum / neighbourhood_cnt) * 2*mpc_separation_weight_;
-        target_sum = (swarm_center - target_swarm) * (2*mpc_target_weight_ / (neighbourhood_cnt + 1));
+        target_sum = (swarm_center - target_swarm) * (2*mpc_target_weight_ / (droneCount_));
 
         ROS_INFO_ONCE("MpcController %d coh x=%f y=%f z=%f w=%f", droneNumber_, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2], mpc_cohesion_weight_);
         ROS_INFO_ONCE("MpcController %d sep x=%f y=%f z=%f w=%f", droneNumber_, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2], mpc_separation_weight_);

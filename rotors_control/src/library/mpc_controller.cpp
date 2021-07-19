@@ -754,10 +754,30 @@ void MpcController::SetOdometryWithoutStateEstimator(const EigenOdometry& odomet
 
     if(dataStoring_active_){
 
+      // Velocity along x,y,z-axis from body to inertial frame
+      double roll, pitch, yaw;
+      Quaternion2Euler(&roll, &pitch, &yaw);
+      // taken from: https://math.stackexchange.com/questions/2796055/3d-coordinate-rotation-using-roll-pitch-yaw
+      // Needed because both angular and linear velocities are expressed in the aircraft body frame
+      double dot_x =  cos(pitch)*cos(yaw)*state_.linearVelocity.x +
+                      (sin(roll)*sin(pitch)*cos(yaw) - cos(roll)*sin(yaw))*state_.linearVelocity.y +
+                      (cos(roll)*sin(pitch)*cos(yaw) + sin(roll)*sin(yaw))*state_.linearVelocity.z;
+      double dot_y =  cos(pitch)*sin(yaw)*state_.linearVelocity.x +
+                      (sin(roll)*sin(pitch)*sin(yaw) + cos(roll)*cos(yaw))*state_.linearVelocity.y +
+                      (cos(roll)*sin(pitch)*sin(yaw) - sin(roll)*cos(yaw))*state_.linearVelocity.z;
+      double dot_z =  -sin(pitch)*state_.linearVelocity.x +
+                      sin(roll)*cos(pitch)*state_.linearVelocity.y +
+  	                  cos(roll)*cos(pitch)*state_.linearVelocity.z;
+
+  // Roll = phi
+  // Pitch = theta
+  // Yaw = psi
+
       // Saving drone Position in a file
       std::stringstream tempDronePosition;
       tempDronePosition << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ","
-              << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
+                        << dot_x << "," << dot_y << "," << dot_z << ","
+                      << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
 
       listDronePosition_.push_back(tempDronePosition.str());
     }

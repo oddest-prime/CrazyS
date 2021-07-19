@@ -122,10 +122,13 @@ DronePosition.png: DronePosition0.csv
 		set xlabel \"Time [s]\" \n\
 		 \n\
 		set output \"$@\" \n\
-		set ylabel \"DronePosition (given by ground-truth odometry)\" \n\
-		plot     \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'X-Pos', \
-			 \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'Y-Pos', \
-			 \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'Z-Pos'" \
+		set ylabel \"DronePosition and Velocity (given by ground-truth odometry)\" \n\
+		plot     \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):1 with lines title 'X-Pos', \
+						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):2 with lines title 'Y-Pos', \
+						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):3 with lines title 'Z-Pos', \
+ 						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):4 with lines title 'X-Velocity', \
+						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):5 with lines title 'Y-Velocity', \
+ 						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):6 with lines title 'Z-Velocity'" \
 	 | gnuplot
 
 DronePositionTrajectory.png: DronePosition0.csv Trajectory0.csv
@@ -138,9 +141,9 @@ DronePositionTrajectory.png: DronePosition0.csv Trajectory0.csv
 		 \n\
 		set output \"$@\" \n\
 		set ylabel \"DronePosition (given by ground-truth odometry) and Trajectory (set-point commands)\" \n\
-		plot     \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'X-Pos', \
-			 \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'Y-Pos', \
-			 \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'Z-Pos', \
+		plot     \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):1 with lines title 'X-Pos', \
+			 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):2 with lines title 'Y-Pos', \
+			 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):3 with lines title 'Z-Pos', \
 			 \"Trajectory0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'X-command', \
 		 	 \"Trajectory0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'Y-command', \
 		 	 \"Trajectory0.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'Z-command'" \

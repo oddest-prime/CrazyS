@@ -713,6 +713,24 @@ void MpcController::ErrorBodyFrame(double* xe, double* ye) {
     x_error_ = x_r - state_.position.x;
     y_error_ = y_r - state_.position.y;
 
+/*
+    if(odometry_.timeStampSec < 10)
+    {
+      x_error_ = 0;
+      y_error_ = 0;
+    }
+    else if(odometry_.timeStampSec < 20)
+    {
+      x_error_ = 0.5;
+      y_error_ = 0;
+    }
+    else
+    {
+      x_error_ = 0;
+      y_error_ = 0;
+    }
+*/
+
     // The aircraft attitude (estimated or not, it depends by the employed controller)
     double yaw, roll, pitch;
     Quaternion2Euler(&roll, &pitch, &yaw);
@@ -769,11 +787,7 @@ void MpcController::SetOdometryWithoutStateEstimator(const EigenOdometry& odomet
                       sin(roll)*cos(pitch)*state_.linearVelocity.y +
   	                  cos(roll)*cos(pitch)*state_.linearVelocity.z;
 
-  // Roll = phi
-  // Pitch = theta
-  // Yaw = psi
-
-      // Saving drone Position in a file
+      // Saving drone Position and Velocity in a file
       std::stringstream tempDronePosition;
       tempDronePosition << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ","
                         << dot_x << "," << dot_y << "," << dot_z << ","

@@ -120,16 +120,22 @@ DronePosition.png: DronePosition0.csv
 		set term pngcairo size 1024,768 \n\
 		set grid \n\
 		set xlabel \"Time [s]\" \n\
-		 \n\
+ 		set ylabel \"Position $< [m] (given by ground-truth odometry)\" \n\
+		set y2label \"Velocity $< [m/s] (given by ground-truth odometry)\" \n\
+		set xtics nomirror \n\
+		set y2tics nomirror \n\
 		set output \"$@\" \n\
-		set ylabel \"DronePosition and Velocity (given by ground-truth odometry)\" \n\
 		plot     \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):1 with lines title 'X-Pos', \
 						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):2 with lines title 'Y-Pos', \
 						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):3 with lines title 'Z-Pos', \
- 						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):4 with lines title 'X-Velocity', \
-						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):5 with lines title 'Y-Velocity', \
- 						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):6 with lines title 'Z-Velocity'" \
+ 						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):4 with lines title 'X-Velocity' axis x2y2, \
+						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):5 with lines title 'Y-Velocity' axis x2y2, \
+ 						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):6 with lines title 'Z-Velocity' axis x2y2" \
 	 | gnuplot
+#	 set xrange [20:25] \n\
+#	 set x2range [20:25] \n\
+#	 set yrange [7.8:8.6] \n\
+
 
 DronePositionTrajectory.png: DronePosition0.csv Trajectory0.csv
 	echo " \

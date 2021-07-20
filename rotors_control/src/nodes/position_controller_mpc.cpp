@@ -461,7 +461,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
       {
           float dist = dronestate[i].GetDistance(&odometry_);
 
-          if(dist < neighbourhood_distance_ && i != droneNumber_) // global neighbourhood
+          if(dist < neighbourhood_distance_ && i != droneNumber_) // neighbourhood based on distance parameter, skip own quadcopter in any case
           {
               neighbourhood_cnt ++;
               neighbourhood_bool[i] = true;
@@ -477,7 +477,6 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
       {
           ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_DECLARATIVE_SIMPLE)");
 
-          float min_sum = FLT_MAX;
           int min_xi = 0;
           int min_yi = 0;
           int min_zi = 0;
@@ -501,6 +500,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           // float eps_move = 0.07;
           // float eps_move = 0.12;
           // float eps_move = 0.25;
+          float min_sum = FLT_MAX;
           for(int xi = 0-n_move_max_; xi <= n_move_max_; xi ++) // iterate over all possible next actions in x-, y- and z-dimension
           {
               for(int yi = 0-n_move_max_; yi <= n_move_max_; yi ++)
@@ -648,6 +648,107 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         new_setpoint.position_W[0] -= gradient_sum.position[0];
         new_setpoint.position_W[1] -= gradient_sum.position[1];
         new_setpoint.position_W[2] -= gradient_sum.position[2];
+        // new_setpoint.position_W[0] += 0.1; // Debug: testing innner loop controller
+        position_controller_.SetTrajectoryPoint(new_setpoint);
+    }
+    // ################################################################################
+    else if(enable_swarm_ & SWARM_GRADIENT_MPC_LENGTH)
+    {
+        ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_GRADIENT_MPC_LENGTH)");
+
+        EigenOdometry target_swarm;
+        target_swarm.position[0] = target_swarm_.position_W[0];
+        target_swarm.position[1] = target_swarm_.position_W[1];
+        target_swarm.position[2] = target_swarm_.position_W[2];
+
+        EigenOdometry cohesion_sum;
+        EigenOdometry separation_sum;
+        EigenOdometry target_sum;
+        for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+        {
+            if(neighbourhood_bool[i]) // only for non-neighbourhood
+            {
+                cohesion_sum = cohesion_sum + dronestate[i].odometry_;
+                separation_sum = separation_sum + (dronestate[i].odometry_ - odometry_) / pow(norm_squared(dronestate[i].odometry_ - odometry_),2);
+
+                ROS_INFO_ONCE("MpcController %d %d odo x=%f y=%f z=%f", droneNumber_, (int)i, odometry_.position[0], odometry_.position[1], odometry_.position[2]);
+                ROS_INFO_ONCE("MpcController %d %d coh x=%f y=%f z=%f", droneNumber_, (int)i, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2]);
+                ROS_INFO_ONCE("MpcController %d %d sep x=%f y=%f z=%f", droneNumber_, (int)i, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2]);
+            }
+        }
+        cohesion_sum = (odometry_ - cohesion_sum / neighbourhood_cnt) * 2*mpc_cohesion_weight_;
+        separation_sum = (separation_sum / neighbourhood_cnt) * 2*mpc_separation_weight_;
+        target_sum = (swarm_center - target_swarm) * (2*mpc_target_weight_ / (droneCount_));
+
+        EigenOdometry gradient_sum = cohesion_sum + separation_sum + target_sum;
+        float gradient_abs = norm(gradient_sum); // length of vector
+        gradient_sum = gradient_sum / gradient_abs; // normalize length
+
+        // determine lenth of target vector by enumeration
+        float min_sum = FLT_MAX;
+        int min_dist_i = 0;
+        for(int dist_i = 0; dist_i <= n_move_max_; dist_i ++)
+        {
+            float cost_cohesion_sum = 0;
+            float cost_separation_sum = 0;
+            float cost_total_sum = 0;
+            EigenOdometry potential_pos = odometry_ - gradient_sum * ((float)dist_i * (float)eps_move_);
+            EigenOdometry potential_center = potential_pos;
+            for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+            {
+                if(neighbourhood_bool[i]) // only for non-neighbourhood
+                {
+                    float dist = dronestate[i].GetDistance(&potential_pos);
+
+                    cost_cohesion_sum += dist*dist;
+                    cost_separation_sum += 1.0/(dist*dist);
+
+                    potential_center.position[0] += dronestate[i].odometry_.position[0];
+                    potential_center.position[1] += dronestate[i].odometry_.position[1];
+                    potential_center.position[2] += dronestate[i].odometry_.position[2];
+                }
+            }
+            potential_center.position[0] /= ((float)neighbourhood_cnt + 1);
+            potential_center.position[1] /= ((float)neighbourhood_cnt + 1);
+            potential_center.position[2] /= ((float)neighbourhood_cnt + 1);
+
+            if(neighbourhood_cnt > 0)
+            {
+                cost_total_sum += mpc_cohesion_weight_ * cost_cohesion_sum / ((float)neighbourhood_cnt); // coehesion term
+                cost_total_sum += mpc_separation_weight_ * cost_separation_sum / ((float)neighbourhood_cnt); // separation term
+            }
+            // target direction term for centroid
+            if(target_swarm_.position_W[2] != 0) // target point is available (z != 0)
+            {
+                float target_distance_x = fabs(target_swarm_.position_W[0] - potential_center.position[0]);
+                float target_distance_y = fabs(target_swarm_.position_W[1] - potential_center.position[1]);
+                float target_distance_z = fabs(target_swarm_.position_W[2] - potential_center.position[2]);
+                cost_total_sum += mpc_target_weight_*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
+                ROS_INFO_ONCE("MpcController %d pot. center  x=%f y=%f z=%f (div %f)", droneNumber_, potential_center.position[0], potential_center.position[1], potential_center.position[2], ((float)neighbourhood_cnt + 1));
+                ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
+            }
+
+            ROS_INFO("MpcController %d i=%d coh=%f sep=%f total=%f", droneNumber_, dist_i, cost_cohesion_sum, cost_separation_sum, cost_total_sum);
+
+            if(cost_total_sum < min_sum)
+            {
+                min_sum = cost_total_sum;
+                min_dist_i = dist_i;
+            }
+        }
+        ROS_INFO("MpcController %d min_dist_i=%d", droneNumber_, min_dist_i);
+
+        ROS_INFO_ONCE("MpcController %d coh x=%f y=%f z=%f w=%f", droneNumber_, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2], mpc_cohesion_weight_);
+        ROS_INFO_ONCE("MpcController %d sep x=%f y=%f z=%f w=%f", droneNumber_, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2], mpc_separation_weight_);
+        ROS_INFO_ONCE("MpcController %d tar x=%f y=%f z=%f w=%f", droneNumber_, target_sum.position[0], target_sum.position[1], target_sum.position[2], mpc_target_weight_);
+        ROS_INFO_ONCE("MpcController %d target_swarm x=%f y=%f z=%f", droneNumber_, target_swarm.position[0], target_swarm.position[1], target_swarm.position[2]);
+        ROS_INFO_ONCE("MpcController %d sum x=%f y=%f z=%f l=%f", droneNumber_, gradient_sum.position[0], gradient_sum.position[1], gradient_sum.position[2], gradient_abs);
+
+        mav_msgs::EigenTrajectoryPoint new_setpoint;
+        new_setpoint.position_W = odometry_.position;
+        new_setpoint.position_W[0] -= gradient_sum.position[0] * ((float)min_dist_i * (float)eps_move_);
+        new_setpoint.position_W[1] -= gradient_sum.position[1] * ((float)min_dist_i * (float)eps_move_);
+        new_setpoint.position_W[2] -= gradient_sum.position[2] * ((float)min_dist_i * (float)eps_move_);
         // new_setpoint.position_W[0] += 0.1; // Debug: testing innner loop controller
         position_controller_.SetTrajectoryPoint(new_setpoint);
     }

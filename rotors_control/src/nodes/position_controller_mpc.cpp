@@ -652,9 +652,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         position_controller_.SetTrajectoryPoint(new_setpoint);
     }
     // ################################################################################
-    else if(enable_swarm_ & SWARM_GRADIENT_MPC_LENGTH)
+    else if(enable_swarm_ & SWARM_GRADIENT_ENUM)
     {
-        ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_GRADIENT_MPC_LENGTH)");
+        ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_GRADIENT_ENUM)");
 
         EigenOdometry target_swarm;
         target_swarm.position[0] = target_swarm_.position_W[0];
@@ -728,7 +728,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                 ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
             }
 
-            ROS_INFO("MpcController %d i=%d coh=%f sep=%f total=%f", droneNumber_, dist_i, cost_cohesion_sum, cost_separation_sum, cost_total_sum);
+            ROS_INFO_ONCE("MpcController %d i=%d coh=%f sep=%f total=%f", droneNumber_, dist_i, cost_cohesion_sum, cost_separation_sum, cost_total_sum);
 
             if(cost_total_sum < min_sum)
             {
@@ -736,7 +736,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                 min_dist_i = dist_i;
             }
         }
-        ROS_INFO("MpcController %d min_dist_i=%d", droneNumber_, min_dist_i);
+        ROS_INFO_ONCE("MpcController %d min_dist_i=%d", droneNumber_, min_dist_i);
+        if(min_dist_i == 1)
+            min_dist_i = 0;
 
         ROS_INFO_ONCE("MpcController %d coh x=%f y=%f z=%f w=%f", droneNumber_, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2], mpc_cohesion_weight_);
         ROS_INFO_ONCE("MpcController %d sep x=%f y=%f z=%f w=%f", droneNumber_, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2], mpc_separation_weight_);

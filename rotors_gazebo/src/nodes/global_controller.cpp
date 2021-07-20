@@ -44,7 +44,7 @@
 #define SWARM_REYNOLDS_LIMITED    4
 #define SWARM_REYNOLDS_VELOCITY   8
 #define SWARM_GRADIENT            16
-#define SWARM_GRADIENT_MPC_LENGTH 32
+#define SWARM_GRADIENT_ENUM       32
 #define SWARM_PHASE_ESTABLISHED   64
 
 
@@ -161,10 +161,10 @@ int main(int argc, char** argv) {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_GRADIENT");
     swarm_mode = SWARM_GRADIENT;
   }
-  if(swarmMode == "gradmpc")
+  if(swarmMode == "gradenum")
   {
-    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_GRADIENT_MPC_LENGTH");
-    swarm_mode = SWARM_GRADIENT_MPC_LENGTH;
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_GRADIENT_ENUM");
+    swarm_mode = SWARM_GRADIENT_ENUM;
   }
 
   std::vector<WaypointWithTime> waypoints;

@@ -51,7 +51,7 @@
 #define SWARM_REYNOLDS_LIMITED    4
 #define SWARM_REYNOLDS_VELOCITY   8
 #define SWARM_GRADIENT            16
-#define SWARM_GRADIENT_MPC_LENGTH 32
+#define SWARM_GRADIENT_ENUM       32
 #define SWARM_PHASE_ESTABLISHED   64
 
 namespace rotors_control {

@@ -10,11 +10,11 @@ cd ~/SWARM/crazys
 # check gradient based version with variable distance
 for j in 1 2 3 4 5 6
 do
-  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradmpc mpc1_params$j "gradmpc9_params$j" &
-  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradmpc mpc1_params$j "gradmpc15_params$j" &
+  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradenum mpc1_params$j "gradenum9_params$j" &
+  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradenum mpc1_params$j "gradenum15_params$j" &
   sleep 150 # delay compilation by 150 seconds in second two docker containers
-  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 gradmpc mpc1_params$j "gradmpc2_params$j" &
-  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 gradmpc mpc1_params$j "gradmpc4_params$j" &
+  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 gradenum mpc1_params$j "gradenum2_params$j" &
+  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 gradenum mpc1_params$j "gradenum4_params$j" &
   wait
 done
 exit 0;

@@ -308,6 +308,8 @@ void PositionControllerMpc::InitializeParams() {
     double dataStoringTime;
     std::string user;
 
+    neighbourhood_cnt_ = -1;
+
     if (pnh.getParam("user_account", user)){
     ROS_INFO("Got param 'user_account': %s", user.c_str());
     position_controller_.user_ = user;
@@ -470,7 +472,11 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
               neighbourhood_bool[i] = false;
       }
 
-
+      if(neighbourhood_cnt_ != neighbourhood_cnt)
+      {
+          neighbourhood_cnt_ = neighbourhood_cnt;
+          ROS_INFO("MpcController %d droneCount=%d neighbourhood_cnt=%d", droneNumber_, droneCount_, neighbourhood_cnt);
+      }
 
       // ################################################################################
       if(enable_swarm_ & SWARM_DECLARATIVE_SIMPLE)
@@ -664,21 +670,28 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         EigenOdometry cohesion_sum;
         EigenOdometry separation_sum;
         EigenOdometry target_sum;
+        EigenOdometry neighbourhood_center = odometry_;
         for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
         {
-            if(neighbourhood_bool[i]) // only for non-neighbourhood
+            if(neighbourhood_bool[i]) // only for neighbourhood
             {
                 cohesion_sum = cohesion_sum + dronestate[i].odometry_;
                 separation_sum = separation_sum + (dronestate[i].odometry_ - odometry_) / pow(norm_squared(dronestate[i].odometry_ - odometry_),2);
+                neighbourhood_center = neighbourhood_center + dronestate[i].odometry_;
 
                 ROS_INFO_ONCE("MpcController %d %d odo x=%f y=%f z=%f", droneNumber_, (int)i, odometry_.position[0], odometry_.position[1], odometry_.position[2]);
                 ROS_INFO_ONCE("MpcController %d %d coh x=%f y=%f z=%f", droneNumber_, (int)i, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2]);
                 ROS_INFO_ONCE("MpcController %d %d sep x=%f y=%f z=%f", droneNumber_, (int)i, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2]);
             }
         }
-        cohesion_sum = (odometry_ - cohesion_sum / neighbourhood_cnt) * 2*mpc_cohesion_weight_;
-        separation_sum = (separation_sum / neighbourhood_cnt) * 2*mpc_separation_weight_;
-        target_sum = (swarm_center - target_swarm) * (2*mpc_target_weight_ / (droneCount_));
+        neighbourhood_center = neighbourhood_center / ((float)neighbourhood_cnt + 1.0);
+
+        if(neighbourhood_cnt > 0)
+        {
+            cohesion_sum = (odometry_ - cohesion_sum / neighbourhood_cnt) * 2*mpc_cohesion_weight_;
+            separation_sum = (separation_sum / neighbourhood_cnt) * 2*mpc_separation_weight_;
+        }
+        target_sum = (neighbourhood_center - target_swarm) * (2*mpc_target_weight_ / ((float)neighbourhood_cnt + 1.0));
 
         EigenOdometry gradient_sum = cohesion_sum + separation_sum + target_sum;
         float gradient_abs = norm(gradient_sum); // length of vector
@@ -702,15 +715,10 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
                     cost_cohesion_sum += dist*dist;
                     cost_separation_sum += 1.0/(dist*dist);
-
-                    potential_center.position[0] += dronestate[i].odometry_.position[0];
-                    potential_center.position[1] += dronestate[i].odometry_.position[1];
-                    potential_center.position[2] += dronestate[i].odometry_.position[2];
+                    potential_center = potential_center + dronestate[i].odometry_;
                 }
             }
-            potential_center.position[0] /= ((float)neighbourhood_cnt + 1);
-            potential_center.position[1] /= ((float)neighbourhood_cnt + 1);
-            potential_center.position[2] /= ((float)neighbourhood_cnt + 1);
+            potential_center = potential_center / ((float)neighbourhood_cnt + 1.0);
 
             if(neighbourhood_cnt > 0)
             {
@@ -718,16 +726,15 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                 cost_total_sum += mpc_separation_weight_ * cost_separation_sum / ((float)neighbourhood_cnt); // separation term
             }
             // target direction term for centroid
-            if(target_swarm_.position_W[2] != 0) // target point is available (z != 0)
+            if(target_swarm.position[2] != 0) // target point is available (z != 0)
             {
-                float target_distance_x = fabs(target_swarm_.position_W[0] - potential_center.position[0]);
-                float target_distance_y = fabs(target_swarm_.position_W[1] - potential_center.position[1]);
-                float target_distance_z = fabs(target_swarm_.position_W[2] - potential_center.position[2]);
-                cost_total_sum += mpc_target_weight_*(target_distance_x*target_distance_x + target_distance_y*target_distance_y + target_distance_z*target_distance_z);
+                EigenOdometry target_distance = potential_center - target_swarm;
+                cost_total_sum += mpc_target_weight_*(target_distance.position[0]*target_distance.position[0] +
+                                                      target_distance.position[1]*target_distance.position[1] +
+                                                      target_distance.position[2]*target_distance.position[2]);
                 ROS_INFO_ONCE("MpcController %d pot. center  x=%f y=%f z=%f (div %f)", droneNumber_, potential_center.position[0], potential_center.position[1], potential_center.position[2], ((float)neighbourhood_cnt + 1));
-                ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
+                ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm.position[0], target_swarm.position[1], target_swarm.position[2]);
             }
-
             ROS_INFO_ONCE("MpcController %d i=%d coh=%f sep=%f total=%f", droneNumber_, dist_i, cost_cohesion_sum, cost_separation_sum, cost_total_sum);
 
             if(cost_total_sum < min_sum)

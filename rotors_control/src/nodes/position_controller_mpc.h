@@ -101,6 +101,7 @@ namespace rotors_control {
 
             int droneNumber_;
             int droneCount_;
+            int neighbourhood_cnt_;
 
             MpcController position_controller_;
             sensorData_t sensors_;

@@ -478,6 +478,9 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
           ROS_INFO("MpcController %d droneCount=%d neighbourhood_cnt=%d", droneNumber_, droneCount_, neighbourhood_cnt);
       }
 
+      tempMetrics << droneCount_ << ",";
+      tempMetrics << neighbourhood_cnt << ",";
+
       // ################################################################################
       if(enable_swarm_ & SWARM_DECLARATIVE_SIMPLE)
       {

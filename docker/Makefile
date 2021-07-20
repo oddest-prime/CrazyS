@@ -58,10 +58,17 @@ Metrics%.png: Metrics%.csv
 		print sprintf(\"metric: MEDIAN of swarm radius %f\", STATS_median) \n\
 		print sprintf(\"metric: MIN of swarm radius %f\", STATS_min) \n\
 		print sprintf(\"metric: MAX of swarm radius %f\", STATS_max) \n\
+		stats \"$<\" using ((column(3)>64) ? column(7) : NaN) \n\
+		print sprintf(\"metric: MEAN of neighbours count %f\", STATS_mean) \n\
+		print sprintf(\"metric: MEDIAN of neighbours count %f\", STATS_median) \n\
+		print sprintf(\"metric: MIN of neighbours count %f\", STATS_min) \n\
+		print sprintf(\"metric: MAX of neighbours count %f\", STATS_max) \n\
 		set output \"$@\" \n\
 		plot     \"$<\" using (column(1)+column(2)/1000000000):(column(3)/64) with lines title 'enable/established', \
 						 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'dist min', \
-						 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'swarm radius'" \
+						 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'swarm radius', \
+						 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'drone count', \
+						 \"$<\" using (column(1)+column(2)/1000000000):7 with lines title 'neighbours count'" \
 	 | gnuplot
 
 State%.png: State%.csv

@@ -7,7 +7,8 @@ mpc1: {
   n_move_max: 6, # max 10 looks also good,
   mpc_cohesion_weight: 20.0,
   mpc_separation_weight: 6.0,
-  mpc_target_weight: 150.0 # 50.0
+  mpc_target_weight: 150.0, # 50.0
+  mpc_obstacle_weight: 0.5
   }
 gradient: {
   scale_factor: 0.03

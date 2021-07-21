@@ -113,6 +113,7 @@ namespace rotors_control {
             float mpc_cohesion_weight_;
             float mpc_separation_weight_;
             float mpc_target_weight_;
+            float mpc_obstacle_weight_;
             float weighted_delta_t_;
             float reynolds_global_factor_;
             float reynolds_velocity_factor_;

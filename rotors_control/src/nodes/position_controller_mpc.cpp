@@ -265,6 +265,7 @@ void PositionControllerMpc::InitializeParams() {
     GetRosParameter(pnh, "mpc1/mpc_cohesion_weight", (float)1.0, &mpc_cohesion_weight_);
     GetRosParameter(pnh, "mpc1/mpc_separation_weight", (float)1.0, &mpc_separation_weight_);
     GetRosParameter(pnh, "mpc1/mpc_target_weight", (float)1.0, &mpc_target_weight_);
+    GetRosParameter(pnh, "mpc1/mpc_obstacle_weight", (float)1.0, &mpc_obstacle_weight_);
 
     GetRosParameter(pnh, "reynolds/weighted_delta_t", (float)0.5, &weighted_delta_t_);
     GetRosParameter(pnh, "reynolds/global_factor", (float)0.5, &reynolds_global_factor_);
@@ -291,6 +292,7 @@ void PositionControllerMpc::InitializeParams() {
     ROS_INFO_ONCE("  mpc1/mpc_cohesion_weight=%f", mpc_cohesion_weight_);
     ROS_INFO_ONCE("  mpc1/mpc_separation_weight=%f", mpc_separation_weight_);
     ROS_INFO_ONCE("  mpc1/mpc_target_weight=%f", mpc_target_weight_);
+    ROS_INFO_ONCE("  mpc1/mpc_obstacle_weight=%f", mpc_obstacle_weight_);
     ROS_INFO_ONCE("  reynolds/weighted_delta_t=%f", weighted_delta_t_);
     ROS_INFO_ONCE("  reynolds/global_factor=%f", reynolds_global_factor_);
     ROS_INFO_ONCE("  reynolds/velocity_factor=%f", reynolds_velocity_factor_);
@@ -668,7 +670,10 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         EigenOdometry obstacle_position;
         obstacle_position.position[0] = 2.5;
         obstacle_position.position[1] = 2.5;
-        obstacle_position.position[2] = odometry_.position[2];
+
+        obstacle_position.position[0] = 1;
+        obstacle_position.position[1] = 0.1;
+        obstacle_position.position[2] = odometry_.position[2]; // todo, remove fix for infinite z obstacles
         float obstacle_radius = 0.15;
 
         EigenOdometry target_swarm;
@@ -705,7 +710,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
         // todo change for set of obstacles
         float obstacle_dist = norm(odometry_ - obstacle_position);
-        obstacle_sum = (obstacle_position - odometry_) * (2 * 50 / (pow(obstacle_dist - obstacle_radius,3) * obstacle_dist));
+        obstacle_sum = (obstacle_position - odometry_) * (2*mpc_obstacle_weight_ / (pow(obstacle_dist - obstacle_radius,3) * obstacle_dist));
         ROS_INFO("MpcController %d obs x=%f y=%f z=%f l=%f", droneNumber_, obstacle_sum.position[0], obstacle_sum.position[1], obstacle_sum.position[2], obstacle_dist);
 
         EigenOdometry gradient_sum = cohesion_sum + separation_sum + target_sum + obstacle_sum;
@@ -750,6 +755,14 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
                 ROS_INFO_ONCE("MpcController %d pot. center  x=%f y=%f z=%f (div %f)", droneNumber_, potential_center.position[0], potential_center.position[1], potential_center.position[2], ((float)neighbourhood_cnt + 1));
                 ROS_INFO_ONCE("MpcController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm.position[0], target_swarm.position[1], target_swarm.position[2]);
             }
+
+            // todo change for set of obstacles
+            obstacle_position.position[2] = potential_center.position[2]; // todo, remove fix for infinite z obstacles
+            float obstacle_dist = norm(potential_pos - obstacle_position);
+            float tmp = mpc_obstacle_weight_ * (1.0/pow(obstacle_dist - obstacle_radius, 2));
+            cost_total_sum += mpc_obstacle_weight_ * (1.0/pow(obstacle_dist - obstacle_radius, 2));
+            ROS_INFO("MpcController %d obs cost=%f dist=%f", droneNumber_, tmp, obstacle_dist);
+
             ROS_INFO_ONCE("MpcController %d i=%d coh=%f sep=%f total=%f", droneNumber_, dist_i, cost_cohesion_sum, cost_separation_sum, cost_total_sum);
 
             if(cost_total_sum < min_sum)

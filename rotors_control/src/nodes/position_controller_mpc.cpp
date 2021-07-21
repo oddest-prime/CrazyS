@@ -669,7 +669,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         obstacle_position.position[0] = 2.5;
         obstacle_position.position[1] = 2.5;
         obstacle_position.position[2] = odometry_.position[2];
-        float obstacle_radius = 0.6;
+        float obstacle_radius = 0.15;
 
         EigenOdometry target_swarm;
         target_swarm.position[0] = target_swarm_.position_W[0];

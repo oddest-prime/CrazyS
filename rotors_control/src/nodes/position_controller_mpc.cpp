@@ -665,6 +665,12 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
     {
         ROS_INFO_ONCE("MpcController starting swarm mode (SWARM_GRADIENT_ENUM)");
 
+        EigenOdometry obstacle_position;
+        obstacle_position.position[0] = 2.5;
+        obstacle_position.position[1] = 2.5;
+        obstacle_position.position[2] = odometry_.position[2];
+        float obstacle_radius = 0.6;
+
         EigenOdometry target_swarm;
         target_swarm.position[0] = target_swarm_.position_W[0];
         target_swarm.position[1] = target_swarm_.position_W[1];
@@ -673,6 +679,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         EigenOdometry cohesion_sum;
         EigenOdometry separation_sum;
         EigenOdometry target_sum;
+        EigenOdometry obstacle_sum;
         EigenOdometry neighbourhood_center = odometry_;
         for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
         {
@@ -696,7 +703,12 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         }
         target_sum = (neighbourhood_center - target_swarm) * (2*mpc_target_weight_ / ((float)neighbourhood_cnt + 1.0));
 
-        EigenOdometry gradient_sum = cohesion_sum + separation_sum + target_sum;
+        // todo change for set of obstacles
+        float obstacle_dist = norm(odometry_ - obstacle_position);
+        obstacle_sum = (obstacle_position - odometry_) * (2 * 50 / (pow(obstacle_dist - obstacle_radius,3) * obstacle_dist));
+        ROS_INFO("MpcController %d obs x=%f y=%f z=%f l=%f", droneNumber_, obstacle_sum.position[0], obstacle_sum.position[1], obstacle_sum.position[2], obstacle_dist);
+
+        EigenOdometry gradient_sum = cohesion_sum + separation_sum + target_sum + obstacle_sum;
         float gradient_abs = norm(gradient_sum); // length of vector
         gradient_sum = gradient_sum / gradient_abs; // normalize length
 

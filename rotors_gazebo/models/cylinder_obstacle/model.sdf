@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <model name="cylinder_obstacle">
+    <static>true</static>
+    <link name="link">
+      <collision name="collision">
+        <geometry>
+          <cylinder>
+            <radius>0.6</radius>
+            <length>5</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <cast_shadows>false</cast_shadows>
+        <geometry>
+          <cylinder>
+            <radius>0.6</radius>
+            <length>5</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <script>
+            <uri>model://cylinder_obstacle/materials/scripts</uri>
+            <uri>model://cylinder_obstacle/materials/textures</uri>
+            <name>vrc/obstacle</name>
+          </script>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

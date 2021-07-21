@@ -43,26 +43,27 @@ Metrics%.png: Metrics%.csv
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
+		stats \"$<\" using ((column(3)>64) ? column(4) : NaN) \n\
+ 		print sprintf(\"metric: MEAN of dist min %f\", STATS_mean) \n\
+ 		print sprintf(\"metric: MEDIAN of dist min %f\", STATS_median) \n\
+ 		print sprintf(\"metric: MIN of dist min %f\", STATS_min) \n\
+ 		print sprintf(\"metric: MAX of dist min %f\", STATS_max) \n\
+ 		stats \"$<\" using ((column(3)>64) ? column(5) : NaN) \n\
+ 		print sprintf(\"metric: MEAN of swarm radius %f\", STATS_mean) \n\
+ 		print sprintf(\"metric: MEDIAN of swarm radius %f\", STATS_median) \n\
+ 		print sprintf(\"metric: MIN of swarm radius %f\", STATS_min) \n\
+ 		print sprintf(\"metric: MAX of swarm radius %f\", STATS_max) \n\
+ 		stats \"$<\" using ((column(3)>64) ? column(7) : NaN) \n\
+ 		print sprintf(\"metric: MEAN of neighbours count %f\", STATS_mean) \n\
+ 		print sprintf(\"metric: MEDIAN of neighbours count %f\", STATS_median) \n\
+ 		print sprintf(\"metric: MIN of neighbours count %f\", STATS_min) \n\
+ 		print sprintf(\"metric: MAX of neighbours count %f\", STATS_max) \n\
+		 \n\
 		set term pngcairo size 1024,768 \n\
 		set grid \n\
 		set xlabel \"Time [s]\" \n\
 		set ylabel \"Drone $< [m]\" \n\
 		set yrange [0:3] \n\
-		stats \"$<\" using ((column(3)>64) ? column(4) : NaN) \n\
-		print sprintf(\"metric: MEAN of dist min %f\", STATS_mean) \n\
-		print sprintf(\"metric: MEDIAN of dist min %f\", STATS_median) \n\
-		print sprintf(\"metric: MIN of dist min %f\", STATS_min) \n\
-		print sprintf(\"metric: MAX of dist min %f\", STATS_max) \n\
-		stats \"$<\" using ((column(3)>64) ? column(5) : NaN) \n\
-		print sprintf(\"metric: MEAN of swarm radius %f\", STATS_mean) \n\
-		print sprintf(\"metric: MEDIAN of swarm radius %f\", STATS_median) \n\
-		print sprintf(\"metric: MIN of swarm radius %f\", STATS_min) \n\
-		print sprintf(\"metric: MAX of swarm radius %f\", STATS_max) \n\
-		stats \"$<\" using ((column(3)>64) ? column(7) : NaN) \n\
-		print sprintf(\"metric: MEAN of neighbours count %f\", STATS_mean) \n\
-		print sprintf(\"metric: MEDIAN of neighbours count %f\", STATS_median) \n\
-		print sprintf(\"metric: MIN of neighbours count %f\", STATS_min) \n\
-		print sprintf(\"metric: MAX of neighbours count %f\", STATS_max) \n\
 		set output \"$@\" \n\
 		plot     \"$<\" using (column(1)+column(2)/1000000000):(column(3)/64) with lines title 'enable/established', \
 						 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'dist min', \
@@ -74,6 +75,12 @@ Metrics%.png: Metrics%.csv
 State%.png: State%.csv
 	echo " \
  		set datafile separator ',' \n\
+		 \n\
+		stats \"$<\" using ((column(3)>64) ? column(10) : NaN) \n\
+ 		print sprintf(\"metric: MEAN of abs vel %f\", STATS_mean) \n\
+ 		print sprintf(\"metric: MEDIAN of abs vel %f\", STATS_median) \n\
+ 		print sprintf(\"metric: MIN of abs vel %f\", STATS_min) \n\
+ 		print sprintf(\"metric: MAX of abs vel %f\", STATS_max) \n\
  		 \n\
  		set term pngcairo size 1024,768 \n\
  		set grid \n\
@@ -82,11 +89,6 @@ State%.png: State%.csv
 		set y2label \"Velocity $< [m/s]\" \n\
 		set xtics nomirror \n\
 		set y2tics nomirror \n\
- 		stats \"$<\" using ((column(3)>64) ? column(10) : NaN) \n\
- 		print sprintf(\"metric: MEAN of abs vel %f\", STATS_mean) \n\
- 		print sprintf(\"metric: MEDIAN of abs vel %f\", STATS_median) \n\
- 		print sprintf(\"metric: MIN of abs vel %f\", STATS_min) \n\
- 		print sprintf(\"metric: MAX of abs vel %f\", STATS_max) \n\
  		set output \"$@\" \n\
  		plot    \"$<\" using (column(1)+column(2)/1000000000):(column(3)/64) with lines title 'enable/established', \
 						\"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'pos_x', \

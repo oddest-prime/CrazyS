@@ -15,18 +15,24 @@ then
   fi
 fi
 
-ffmpeg -r 15 -pattern_type glob -i "/tmp/cam1/default_camera1_link_*.jpg" -c:v libx264 /tmp/my_cam1.mp4
-ffmpeg -r 15 -pattern_type glob -i "/tmp/cam2/default_camera2_link_*.jpg" -c:v libx264 /tmp/my_cam2.mp4
-ffmpeg -r 15 -pattern_type glob -i "/tmp/cam3/default_camera3_link_*.jpg" -c:v libx264 /tmp/my_cam3.mp4
-ffmpeg -r 15 -pattern_type glob -i "/tmp/cam4/default_camera4_link_*.jpg" -c:v libx264 /tmp/my_cam4.mp4
+ffmpeg -r 15 -pattern_type glob -i "/tmp/cam1/default_camera1_link_*.jpg" -c:v libx264 /tmp/my_cam1.mp4 #      side view from X-axis
+ffmpeg -r 15 -pattern_type glob -i "/tmp/cam2/default_camera2_link_*.jpg" -c:v libx264 /tmp/my_cam2.mp4 #      top view at center
+ffmpeg -r 15 -pattern_type glob -i "/tmp/cam3/default_camera3_link_*.jpg" -c:v libx264 /tmp/my_cam3.mp4 #      side view from Y-axis
+ffmpeg -r 15 -pattern_type glob -i "/tmp/cam4/default_camera4_link_*.jpg" -c:v libx264 /tmp/my_cam4.mp4 #      inclined diagonal view
+test -e /tmp/cam5 && ffmpeg -r 15 -pattern_type glob -i "/tmp/cam5/default_camera5_link_*.jpg" -c:v libx264 /tmp/my_cam5.mp4 || cp /tmp/my_cam4.mp4 /tmp/my_cam5.mp4 #      top view at obstacle
 
 #ffmpeg -i /tmp/my_cam1.mp4 -i /tmp/my_cam3.mp4 -filter_complex "[0:v]crop=1719:1080, pad=1720:1080:0:0:black[tmp0]; [1:v]crop=1719:1080, pad=1720:1080:1:0:black[tmp1]; [tmp0][tmp1]hstack[v] " -map [v] -y /tmp/my_out1.mp4
 #ffmpeg -i /tmp/my_cam2.mp4 -i /tmp/my_cam4.mp4 -filter_complex "[0:v]crop=1719:1080, pad=1720:1080:0:0:black[tmp0]; [1:v]crop=1719:1080, pad=1720:1080:1:0:black[tmp1]; [tmp0][tmp1]hstack[v] " -map [v] -y /tmp/my_out2.mp4
 #ffmpeg -i /tmp/my_out2.mp4 -i /tmp/my_out1.mp4 -filter_complex "[0:v]crop=3440:1079, pad=3440:1080:0:0:black[tmp0]; [1:v]crop=3440:1079, pad=3440:1080:1:0:black[tmp1]; [tmp0][tmp1]vstack[v] " -map [v] -y /tmp/my_out.mp4
 
+# /tmp/my_cam1.mp4 - links oben
+# /tmp/my_cam5.mp4 - rechts oben
+# /tmp/my_cam2.mp4 - links unten
+# /tmp/my_cam4.mp4 - rechts unten
+
 ffmpeg \
 -i /tmp/my_cam1.mp4 \
--i /tmp/my_cam3.mp4 \
+-i /tmp/my_cam5.mp4 \
 -i /tmp/my_cam2.mp4 \
 -i /tmp/my_cam4.mp4 \
 -loop 1 -t 3 -i /tmp/info.png \

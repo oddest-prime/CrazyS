@@ -671,8 +671,8 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         obstacle_position.position[0] = 2.5;
         obstacle_position.position[1] = 2.5;
 
-        obstacle_position.position[0] = 1;
-        obstacle_position.position[1] = 0.1;
+        // obstacle_position.position[0] = 1; // test obstacle for 2 drone scenario
+        // obstacle_position.position[1] = 0.1; // test obstacle for 2 drone scenario
         obstacle_position.position[2] = odometry_.position[2]; // todo, remove fix for infinite z obstacles
         float obstacle_radius = 0.15;
 

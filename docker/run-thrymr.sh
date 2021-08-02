@@ -20,6 +20,8 @@ do
   docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 gradenum mpc1_params$j "obstacle2_params$j" &
   docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 gradenum mpc1_params$j "obstacle4_params$j" &
   wait
+
+  test -e /tmp/stop && exit 7 # stop if flag is present
 done
 exit 0;
 

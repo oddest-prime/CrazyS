@@ -711,7 +711,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         // todo change for set of obstacles
         float obstacle_dist = norm(odometry_ - obstacle_position);
         obstacle_sum = (obstacle_position - odometry_) * (2*mpc_obstacle_weight_ / (pow(obstacle_dist - obstacle_radius,3) * obstacle_dist));
-        ROS_INFO("MpcController %d obs x=%f y=%f z=%f l=%f", droneNumber_, obstacle_sum.position[0], obstacle_sum.position[1], obstacle_sum.position[2], obstacle_dist);
+        ROS_INFO_ONCE("MpcController %d obs x=%f y=%f z=%f l=%f", droneNumber_, obstacle_sum.position[0], obstacle_sum.position[1], obstacle_sum.position[2], obstacle_dist);
 
         EigenOdometry gradient_sum = cohesion_sum + separation_sum + target_sum + obstacle_sum;
         float gradient_abs = norm(gradient_sum); // length of vector
@@ -729,7 +729,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
             EigenOdometry potential_center = potential_pos;
             for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
             {
-                if(neighbourhood_bool[i]) // only for non-neighbourhood
+                if(neighbourhood_bool[i]) // only for neighbourhood
                 {
                     float dist = dronestate[i].GetDistance(&potential_pos);
 
@@ -761,7 +761,7 @@ void PositionControllerMpc::OdometryCallback(const nav_msgs::OdometryConstPtr& o
             float obstacle_dist = norm(potential_pos - obstacle_position);
             float tmp = mpc_obstacle_weight_ * (1.0/pow(obstacle_dist - obstacle_radius, 2));
             cost_total_sum += mpc_obstacle_weight_ * (1.0/pow(obstacle_dist - obstacle_radius, 2));
-            ROS_INFO("MpcController %d obs cost=%f dist=%f", droneNumber_, tmp, obstacle_dist);
+            ROS_INFO_ONCE("MpcController %d obs cost=%f dist=%f", droneNumber_, tmp, obstacle_dist);
 
             ROS_INFO_ONCE("MpcController %d i=%d coh=%f sep=%f total=%f", droneNumber_, dist_i, cost_cohesion_sum, cost_separation_sum, cost_total_sum);
 

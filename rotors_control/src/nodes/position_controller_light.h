@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef CRAYZFLIE_2_POSITION_CONTROLLER_MPC_H
-#define CRAYZFLIE_2_POSITION_CONTROLLER_MPC_H
+#ifndef CRAYZFLIE_2_POSITION_CONTROLLER_LIGHT_H
+#define CRAYZFLIE_2_POSITION_CONTROLLER_LIGHT_H
 
 #include <boost/bind.hpp>
 #include <Eigen/Eigen>
@@ -41,6 +41,7 @@
 
 #include "rotors_control/common.h"
 #include "rotors_control/mpc_controller.h"
+#include "rotors_control/position_controller.h"
 #include "rotors_control/crazyflie_complementary_filter.h"
 
 #define N_DRONES_MAX  20          /* maximum number of drones */
@@ -82,10 +83,10 @@ namespace rotors_control {
       EigenOdometry odometry_;
     };
 
-    class PositionControllerMpc{
+    class PositionControllerLight{
         public:
-            PositionControllerMpc();
-            ~PositionControllerMpc();
+            PositionControllerLight();
+            ~PositionControllerLight();
 
             void InitializeParams();
             void Publish();
@@ -103,6 +104,7 @@ namespace rotors_control {
             int droneCount_;
             int neighbourhood_cnt_;
 
+//            PositionController position_controller_;
             MpcController position_controller_;
             sensorData_t sensors_;
             EigenOdometry odometry_;
@@ -178,4 +180,4 @@ namespace rotors_control {
     };
 }
 
-#endif // CRAZYFLIE_2_POSITION_CONTROLLER_MPC_H
+#endif // CRAZYFLIE_2_POSITION_CONTROLLER_LIGHT_H

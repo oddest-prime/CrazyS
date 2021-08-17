@@ -53,7 +53,7 @@
       <arg name="y" value="0.0"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
@@ -89,7 +89,7 @@
       <arg name="y" value="0.0"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
@@ -125,7 +125,7 @@
       <arg name="y" value="0.0"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
@@ -161,7 +161,7 @@
       <arg name="y" value="0.0"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
@@ -197,7 +197,7 @@
       <arg name="y" value="0.0"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
@@ -233,7 +233,7 @@
       <arg name="y" value="0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
@@ -269,7 +269,7 @@
       <arg name="y" value="0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
@@ -305,7 +305,7 @@
       <arg name="y" value="0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
@@ -341,7 +341,7 @@
       <arg name="y" value="0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
@@ -377,7 +377,7 @@
       <arg name="y" value="0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
@@ -413,7 +413,7 @@
       <arg name="y" value="1.0"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
@@ -449,7 +449,7 @@
       <arg name="y" value="1.0"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
@@ -485,7 +485,7 @@
       <arg name="y" value="1.0"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
@@ -521,7 +521,7 @@
       <arg name="y" value="1.0"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
@@ -557,7 +557,7 @@
       <arg name="y" value="1.0"/>
     </include>
    <!-- The Crazyflie position controller -->
-   <node name="position_controller_mpc" pkg="rotors_control" type="position_controller_mpc" output="screen">
+   <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>

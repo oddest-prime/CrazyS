@@ -11,6 +11,9 @@
 
 ## Run container with GUI on host machine
 	docker run -it --device /dev/dri/ --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v "$(pwd)":/crazyflie_ws/src/crazys crazys
+
+	cd ~/SWARM && docker run -it --device /dev/dri/ --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --device=/dev/input/js0 --device /dev/bus/usb/ --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v "$(pwd)/crazys":/crazyflie_ws/src/crazys -v "$(pwd)/lps-ros":/crazyflie_ws/src/lps-ros -v "$(pwd)/crazyflie_ros":/crazyflie_ws/src/crazyflie_ros crazys
+
 ### Start simulation with GUI
 	roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=true swarm_params:=mpc1_params2
 	roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=true swarm_mode:=mpc1 swarm_params:=mpc1_params2
@@ -18,6 +21,11 @@
 	roslaunch rotors_gazebo crazyflie2_swarm9.launch gui:=true swarm_params:=mpc1_params2
 
   roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=true swarm_mode:=gradient swarm_params:=mpc1_params1
+
+### Start with hardware
+  roslaunch crazyflie_demo teleop_xbox360.launch
+
+/dev/bus/usb
 
 ## Other notes
 	export containerId=$(docker ps -l -q)

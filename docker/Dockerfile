@@ -32,6 +32,7 @@ RUN apt-get update && apt-get -y remove ros-melodic-gazebo* gazebo* && \
 RUN useradd -m flie && \
     echo "flie:flie" | chpasswd && \
     adduser flie sudo && \
+    adduser flie plugdev && \
     mkdir /crazyflie_ws && \
     chown flie:flie /crazyflie_ws && \
     mkdir -p /home/flie/.ssh && \
@@ -55,10 +56,10 @@ RUN /bin/bash -c "source /opt/ros/melodic/setup.bash; cd /crazyflie_ws/src; catk
 RUN ssh-keyscan github.com >> ~/.ssh/known_hosts
 # RUN cd /crazyflie_ws/src && git clone -b dev/ros-melodic https://github.com/gsilano/CrazyS.git
 RUN cd /crazyflie_ws/src && git clone -b med18_gazebo9 https://github.com/gsilano/mav_comm.git
-RUN cd /crazyflie_ws/src && git clone -b dockerized git@github.com:oddest-prime/crazys.git
+# RUN cd /crazyflie_ws/src && git clone -b dockerized git@github.com:oddest-prime/crazys.git
+# RUN /bin/bash -c "source /opt/ros/melodic/setup.bash; cd /crazyflie_ws; catkin clean; catkin build"
+# RUN echo "source /crazyflie_ws/devel/setup.bash" >> ~/.bashrc
 
-RUN /bin/bash -c "source /opt/ros/melodic/setup.bash; cd /crazyflie_ws; catkin build"
-
-RUN echo "source /crazyflie_ws/devel/setup.bash" >> ~/.bashrc
+RUN echo "alias crazys_init='catkin clean --yes; catkin build; source /crazyflie_ws/devel/setup.bash'" >> ~/.bashrc
 
 CMD /bin/bash

@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef CRAYZFLIE_2_POSITION_CONTROLLER_LIGHT_H
-#define CRAYZFLIE_2_POSITION_CONTROLLER_LIGHT_H
+#ifndef CRAYZFLIE_2_SWARM_CONTROLLER_H
+#define CRAYZFLIE_2_SWARM_CONTROLLER_H
 
 #include <boost/bind.hpp>
 #include <Eigen/Eigen>
@@ -70,10 +70,23 @@ namespace rotors_control {
     EigenOdometry SumVelocity(EigenOdometry* a, EigenOdometry* b);
     float SquaredScalarVelocity(EigenOdometry* a);
 
-    class PositionControllerLight{
+    class DroneStateWithTime {
+     public:
+      void SetId(int self, int other);
+      void PoseCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg);
+      void UpdateDistance(EigenOdometry* odometry);
+      float GetDistance(EigenOdometry* odometry);
+
+      int self_;
+      int other_;
+      float distance_;
+      EigenOdometry odometry_;
+    };
+
+    class SwarmController{
         public:
-            PositionControllerLight();
-            ~PositionControllerLight();
+            SwarmController();
+            ~SwarmController();
 
             void InitializeParams();
             void Publish();
@@ -135,16 +148,15 @@ namespace rotors_control {
             //subscribers
             ros::Subscriber cmd_multi_dof_joint_trajectory_sub_;
             ros::Subscriber cmd_multi_dof_joint_trajectory_spline_sub_;
-            ros::Subscriber setpoint_sub_;
-            ros::Subscriber odometry_sub_;
+            ros::Subscriber pose_sub_;
             ros::Subscriber enable_sub_;
             ros::Subscriber imu_sub_;
             ros::Subscriber imu_ideal_sub_;
-            ros::Subscriber odom_sub_[N_DRONES_MAX];
+            ros::Subscriber pose_other_sub_[N_DRONES_MAX];
 
             //publisher
             ros::Publisher motor_velocity_reference_pub_;
-            ros::Publisher pose_pub_;
+            ros::Publisher setpoint_pub_;
 
             mav_msgs::EigenTrajectoryPointDeque commands_;
             std::deque<ros::Duration> command_waiting_times_;
@@ -156,11 +168,12 @@ namespace rotors_control {
             void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
             void EnableCallback(const std_msgs::Int8ConstPtr& enable_msg);
             void MellingerOdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
+            void PoseCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg);
 
             void IMUCallback(const sensor_msgs::ImuConstPtr& imu_msg);
             void IMUMellingerCallback(const sensor_msgs::ImuConstPtr& imu_msg); //When the Mellinger's controller is on
 
-            void SetpointCallback(const geometry_msgs::PoseStampedConstPtr& setpoint_msg);
+            DroneStateWithTime dronestate[N_DRONES_MAX];
 
             // Lists for data saving
             std::vector<string> listDistance_;
@@ -169,4 +182,4 @@ namespace rotors_control {
     };
 }
 
-#endif // CRAZYFLIE_2_POSITION_CONTROLLER_LIGHT_H
+#endif // CRAYZFLIE_2_SWARM_CONTROLLER_H

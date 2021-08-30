@@ -588,8 +588,8 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       ROS_INFO_ONCE("SwarmController starting swarm mode (SWARM_GRADIENT_ENUM)");
 
       EigenOdometry obstacle_position;
-      obstacle_position.position[0] = 2.5;
-      obstacle_position.position[1] = 2.5;
+      obstacle_position.position[0] = 200;
+      obstacle_position.position[1] = 200;
 
       // obstacle_position.position[0] = 1; // test obstacle for 2 drone scenario
       // obstacle_position.position[1] = 0.1; // test obstacle for 2 drone scenario
@@ -637,7 +637,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       float gradient_abs = norm(gradient_sum); // length of vector
       gradient_sum = gradient_sum / gradient_abs; // normalize length
 
-      // determine lenth of target vector by enumeration
+      // determine length of target vector by enumeration
       float min_sum = FLT_MAX;
       int min_dist_i = 0;
       for(int dist_i = 0; dist_i <= n_move_max_; dist_i ++)

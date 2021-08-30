@@ -99,13 +99,21 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
     trajectory_msgs::MultiDOFJointTrajectory trajectory_msg;
     std_msgs::Int32 enable_msg;
 
-    if(msg->data == 104) // key "h"
-    {
-      // Default desired position and yaw.
-      Eigen::Vector3d desired_position(0.3, 0.5, 1.0);
-      double desired_yaw = 0.0;
+    // Default desired position and yaw.
+    Eigen::Vector3d desired_position(0.3, 0.5, 1.0);
+    double desired_yaw = 0.0;
 
-      int modulus = 1;
+    if(msg->data == 'h') // hovering
+    {
+      int modulus = 5;
+      if(droneCount < 10)
+        modulus = 4;
+      if(droneCount == 9)
+        modulus = 3;
+      if(droneCount == 4)
+        modulus = 2;
+      if(droneCount == 2)
+        modulus = 1;
 
       ROS_INFO("global_controller: Go to starting position (hovering).");
       for (size_t i = 0; i < droneCount; i++) // go to starting position (hovering)
@@ -127,7 +135,7 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
         enable_pub[i].publish(enable_msg);
       }
     }
-    if(msg->data == 108) // key "l"
+    if(msg->data == 'l') // landing
     {
       ROS_INFO("global_controller: Go to landing position (poweroff).");
       for (size_t i = 0; i < droneCount; i++) // go to starting position (hovering)
@@ -138,6 +146,45 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
       ros::Duration(2.0).sleep();
       ROS_INFO("global_controller: Terminate ROS and shutdown drones.");
       ros::shutdown();
+    }
+    if(msg->data == 's') // swarm mode enable
+    {
+      ROS_INFO("global_controller: Enable swarm mode.");
+
+      trajectory_msg.header.stamp = ros::Time::now();
+      desired_position(0) = 0.5;
+      desired_position(1) = 0.5;
+      desired_position(2) = 0.8;
+      mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
+      for (size_t i = 0; i < droneCount; i++) // send target point to swarm
+      {
+        ROS_INFO("global_controller: Publishing swarm target on namespace %s: [x=%f, y=%f, z=%f].",
+        nhp[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
+        trajectory_pub[i].publish(trajectory_msg);
+
+        enable_msg.data = swarm_mode;
+        enable_pub[i].publish(enable_msg);
+      }
+    }
+    if(msg->data == '1' || msg->data == '2' || msg->data == '3') // go to positions
+    {
+      ROS_INFO("global_controller: Go to position.");
+
+      trajectory_msg.header.stamp = ros::Time::now();
+      desired_position(0) = 0.5;
+      desired_position(1) = 0.5;
+      if(msg->data == '1')
+        desired_position(1) = 2;
+      if(msg->data == '3')
+        desired_position(1) = -1;
+      desired_position(2) = 0.8;
+      mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
+      for (size_t i = 0; i < droneCount; i++) // send target point to swarm
+      {
+        ROS_INFO("global_controller: Publishing swarm target on namespace %s: [x=%f, y=%f, z=%f].",
+        nhp[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
+        trajectory_pub[i].publish(trajectory_msg);
+      }
     }
   }
 }

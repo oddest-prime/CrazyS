@@ -23,7 +23,7 @@
   roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=true swarm_mode:=gradient swarm_params:=mpc1_params1
 
 ### Start with hardware
-  roslaunch crazyflie_demo teleop_xbox360.launch
+  roslaunch crazyflie_demo swarm4.launch
 
 /dev/bus/usb
 

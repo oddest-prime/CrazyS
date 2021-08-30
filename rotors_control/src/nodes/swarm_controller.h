@@ -32,7 +32,7 @@
 #include <mav_msgs/eigen_mav_msgs.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
-#include <std_msgs/Int8.h>
+#include <std_msgs/Int32.h>
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
@@ -54,6 +54,7 @@
 #define SWARM_GRADIENT            16
 #define SWARM_GRADIENT_ENUM       32
 #define SWARM_PHASE_ESTABLISHED   64
+#define SWARM_LANDING             32768
 
 namespace rotors_control {
 
@@ -166,7 +167,7 @@ namespace rotors_control {
             void MultiDofJointTrajectoryMellingerCallback(const mav_msgs::DroneState& drone_state_msg);
 
             void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
-            void EnableCallback(const std_msgs::Int8ConstPtr& enable_msg);
+            void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
             void MellingerOdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
             void PoseCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg);
 

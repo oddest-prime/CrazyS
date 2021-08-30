@@ -55,7 +55,6 @@ SwarmController::SwarmController() {
     InitializeParams();
 
     // Topics subscribe
-    // Topics subscribe
     cmd_multi_dof_joint_trajectory_sub_ = nh.subscribe(mav_msgs::default_topics::COMMAND_TRAJECTORY, 1,
       &SwarmController::MultiDofJointTrajectoryCallback, this);
 
@@ -286,7 +285,7 @@ void SwarmController::IMUCallback(const sensor_msgs::ImuConstPtr& imu_msg) {
 
 }
 
-void SwarmController::EnableCallback(const std_msgs::Int8ConstPtr& enable_msg) {
+void SwarmController::EnableCallback(const std_msgs::Int32ConstPtr& enable_msg) {
   ROS_INFO("SwarmController got enable message: %d", enable_msg->data);
 
   enable_swarm_ = enable_msg->data;
@@ -387,6 +386,13 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
 
         if(set_point.pose.position.z <= 0.01) // do not enable drone until proper target point received
           return;
+    }
+    else if(enable_swarm_ == SWARM_LANDING) // set keep target point and set small z if in landing mode
+    {
+        ROS_INFO_ONCE("SwarmController %d landing x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
+        set_point.pose.position.x = odometry_.position[0];
+        set_point.pose.position.y = odometry_.position[1];
+        set_point.pose.position.z = max(0.0, min(odometry_.position[2] - 0.05, 0.1));
     }
     else if(enable_swarm_ & SWARM_DECLARATIVE_SIMPLE)
     {

@@ -35,6 +35,7 @@
 #include <string>
 #include <sstream>
 #include <iterator>
+#include <limits>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -334,10 +335,13 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
 
     // for logging into files
     std::stringstream tempDistance;
+    tempDistance.precision(24);
     tempDistance << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
     std::stringstream tempMetrics;
+    tempMetrics.precision(24);
     tempMetrics << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
     std::stringstream tempState;
+    tempState.precision(24);
     tempState << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
 
     // calculate swarm center, save distances to other drones

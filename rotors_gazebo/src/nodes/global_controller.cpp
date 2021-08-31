@@ -147,6 +147,12 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
       ROS_INFO("global_controller: Terminate ROS and shutdown drones.");
       ros::shutdown();
     }
+    if(msg->data == 'q') // quit without landing
+    {
+      ROS_INFO("global_controller: Quit without landing.");
+      ROS_INFO("global_controller: Terminate ROS and shutdown drones.");
+      ros::shutdown();
+    }
     if(msg->data == 's') // swarm mode enable
     {
       ROS_INFO("global_controller: Enable swarm mode.");

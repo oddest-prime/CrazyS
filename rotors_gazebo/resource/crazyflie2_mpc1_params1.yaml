@@ -1,13 +1,13 @@
 # Swarm controller parameters
 swarm: {
-  neighbourhood_distance: 2.0, # approx 1m
+  neighbourhood_distance: 55.0, # approx 1m
   }
 mpc1: {
   eps_move: 0.08, # 0.05, 0.1
-  n_move_max: 2, # 6
+  n_move_max: 3, # 6
   mpc_cohesion_weight: 20.0,
-  mpc_separation_weight: 4.0, # 6.0, 8.5
-  mpc_target_weight: 50.0, # 150.0
+  mpc_separation_weight: 10.0, # 6.0, 8.5
+  mpc_target_weight: 150.0, # 150.0
   mpc_obstacle_weight: 0.1 # 20.0
   }
 gradient: {

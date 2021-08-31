@@ -106,6 +106,8 @@ void SwarmController::KeyboardCallback(const std_msgs::Int32Ptr& msg) {
   ROS_INFO("SwarmController: Got data in keyboard_callback: %d", msg->data);
   if(msg->data == 'd') // save data
     FileSaveData();
+  if(msg->data == 'l') // save when landing
+    FileSaveData();
 }
 
 //The callback saves data into csv files
@@ -410,9 +412,6 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
         set_point.pose.position.x = target_swarm_.position_W[0];
         set_point.pose.position.y = target_swarm_.position_W[1];
         set_point.pose.position.z = target_swarm_.position_W[2];
-
-        if(set_point.pose.position.z <= 0.01) // do not enable drone until proper target point received
-          return;
     }
     else if(enable_swarm_ == SWARM_LANDING) // set keep target point and set small z if in landing mode
     {
@@ -899,7 +898,8 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
 */
   }
 
-  setpoint_pub_.publish(set_point);
+  if(enable_swarm_ != SWARM_DISABLED || set_point.pose.position.z > 0.01) // do not enable drone until proper target point received
+    setpoint_pub_.publish(set_point);
 
   if(dataStoring_active_) // save data for log files
   {

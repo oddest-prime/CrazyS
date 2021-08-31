@@ -394,7 +394,7 @@ void MpcController::XYController(double* theta_command, double* phi_command) {
     assert(theta_command);
     assert(phi_command);
 
-    ROS_FATAL("XYController is deprecated, use XYControllerExplicit instead!");
+    //ROS_FATAL("XYController is deprecated, use XYControllerExplicit instead!");
 
     double v, u;
     u = state_.linearVelocity.x;
@@ -407,8 +407,8 @@ void MpcController::XYController(double* theta_command, double* phi_command) {
     e_vx = xe - u;
     e_vy = ye - v;
 
-    e_vx = xe - u/20; // do not add velocity
-    e_vy = ye - v/20; // do not add velocity
+    //e_vx = xe - u/20; // do not add velocity
+    //e_vy = ye - v/20; // do not add velocity
 
     double theta_command_kp;
     theta_command_kp = xy_gain_kp_.x() * e_vx;
@@ -450,10 +450,10 @@ void MpcController::XYController(double* theta_command, double* phi_command) {
 
     }
 
-     ROS_INFO("Theta_kp: %f, Theta_ki: %f, Phi_kp: %f, Phi_ki: %f", theta_command_kp, theta_command_ki_, phi_command_kp, phi_command_ki_);
+     ROS_DEBUG("Theta_kp: %f, Theta_ki: %f, Phi_kp: %f, Phi_ki: %f", theta_command_kp, theta_command_ki_, phi_command_kp, phi_command_ki_);
      ROS_DEBUG("Phi_c: %f, Theta_c: %f", *phi_command, *theta_command);
      ROS_DEBUG("E_vx: %f, E_vy: %f", e_vx, e_vy);
-     ROS_INFO("E_x: %f, E_y: %f", xe, ye);
+     ROS_DEBUG("E_x: %f, E_y: %f", xe, ye);
 }
 
 void MpcController::XYControllerMpc(double* theta_command, double* phi_command) {
@@ -876,7 +876,8 @@ void MpcController::AttitudeController(double* p_command, double* q_command) {
       phi_command = setpoint_roll_;
     }
     else
-      XYControllerExplicit(&theta_command, &phi_command);
+      XYController(&theta_command, &phi_command);
+//      XYControllerExplicit(&theta_command, &phi_command);
 
     double phi_error, theta_error;
     phi_error = phi_command - roll;

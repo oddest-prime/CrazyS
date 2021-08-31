@@ -36,6 +36,9 @@
 #include <sstream>
 #include <iterator>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include "rotors_control/parameters_ros.h"
 #include "rotors_control/stabilizer_types.h"
 #include "rotors_control/crazyflie_complementary_filter.h"
@@ -60,6 +63,7 @@ SwarmController::SwarmController() {
 
     pose_sub_ = nh.subscribe("lps_pose", 1, &SwarmController::PoseCallback, this);
     enable_sub_ = nh.subscribe("enable", 1, &SwarmController::EnableCallback, this);
+    keyboard_sub_ = nh.subscribe("/key", 1, &SwarmController::KeyboardCallback, this);
 
     ros::NodeHandle nhq[N_DRONES_MAX] = { // NodeHandles for each drone (separate namespace)
       ros::NodeHandle("/crazyflie2_0"),
@@ -97,8 +101,19 @@ SwarmController::SwarmController() {
 
 SwarmController::~SwarmController(){}
 
-//The callback saves data come from simulation into csv files
+void SwarmController::KeyboardCallback(const std_msgs::Int32Ptr& msg) {
+  ROS_INFO("SwarmController: Got data in keyboard_callback: %d", msg->data);
+  if(msg->data == 'd') // save data
+    FileSaveData();
+}
+
+//The callback saves data into csv files
 void SwarmController::CallbackSaveData(const ros::TimerEvent& event){
+  ROS_INFO("SwarmController CallbackSavaData. droneNumber: %d", droneNumber_);
+  FileSaveData();
+}
+
+void SwarmController::FileSaveData(void){
 
       if(!dataStoring_active_){
          return;
@@ -108,13 +123,17 @@ void SwarmController::CallbackSaveData(const ros::TimerEvent& event){
       ofstream fileMetrics;
       ofstream fileState;
 
-      ROS_INFO("CallbackSavaData SwarmController. droneNumber: %d", droneNumber_);
+      ROS_INFO("SwarmController FileSaveData. droneNumber: %d", droneNumber_);
 
-      fileDistance.open(std::string("/tmp/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      fileMetrics.open(std::string("/tmp/log_output/Metrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      fileState.open(std::string("/tmp/log_output/State") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      if(mkdir("/tmp/log_output/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
+          if(errno != EEXIST)
+             ROS_ERROR("Cannot create directory /tmp/log_output/");
 
-      // Saving distances from every to every dron in a file
+      fileDistance.open(std::string("/tmp/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileMetrics.open(std::string("/tmp/log_output/Metrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileState.open(std::string("/tmp/log_output/State") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+
+      // Saving distances from every to every drone in a file
       for (unsigned n=0; n < listDistance_.size(); ++n) {
           fileDistance << listDistance_.at( n );
       }
@@ -133,7 +152,7 @@ void SwarmController::CallbackSaveData(const ros::TimerEvent& event){
       fileState.close();
 
       // To have a one shot storing
-      dataStoring_active_ = false;
+      // dataStoring_active_ = false;
 }
 
 void SwarmController::MultiDofJointTrajectoryCallback(const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& msg) {
@@ -248,14 +267,18 @@ void SwarmController::InitializeParams() {
         if(dataStoringActive == "yes" || dataStoringActive == "distance")
             dataStoring_active_ = true;
     }
-    else
+    else {
        ROS_ERROR("Failed to get param 'csvFilesStoring'");
+       dataStoring_active_ = true;
+    }
 
     if (pnh.getParam("csvFilesStoringTime", dataStoringTime)){
         ROS_INFO("Got param 'csvFilesStoringTime': %f", dataStoringTime);
     }
-    else
+    else {
        ROS_ERROR("Failed to get param 'csvFilesStoringTime'");
+       dataStoringTime = 9999;
+    }
 
     ros::NodeHandle nh;
     timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &SwarmController::CallbackSaveData, this, false, true);

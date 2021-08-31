@@ -43,6 +43,9 @@
     <param name="swarmMode" value="$(arg swarm_mode)"/>
   </node>
 
+  <node name="keyboard_pub" pkg="keyboard_pub" type="keyboard_pub_node" output="screen">
+  </node>
+
   <group ns="$(arg mav_name)_0">
   <!-- The following lines simulate the Crazyflie dynamics -->
     <include file="$(find rotors_gazebo)/launch/spawn_mav_crazyflie.launch">
@@ -70,6 +73,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="2"/>
       <param name="droneNumber" value="0"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -111,6 +116,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="2"/>
       <param name="droneNumber" value="1"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />

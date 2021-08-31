@@ -66,6 +66,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="0"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -108,6 +110,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="1"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -150,6 +154,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -192,6 +198,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="3"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -234,6 +242,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="4"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -276,6 +286,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="5"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -318,6 +330,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="6"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -360,6 +374,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="7"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -402,6 +418,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="8"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -444,6 +462,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="9"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -486,6 +506,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="10"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -528,6 +550,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="11"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -570,6 +594,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="12"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -612,6 +638,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="13"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
@@ -654,6 +682,8 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="15"/>
       <param name="droneNumber" value="14"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />

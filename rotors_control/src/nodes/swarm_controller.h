@@ -146,6 +146,8 @@ namespace rotors_control {
             void CallbackIMUUpdate(const ros::TimerEvent& event);
             void CallbackSaveData(const ros::TimerEvent& event);
 
+            void FileSaveData(void);
+
             //subscribers
             ros::Subscriber cmd_multi_dof_joint_trajectory_sub_;
             ros::Subscriber cmd_multi_dof_joint_trajectory_spline_sub_;
@@ -153,6 +155,7 @@ namespace rotors_control {
             ros::Subscriber enable_sub_;
             ros::Subscriber imu_sub_;
             ros::Subscriber imu_ideal_sub_;
+            ros::Subscriber keyboard_sub_;
             ros::Subscriber pose_other_sub_[N_DRONES_MAX];
 
             //publisher
@@ -170,6 +173,7 @@ namespace rotors_control {
             void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
             void MellingerOdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
             void PoseCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg);
+            void KeyboardCallback(const std_msgs::Int32Ptr& msg);
 
             void IMUCallback(const sensor_msgs::ImuConstPtr& imu_msg);
             void IMUMellingerCallback(const sensor_msgs::ImuConstPtr& imu_msg); //When the Mellinger's controller is on

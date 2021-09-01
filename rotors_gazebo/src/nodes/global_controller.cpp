@@ -122,7 +122,7 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
 
         desired_position(0) = ((float)(i%modulus)) * spacingX + offsetX +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); // * 0.5;
         desired_position(1) = floor((float)(i/modulus)) * spacingY + offsetY +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); // * 0.5;
-        desired_position(2) = 0.8 + ((float)(i%2)) * spacingZ + offsetZ +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); //* 0.2;
+        desired_position(2) = 1.0 + ((float)(i%2)) * spacingZ + offsetZ +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); //* 0.2;
         desired_yaw = 0; // not rotated
         mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
 
@@ -160,7 +160,7 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
       trajectory_msg.header.stamp = ros::Time::now();
       desired_position(0) = 0.5;
       desired_position(1) = 0.5;
-      desired_position(2) = 0.8;
+      desired_position(2) = 1.0;
       mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
       for (size_t i = 0; i < droneCount; i++) // send target point to swarm
       {
@@ -183,7 +183,7 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
         desired_position(1) = 2;
       if(msg->data == '3')
         desired_position(1) = -1;
-      desired_position(2) = 0.8;
+      desired_position(2) = 1.0;
       mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
       for (size_t i = 0; i < droneCount; i++) // send target point to swarm
       {

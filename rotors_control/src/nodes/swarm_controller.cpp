@@ -655,14 +655,14 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       target_sum = (neighbourhood_center - target_swarm) * (2*mpc_target_weight_ / ((float)neighbourhood_cnt + 1.0));
 
       float target_distance_approx = norm(neighbourhood_center - target_swarm);
-      float dyn_eps = (float)max(
-                          (float)eps_move_,
-                          (float)min(
-                              (float)eps_move_ * 5.0, 
-                              (float)eps_move_ * (((float)target_distance_approx + 0.5) * (5.0 / 2))
-                          )
-                      );
-      ROS_INFO("SwarmController %d dist_approx=%f dyn_eps=%f", droneNumber_, target_distance_approx, dyn_eps);
+      float dyn_n_move_max = ceil((float)max(
+                              (float)n_move_max_,
+                              (float)min(
+                                  (float)n_move_max_ * 3.0,
+                                  (float)n_move_max_ * (((float)target_distance_approx + 0.5) * (3.0 / 2))
+                              )
+                          ));
+      ROS_INFO("SwarmController %d dist_approx=%f n_move_max_= %d / %d", droneNumber_, target_distance_approx, (int)dyn_n_move_max, n_move_max_);
 
       // todo change for set of obstacles
       float obstacle_dist = norm(odometry_ - obstacle_position);
@@ -676,12 +676,12 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       // determine length of target vector by enumeration
       float min_sum = FLT_MAX;
       int min_dist_i = 0;
-      for(int dist_i = 0; dist_i <= n_move_max_; dist_i ++)
+      for(int dist_i = 0; dist_i <= (int)dyn_n_move_max; dist_i ++)
       {
           float cost_cohesion_sum = 0;
           float cost_separation_sum = 0;
           float cost_total_sum = 0;
-          EigenOdometry potential_pos = odometry_ - gradient_sum * ((float)dist_i * (float)dyn_eps);
+          EigenOdometry potential_pos = odometry_ - gradient_sum * ((float)dist_i * (float)eps_move_);
           EigenOdometry potential_center = potential_pos;
           for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
           {

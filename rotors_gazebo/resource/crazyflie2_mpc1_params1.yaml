@@ -1,6 +1,6 @@
 # Swarm controller parameters
 swarm: {
-  neighbourhood_distance: 55.0, # approx 1m
+  neighbourhood_distance: 99.0, # approx 1m
   }
 mpc1: {
   eps_move: 0.025, # 0.05, 0.1

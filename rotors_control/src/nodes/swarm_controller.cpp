@@ -654,6 +654,16 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       }
       target_sum = (neighbourhood_center - target_swarm) * (2*mpc_target_weight_ / ((float)neighbourhood_cnt + 1.0));
 
+      float target_distance_approx = norm(neighbourhood_center - target_swarm);
+      float dyn_eps = (float)max(
+                          (float)eps_move_,
+                          (float)min(
+                              (float)eps_move_ * 5.0, 
+                              (float)eps_move_ * (((float)target_distance_approx + 0.5) * (5.0 / 2))
+                          )
+                      );
+      ROS_INFO("SwarmController %d dist_approx=%f dyn_eps=%f", droneNumber_, target_distance_approx, dyn_eps);
+
       // todo change for set of obstacles
       float obstacle_dist = norm(odometry_ - obstacle_position);
       obstacle_sum = (obstacle_position - odometry_) * (2*mpc_obstacle_weight_ / (pow(obstacle_dist - obstacle_radius,3) * obstacle_dist));
@@ -671,7 +681,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
           float cost_cohesion_sum = 0;
           float cost_separation_sum = 0;
           float cost_total_sum = 0;
-          EigenOdometry potential_pos = odometry_ - gradient_sum * ((float)dist_i * (float)eps_move_);
+          EigenOdometry potential_pos = odometry_ - gradient_sum * ((float)dist_i * (float)dyn_eps);
           EigenOdometry potential_center = potential_pos;
           for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
           {

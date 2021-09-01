@@ -13,7 +13,8 @@ cd ~/SWARM/crazys
 
 # check gradient based version with variable distance
 #for j in 1 2 3 4 5 6
-for j in 1 4
+#for j in 1 4
+for j in 1
 do
   docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradenum mpc1_params$j "obstacle9_params$j" &
   docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradenum mpc1_params$j "obstacle15_params$j" &

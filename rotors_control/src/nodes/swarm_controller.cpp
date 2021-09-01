@@ -614,8 +614,8 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       ROS_INFO_ONCE("SwarmController starting swarm mode (SWARM_GRADIENT_ENUM)");
 
       EigenOdometry obstacle_position;
-      obstacle_position.position[0] = 200;
-      obstacle_position.position[1] = 200;
+      obstacle_position.position[0] = 2.5;
+      obstacle_position.position[1] = 2.5;
 
       // obstacle_position.position[0] = 1; // test obstacle for 2 drone scenario
       // obstacle_position.position[1] = 0.1; // test obstacle for 2 drone scenario

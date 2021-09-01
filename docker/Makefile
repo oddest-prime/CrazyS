@@ -10,6 +10,7 @@ allStatePng := $(subst csv,png,$(allStateCsv))
 all-distance: $(allDistancePng)
 all-metrics: $(allMetricsPng)
 all-state: $(allStatePng)
+all-trace: TraceXY.png TraceXZ.png TraceYZ.png
 
 Distance%.png: Distance%.csv
 	echo " \
@@ -21,7 +22,7 @@ Distance%.png: Distance%.csv
 		set ylabel \"Drone $< [m]\" \n\
 		set yrange [0:3] \n\
 		set output \"$@\" \n\
-		plot     \"$<\" using (column(1)+column(2)/1000000000):(column(3)/64) with lines title 'enable/established', \
+		plot     \"$<\" using (column(1)+column(2)/1000000000):(column(3)/32768) with lines title 'enable/established', \
 						 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'dist to 0', \
 						 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'dist to 1', \
 				   	 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'dist to 2', \
@@ -43,29 +44,13 @@ Metrics%.png: Metrics%.csv
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
-		stats \"$<\" using ((column(3)>64) ? column(4) : NaN) \n\
- 		print sprintf(\"metric: MEAN of dist min %f\", STATS_mean) \n\
- 		print sprintf(\"metric: MEDIAN of dist min %f\", STATS_median) \n\
- 		print sprintf(\"metric: MIN of dist min %f\", STATS_min) \n\
- 		print sprintf(\"metric: MAX of dist min %f\", STATS_max) \n\
- 		stats \"$<\" using ((column(3)>64) ? column(5) : NaN) \n\
- 		print sprintf(\"metric: MEAN of swarm radius %f\", STATS_mean) \n\
- 		print sprintf(\"metric: MEDIAN of swarm radius %f\", STATS_median) \n\
- 		print sprintf(\"metric: MIN of swarm radius %f\", STATS_min) \n\
- 		print sprintf(\"metric: MAX of swarm radius %f\", STATS_max) \n\
- 		stats \"$<\" using ((column(3)>64) ? column(7) : NaN) \n\
- 		print sprintf(\"metric: MEAN of neighbours count %f\", STATS_mean) \n\
- 		print sprintf(\"metric: MEDIAN of neighbours count %f\", STATS_median) \n\
- 		print sprintf(\"metric: MIN of neighbours count %f\", STATS_min) \n\
- 		print sprintf(\"metric: MAX of neighbours count %f\", STATS_max) \n\
-		 \n\
 		set term pngcairo size 1024,768 \n\
 		set grid \n\
 		set xlabel \"Time [s]\" \n\
 		set ylabel \"Drone $< [m]\" \n\
 		set yrange [0:3] \n\
 		set output \"$@\" \n\
-		plot     \"$<\" using (column(1)+column(2)/1000000000):(column(3)/64) with lines title 'enable/established', \
+		plot     \"$<\" using (column(1)+column(2)/1000000000):(column(3)/32768) with lines title 'enable/established', \
 						 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'dist min', \
 						 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'swarm radius', \
 						 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'drone count', \
@@ -75,12 +60,6 @@ Metrics%.png: Metrics%.csv
 State%.png: State%.csv
 	echo " \
  		set datafile separator ',' \n\
-		 \n\
-		stats \"$<\" using ((column(3)>64) ? column(10) : NaN) \n\
- 		print sprintf(\"metric: MEAN of abs vel %f\", STATS_mean) \n\
- 		print sprintf(\"metric: MEDIAN of abs vel %f\", STATS_median) \n\
- 		print sprintf(\"metric: MIN of abs vel %f\", STATS_min) \n\
- 		print sprintf(\"metric: MAX of abs vel %f\", STATS_max) \n\
  		 \n\
  		set term pngcairo size 1024,768 \n\
  		set grid \n\
@@ -90,15 +69,134 @@ State%.png: State%.csv
 		set xtics nomirror \n\
 		set y2tics nomirror \n\
  		set output \"$@\" \n\
- 		plot    \"$<\" using (column(1)+column(2)/1000000000):(column(3)/64) with lines title 'enable/established', \
+ 		plot    \"$<\" using (column(1)+column(2)/1000000000):(column(3)/32768) with lines title 'enable/established', \
 						\"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'pos_x', \
 						\"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'pos_y', \
-						\"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'pos_z', \
-						\"$<\" using (column(1)+column(2)/1000000000):7 with lines title 'vel_x' axis x2y2, \
-						\"$<\" using (column(1)+column(2)/1000000000):8 with lines title 'vel_y' axis x2y2, \
-						\"$<\" using (column(1)+column(2)/1000000000):9 with lines title 'vel_z' axis x2y2, \
- 						\"$<\" using (column(1)+column(2)/1000000000):10 with lines title '|vel|' axis x2y2" \
+						\"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'pos_z'" \
  	 | gnuplot
+
+TraceXY.png: State0.csv Makefile
+	echo " \
+  		set datafile separator ',' \n\
+  		 \n\
+  		set term pngcairo size 1024,768 \n\
+  		set grid \n\
+  		set xlabel \"Position y [m]\" \n\
+  		set ylabel \"Position x [m]\" \n\
+			set yrange [-1:2] \n\
+			set xrange [-2.5:3.5] \n\
+  		set output \"$@\" \n\
+  		plot  \"State0.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 0', \
+						\"State1.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 1', \
+						\"State2.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 2', \
+						\"State3.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 3', \
+						\"State4.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 4', \
+						\"State5.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 5', \
+						\"State6.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 6', \
+						\"State7.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 7', \
+						\"State8.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 8'" \
+  	 | gnuplot
+
+TraceXZ.png: State0.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Position x [m]\" \n\
+		set ylabel \"Position z [m]\" \n\
+			set xrange [-2.5:3.5] \n\
+			set yrange [-0.5:2.5] \n\
+		set output \"$@\" \n\
+		plot    \"State0.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 0', \
+						\"State1.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 1', \
+						\"State2.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 2', \
+						\"State3.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 3', \
+						\"State4.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 4', \
+						\"State5.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 5', \
+						\"State6.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 6', \
+						\"State7.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 7', \
+						\"State8.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 8'" \
+	 | gnuplot
+
+
+TraceYZ.png: State0.csv Makefile
+	echo " \
+ 		set datafile separator ',' \n\
+ 		 \n\
+ 		set term pngcairo size 1024,768 \n\
+ 		set grid \n\
+ 		set xlabel \"Position y [m]\" \n\
+ 		set ylabel \"Position z [m]\" \n\
+			set xrange [-2.5:3.5] \n\
+			set yrange [-0.5:2.5] \n\
+ 		set output \"$@\" \n\
+ 		plot    \"State0.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 0', \
+						\"State1.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 1', \
+						\"State2.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 2', \
+						\"State3.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 3', \
+						\"State4.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 4', \
+						\"State5.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 5', \
+						\"State6.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 6', \
+						\"State7.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 7', \
+						\"State8.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 8'" \
+ 	 | gnuplot
+
+CleanedMetrics%.csv: Metrics%.csv
+	grep ",32," $< > $@
+
+CleanedAllMetrics.csv: CleanedMetrics0.csv CleanedMetrics1.csv CleanedMetrics2.csv CleanedMetrics3.csv CleanedMetrics4.csv CleanedMetrics5.csv CleanedMetrics6.csv CleanedMetrics7.csv CleanedMetrics8.csv Makefile
+	paste CleanedMetrics0.csv CleanedMetrics1.csv CleanedMetrics2.csv CleanedMetrics3.csv CleanedMetrics4.csv CleanedMetrics5.csv CleanedMetrics6.csv CleanedMetrics7.csv CleanedMetrics8.csv |\
+	awk -F, '{print $$1","$$2",99,"$$4","$$5","$$11","$$12","$$18","$$19","$$25","$$26","$$32","$$33","$$39","$$40","$$46","$$47","$$53","$$54","$$60","$$61}' | grep -v ",," > CleanedAllMetrics.csv
+
+CleanedAllMetrics.png: CleanedAllMetrics.csv
+	echo " \
+		set datafile separator ',' \n\
+		min(a,b) = (a < b) ? a : b \n\
+		max(a,b) = (a < b) ? b : a \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		set ylabel \"Distance $< [m]\" \n\
+		set yrange [0:1.5] \n\
+		set output \"$@\" \n\
+		plot     \"$<\" using (column(1)+column(2)/1000000000):(min(column(4),min(column(6),min(column(8),min(column(10),min(column(12),min(column(14),min(column(16),min(column(18),column(20)))))))))) with lines title 'dist_{min}', \
+						 \"$<\" using (column(1)+column(2)/1000000000):(max(column(5),max(column(7),max(column(9),max(column(11),max(column(13),max(column(15),max(column(17),max(column(19),column(21)))))))))) with lines title 'comp_{max}" \
+	 | gnuplot
+
+CleanedAllMetricsVerbose.png: CleanedAllMetrics.csv
+	 	echo " \
+	 		set datafile separator ',' \n\
+	 		min(a,b) = (a < b) ? a : b \n\
+	 		max(a,b) = (a < b) ? b : a \n\
+	 		set term pngcairo size 1024,768 \n\
+	 		set grid \n\
+			set xlabel \"Time [s]\" \n\
+			set ylabel \"Distance $< [m]\" \n\
+			set yrange [0:1.5] \n\
+	 		set output \"$@\" \n\
+	 		plot     \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'dist_min of drone 0', \
+	 						 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'dist_min of drone 1', \
+	 				   	 \"$<\" using (column(1)+column(2)/1000000000):8 with lines title 'dist_min of drone 2', \
+	 				   	 \"$<\" using (column(1)+column(2)/1000000000):10 with lines title 'dist_min of drone 3', \
+	 				   	 \"$<\" using (column(1)+column(2)/1000000000):12 with lines title 'dist_min of drone 4', \
+	 				   	 \"$<\" using (column(1)+column(2)/1000000000):14 with lines title 'dist_min of drone 5', \
+	 				   	 \"$<\" using (column(1)+column(2)/1000000000):16 with lines title 'dist_min of drone 6', \
+	 				   	 \"$<\" using (column(1)+column(2)/1000000000):18 with lines title 'dist_min of drone 7', \
+	 				   	 \"$<\" using (column(1)+column(2)/1000000000):20 with lines title 'dist_min of drone 8', \
+	 						 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'dist_center of drone 0', \
+	 						 \"$<\" using (column(1)+column(2)/1000000000):7 with lines title 'dist_center of drone 1', \
+	 				   	 \"$<\" using (column(1)+column(2)/1000000000):9 with lines title 'dist_center of drone 2', \
+	 				   	 \"$<\" using (column(1)+column(2)/1000000000):11 with lines title 'dist_center of drone 3', \
+	 				   	 \"$<\" using (column(1)+column(2)/1000000000):13 with lines title 'dist_center of drone 4', \
+	 				   	 \"$<\" using (column(1)+column(2)/1000000000):15 with lines title 'dist_center of drone 5', \
+	 				   	 \"$<\" using (column(1)+column(2)/1000000000):17 with lines title 'dist_center of drone 6', \
+	 				   	 \"$<\" using (column(1)+column(2)/1000000000):19 with lines title 'dist_center of drone 7', \
+	 				   	 \"$<\" using (column(1)+column(2)/1000000000):21 with lines title 'dist_center of drone 8', \
+	 						 \"$<\" using (column(1)+column(2)/1000000000):(min(column(4),min(column(6),min(column(8),min(column(10),min(column(12),min(column(14),min(column(16),min(column(18),column(20)))))))))) with lines title 'min of dist_min', \
+	 						 \"$<\" using (column(1)+column(2)/1000000000):(max(column(5),max(column(7),max(column(9),max(column(11),max(column(13),max(column(15),max(column(17),max(column(19),column(21)))))))))) with lines title 'max of dist_center" \
+	 	 | gnuplot
+
 
 
 MetricsMerged.csv: $(allMetricsCsv)

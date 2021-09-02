@@ -8,7 +8,7 @@ mpc1: {
   mpc_cohesion_weight: 20.0,
   mpc_separation_weight: 9.0, # 6.0, 8.5
   mpc_target_weight: 150.0, # 150.0
-  mpc_obstacle_weight: 20.0 # 20.0
+  mpc_obstacle_weight: 30.0 # 20.0
   }
 gradient: {
   scale_factor: 0.03

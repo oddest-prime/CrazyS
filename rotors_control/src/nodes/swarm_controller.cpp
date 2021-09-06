@@ -678,7 +678,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
                                   (float)n_move_max_ * (((float)target_distance_current + 0.5) * (3.0 / 2))
                               )
                           ));
-      ROS_INFO("SwarmController %d dist_cur=%f n_move_max_= %d / %d", droneNumber_, target_distance_current, (int)dyn_n_move_max, n_move_max_);
+      ROS_INFO_ONCE("SwarmController %d dist_cur=%f n_move_max_= %d / %d", droneNumber_, target_distance_current, (int)dyn_n_move_max, n_move_max_);
 
       // determine length of target vector by enumeration
       float min_sum = FLT_MAX;

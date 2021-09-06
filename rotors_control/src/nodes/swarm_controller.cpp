@@ -412,7 +412,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
     // obstacle_position.position[0] = 1; // test obstacle for 2 drone scenario
     // obstacle_position.position[1] = 0.1; // test obstacle for 2 drone scenario
     obstacle_position.position[2] = odometry_.position[2]; // todo, remove fix for infinite z obstacles
-    float obstacle_radius = 0.10;
+    float obstacle_radius = 0.15;
 
     // ################################################################################
     if(enable_swarm_ == SWARM_DISABLED) // set target point if not in swarm mode

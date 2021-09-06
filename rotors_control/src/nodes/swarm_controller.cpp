@@ -405,6 +405,15 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
     tempMetrics << droneCount_ << ",";
     tempMetrics << neighbourhood_cnt << ",";
 
+    // obstacle definition
+    EigenOdometry obstacle_position;
+    obstacle_position.position[0] = 2.5;
+    obstacle_position.position[1] = 2.5;
+    // obstacle_position.position[0] = 1; // test obstacle for 2 drone scenario
+    // obstacle_position.position[1] = 0.1; // test obstacle for 2 drone scenario
+    obstacle_position.position[2] = odometry_.position[2]; // todo, remove fix for infinite z obstacles
+    float obstacle_radius = 0.10;
+
     // ################################################################################
     if(enable_swarm_ == SWARM_DISABLED) // set target point if not in swarm mode
     {
@@ -557,26 +566,34 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       EigenOdometry cohesion_sum;
       EigenOdometry separation_sum;
       EigenOdometry target_sum;
+      EigenOdometry obstacle_sum;
+      EigenOdometry neighbourhood_center = odometry_;
       for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
       {
-          if(neighbourhood_bool[i] == false) // skip for non-neighbourhood
-            continue;
+          if(neighbourhood_bool[i]) // only for neighbourhood
+          {
+              cohesion_sum = cohesion_sum + dronestate[i].odometry_;
+              separation_sum = separation_sum + (dronestate[i].odometry_ - odometry_) / pow(norm_squared(dronestate[i].odometry_ - odometry_),2);
+              neighbourhood_center = neighbourhood_center + dronestate[i].odometry_;
 
-          cohesion_sum = cohesion_sum + dronestate[i].odometry_;
-          separation_sum = separation_sum + (dronestate[i].odometry_ - odometry_) / pow(norm_squared(dronestate[i].odometry_ - odometry_),2);
-
-          ROS_INFO_ONCE("SwarmController %d %d odo x=%f y=%f z=%f", droneNumber_, (int)i, odometry_.position[0], odometry_.position[1], odometry_.position[2]);
-          ROS_INFO_ONCE("SwarmController %d %d coh x=%f y=%f z=%f", droneNumber_, (int)i, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2]);
-          ROS_INFO_ONCE("SwarmController %d %d sep x=%f y=%f z=%f", droneNumber_, (int)i, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2]);
+              ROS_INFO_ONCE("SwarmController %d %d odo x=%f y=%f z=%f", droneNumber_, (int)i, odometry_.position[0], odometry_.position[1], odometry_.position[2]);
+              ROS_INFO_ONCE("SwarmController %d %d coh x=%f y=%f z=%f", droneNumber_, (int)i, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2]);
+              ROS_INFO_ONCE("SwarmController %d %d sep x=%f y=%f z=%f", droneNumber_, (int)i, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2]);
+          }
       }
-      cohesion_sum = (odometry_ - cohesion_sum / neighbourhood_cnt) * 2*mpc_cohesion_weight_;
-      separation_sum = (separation_sum / neighbourhood_cnt) * 2*mpc_separation_weight_;
-      target_sum = (swarm_center - target_swarm) * (2*mpc_target_weight_ / (droneCount_));
+      neighbourhood_center = neighbourhood_center / ((float)neighbourhood_cnt + 1.0);
 
-      ROS_INFO_ONCE("SwarmController %d coh x=%f y=%f z=%f w=%f", droneNumber_, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2], mpc_cohesion_weight_);
-      ROS_INFO_ONCE("SwarmController %d sep x=%f y=%f z=%f w=%f", droneNumber_, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2], mpc_separation_weight_);
-      ROS_INFO_ONCE("SwarmController %d tar x=%f y=%f z=%f w=%f", droneNumber_, target_sum.position[0], target_sum.position[1], target_sum.position[2], mpc_target_weight_);
-      ROS_INFO_ONCE("SwarmController %d target_swarm x=%f y=%f z=%f", droneNumber_, target_swarm.position[0], target_swarm.position[1], target_swarm.position[2]);
+      if(neighbourhood_cnt > 0)
+      {
+          cohesion_sum = (odometry_ - cohesion_sum / neighbourhood_cnt) * 2*mpc_cohesion_weight_;
+          separation_sum = (separation_sum / neighbourhood_cnt) * 2*mpc_separation_weight_;
+      }
+      target_sum = (neighbourhood_center - target_swarm) * (2*mpc_target_weight_ / ((float)neighbourhood_cnt + 1.0));
+
+      // todo change for set of obstacles
+      float obstacle_dist = norm(odometry_ - obstacle_position);
+      obstacle_sum = (obstacle_position - odometry_) * (2*mpc_obstacle_weight_ / (pow(obstacle_dist - obstacle_radius,3) * obstacle_dist));
+      ROS_INFO_ONCE("SwarmController %d obs x=%f y=%f z=%f l=%f", droneNumber_, obstacle_sum.position[0], obstacle_sum.position[1], obstacle_sum.position[2], obstacle_dist);
 
       EigenOdometry gradient_sum = (cohesion_sum + separation_sum + target_sum) * gradient_scale_factor_;
       float gradient_abs = norm(gradient_sum); // length of vector
@@ -586,13 +603,19 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       else
         dist_limit = 1;
       gradient_sum = gradient_sum * dist_limit; // rescale vector
-      if(gradient_abs < eps_move_) // stepped function around 0
+      /*if(gradient_abs < eps_move_) // stepped function around 0
       {
         gradient_sum.position[0] = 0;
         gradient_sum.position[1] = 0;
         gradient_sum.position[2] = 0;
       }
+      */
       // gradient_abs = norm(gradient_sum); // length of vector
+
+      ROS_INFO_ONCE("SwarmController %d coh x=%f y=%f z=%f w=%f", droneNumber_, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2], mpc_cohesion_weight_);
+      ROS_INFO_ONCE("SwarmController %d sep x=%f y=%f z=%f w=%f", droneNumber_, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2], mpc_separation_weight_);
+      ROS_INFO_ONCE("SwarmController %d tar x=%f y=%f z=%f w=%f", droneNumber_, target_sum.position[0], target_sum.position[1], target_sum.position[2], mpc_target_weight_);
+      ROS_INFO_ONCE("SwarmController %d target_swarm x=%f y=%f z=%f", droneNumber_, target_swarm.position[0], target_swarm.position[1], target_swarm.position[2]);
 
       ROS_INFO_ONCE("SwarmController %d sum x=%f y=%f z=%f l=%f", droneNumber_, gradient_sum.position[0], gradient_sum.position[1], gradient_sum.position[2], gradient_abs);
 
@@ -612,15 +635,6 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
   else if(enable_swarm_ & SWARM_GRADIENT_ENUM)
   {
       ROS_INFO_ONCE("SwarmController starting swarm mode (SWARM_GRADIENT_ENUM)");
-
-      EigenOdometry obstacle_position;
-      obstacle_position.position[0] = 2.5;
-      obstacle_position.position[1] = 2.5;
-
-      // obstacle_position.position[0] = 1; // test obstacle for 2 drone scenario
-      // obstacle_position.position[1] = 0.1; // test obstacle for 2 drone scenario
-      obstacle_position.position[2] = odometry_.position[2]; // todo, remove fix for infinite z obstacles
-      float obstacle_radius = 0.10;
 
       EigenOdometry target_swarm;
       target_swarm.position[0] = target_swarm_.position_W[0];
@@ -654,16 +668,6 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       }
       target_sum = (neighbourhood_center - target_swarm) * (2*mpc_target_weight_ / ((float)neighbourhood_cnt + 1.0));
 
-      float target_distance_approx = norm(neighbourhood_center - target_swarm);
-      float dyn_n_move_max = ceil((float)max(
-                              (float)n_move_max_,
-                              (float)min(
-                                  (float)n_move_max_ * 3.0,
-                                  (float)n_move_max_ * (((float)target_distance_approx + 0.5) * (3.0 / 2))
-                              )
-                          ));
-      ROS_INFO("SwarmController %d dist_approx=%f n_move_max_= %d / %d", droneNumber_, target_distance_approx, (int)dyn_n_move_max, n_move_max_);
-
       // todo change for set of obstacles
       float obstacle_dist = norm(odometry_ - obstacle_position);
       obstacle_sum = (obstacle_position - odometry_) * (2*mpc_obstacle_weight_ / (pow(obstacle_dist - obstacle_radius,3) * obstacle_dist));
@@ -672,6 +676,16 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       EigenOdometry gradient_sum = cohesion_sum + separation_sum + target_sum + obstacle_sum;
       float gradient_abs = norm(gradient_sum); // length of vector
       gradient_sum = gradient_sum / gradient_abs; // normalize length
+
+      float target_distance_current = norm(neighbourhood_center - target_swarm);
+      float dyn_n_move_max = ceil((float)max(
+                              (float)n_move_max_,
+                              (float)min(
+                                  (float)n_move_max_ * 3.0,
+                                  (float)n_move_max_ * (((float)target_distance_current + 0.5) * (3.0 / 2))
+                              )
+                          ));
+      ROS_INFO("SwarmController %d dist_cur=%f n_move_max_= %d / %d", droneNumber_, target_distance_current, (int)dyn_n_move_max, n_move_max_);
 
       // determine length of target vector by enumeration
       float min_sum = FLT_MAX;

@@ -595,22 +595,23 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       obstacle_sum = (obstacle_position - odometry_) * (2*mpc_obstacle_weight_ / (pow(obstacle_dist - obstacle_radius,3) * obstacle_dist));
       ROS_INFO_ONCE("SwarmController %d obs x=%f y=%f z=%f l=%f", droneNumber_, obstacle_sum.position[0], obstacle_sum.position[1], obstacle_sum.position[2], obstacle_dist);
 
-      EigenOdometry gradient_sum = (cohesion_sum + separation_sum + target_sum) * gradient_scale_factor_;
+      EigenOdometry gradient_sum = (cohesion_sum + separation_sum + target_sum + obstacle_sum) * gradient_scale_factor_;
       float gradient_abs = norm(gradient_sum); // length of vector
-      float dist_limit = eps_move_ * n_move_max_;
+      /* float dist_limit = eps_move_ * n_move_max_;
       if(gradient_abs > dist_limit) // limit distance for this controller
         dist_limit = dist_limit / gradient_abs;
       else
         dist_limit = 1;
       gradient_sum = gradient_sum * dist_limit; // rescale vector
-      /*if(gradient_abs < eps_move_) // stepped function around 0
+      // */
+      /* if(gradient_abs < eps_move_) // stepped function around 0
       {
         gradient_sum.position[0] = 0;
         gradient_sum.position[1] = 0;
         gradient_sum.position[2] = 0;
       }
-      */
-      // gradient_abs = norm(gradient_sum); // length of vector
+      // */
+      gradient_abs = norm(gradient_sum); // length of vector
 
       ROS_INFO_ONCE("SwarmController %d coh x=%f y=%f z=%f w=%f", droneNumber_, cohesion_sum.position[0], cohesion_sum.position[1], cohesion_sum.position[2], mpc_cohesion_weight_);
       ROS_INFO_ONCE("SwarmController %d sep x=%f y=%f z=%f w=%f", droneNumber_, separation_sum.position[0], separation_sum.position[1], separation_sum.position[2], mpc_separation_weight_);
@@ -619,14 +620,6 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
 
       ROS_INFO_ONCE("SwarmController %d sum x=%f y=%f z=%f l=%f", droneNumber_, gradient_sum.position[0], gradient_sum.position[1], gradient_sum.position[2], gradient_abs);
 
-/*      mav_msgs::EigenTrajectoryPoint new_setpoint;
-      new_setpoint.position_W = odometry_.position;
-      new_setpoint.position_W[0] -= gradient_sum.position[0];
-      new_setpoint.position_W[1] -= gradient_sum.position[1];
-      new_setpoint.position_W[2] -= gradient_sum.position[2];
-      // new_setpoint.position_W[0] += 0.1; // Debug: testing innner loop controller
-      position_controller_.SetTrajectoryPoint(new_setpoint);
-*/
       set_point.pose.position.x = odometry_.position[0] - gradient_sum.position[0];
       set_point.pose.position.y = odometry_.position[1] - gradient_sum.position[1];
       set_point.pose.position.z = odometry_.position[2] - gradient_sum.position[2];
@@ -750,15 +743,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       ROS_INFO_ONCE("SwarmController %d tar x=%f y=%f z=%f w=%f", droneNumber_, target_sum.position[0], target_sum.position[1], target_sum.position[2], mpc_target_weight_);
       ROS_INFO_ONCE("SwarmController %d target_swarm x=%f y=%f z=%f", droneNumber_, target_swarm.position[0], target_swarm.position[1], target_swarm.position[2]);
       ROS_INFO_ONCE("SwarmController %d sum x=%f y=%f z=%f l=%f", droneNumber_, gradient_sum.position[0], gradient_sum.position[1], gradient_sum.position[2], gradient_abs);
-/*
-      mav_msgs::EigenTrajectoryPoint new_setpoint;
-      new_setpoint.position_W = odometry_.position;
-      new_setpoint.position_W[0] -= gradient_sum.position[0] * ((float)min_dist_i * (float)eps_move_);
-      new_setpoint.position_W[1] -= gradient_sum.position[1] * ((float)min_dist_i * (float)eps_move_);
-      new_setpoint.position_W[2] -= gradient_sum.position[2] * ((float)min_dist_i * (float)eps_move_);
-      // new_setpoint.position_W[0] += 0.1; // Debug: testing innner loop controller
-      position_controller_.SetTrajectoryPoint(new_setpoint);
-*/
+
       set_point.pose.position.x = odometry_.position[0] - gradient_sum.position[0] * ((float)min_dist_i * (float)eps_move_);
       set_point.pose.position.y = odometry_.position[1] - gradient_sum.position[1] * ((float)min_dist_i * (float)eps_move_);
       set_point.pose.position.z = odometry_.position[2] - gradient_sum.position[2] * ((float)min_dist_i * (float)eps_move_);

@@ -98,10 +98,10 @@ make all-state
 echo "metrics file content:" >> /tmp/video.info
 echo "---------------------------------------------------------" >> /tmp/video.info
 grep "metric:" Metrics.txt >> /tmp/video.info
-echo "---------------------------------------------------------" >> /tmp/video.info
-echo "states file content:" >> /tmp/video.info
-echo "---------------------------------------------------------" >> /tmp/video.info
-grep "metric:" States.txt >> /tmp/video.info
+#echo "---------------------------------------------------------" >> /tmp/video.info
+#echo "states file content:" >> /tmp/video.info
+#echo "---------------------------------------------------------" >> /tmp/video.info
+#grep "metric:" States.txt >> /tmp/video.info
 echo "=========================================================" >> /tmp/video.info
 
 cp /tmp/video.info /tmp/log_output/simulation.info

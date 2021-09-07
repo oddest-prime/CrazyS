@@ -341,7 +341,7 @@
      <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="9"/>
-      <param name="droneNumber" value="60"/>
+      <param name="droneNumber" value="6"/>
       <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />

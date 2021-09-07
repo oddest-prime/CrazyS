@@ -460,7 +460,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
     if(neighbourhood_cnt_ != neighbourhood_cnt)
     {
         neighbourhood_cnt_ = neighbourhood_cnt;
-        ROS_INFO("SwarmController %d droneCount=%d neighbourhood_cnt=%d", droneNumber_, droneCount_, neighbourhood_cnt);
+        ROS_INFO_ONCE("SwarmController %d droneCount=%d neighbourhood_cnt=%d", droneNumber_, droneCount_, neighbourhood_cnt);
     }
 
     tempMetrics << droneCount_ << ",";

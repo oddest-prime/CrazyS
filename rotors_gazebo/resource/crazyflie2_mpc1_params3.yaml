@@ -11,5 +11,5 @@ mpc1: {
   mpc_obstacle_weight: 20.0 # 20.0
   }
 gradient: {
-  scale_factor: 0.01 # 0.03
+  scale_factor: 0.007 # 0.03
   }

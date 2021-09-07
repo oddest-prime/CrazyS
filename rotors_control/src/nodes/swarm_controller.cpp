@@ -333,6 +333,15 @@ void SwarmController::EnableCallback(const std_msgs::Int32ConstPtr& enable_msg) 
 void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg) {
     ROS_INFO_ONCE("SwarmController got PoseStamped message.");
 
+    // received message containing own position information
+    auto odometry_true = EigenOdometry();
+    odometry_ = EigenOdometry();
+    odometry_true.timeStampSec = pose_msg->header.stamp.sec;
+    odometry_true.timeStampNsec = pose_msg->header.stamp.nsec;
+    odometry_true.position[0] = pose_msg->pose.position.x;
+    odometry_true.position[1] = pose_msg->pose.position.y;
+    odometry_true.position[2] = pose_msg->pose.position.z;
+
     // gaussian random number generator
     const double mean = 0.0;
     const double stddev = 0.15; // 15 cm
@@ -346,14 +355,11 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       rand_z_ = dist(generator);
       ROS_INFO_ONCE("SwarmController %d random noise x=%f y=%f z=%f", droneNumber_, rand_x_, rand_y_, rand_z_);
     }
+    odometry_ = odometry_true;
+    odometry_true.position[0] += rand_x_;
+    odometry_true.position[1] += rand_y_;
+    odometry_true.position[2] += rand_z_;
 
-    // received message containing own position information
-    odometry_ = EigenOdometry();
-    odometry_.timeStampSec = pose_msg->header.stamp.sec;
-    odometry_.timeStampNsec = pose_msg->header.stamp.nsec;
-    odometry_.position[0] = pose_msg->pose.position.x + rand_x_;
-    odometry_.position[1] = pose_msg->pose.position.y + rand_y_;
-    odometry_.position[2] = pose_msg->pose.position.z + rand_z_;
 
     // setpoint for message to be sent to low-level controller
     geometry_msgs::PoseStamped set_point;
@@ -391,20 +397,20 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
     float obstacle_dist_min = FLT_MAX;
     for(int i = 0; i < obstacle_count; i++) // iterate over all obstacles
     {
-      float obstacle_dist = norm(odometry_ - obstacle_position[i]);
+      float obstacle_dist = norm(odometry_true - obstacle_position[i]);
       obstacle_dist_min = min(obstacle_dist_min, obstacle_dist);
     }
 
     // for logging into files
     std::stringstream tempDistance;
     tempDistance.precision(24);
-    tempDistance << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
+    tempDistance << odometry_true.timeStampSec << "," << odometry_true.timeStampNsec << "," << enable_swarm_ << ",";
     std::stringstream tempMetrics;
     tempMetrics.precision(24);
-    tempMetrics << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
+    tempMetrics << odometry_true.timeStampSec << "," << odometry_true.timeStampNsec << "," << enable_swarm_ << ",";
     std::stringstream tempState;
     tempState.precision(24);
-    tempState << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
+    tempState << odometry_true.timeStampSec << "," << odometry_true.timeStampNsec << "," << enable_swarm_ << ",";
 
     // calculate swarm center, save distances to other drones
     EigenOdometry swarm_center;
@@ -414,7 +420,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
         swarm_center = swarm_center + dronestate[i].odometry_;
         if(i != droneNumber_) // sum without own drone
         {
-            float dist = dronestate[i].GetDistance(&odometry_);
+            float dist = dronestate[i].GetDistance(&odometry_true);
             dist_min = min(dist, dist_min);
             if(dataStoring_active_) // save distance to log file for current position
                 tempDistance << dist << ",";
@@ -428,13 +434,13 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
     {
        tempMetrics << dist_min << ",";
 
-       EigenOdometry center_vector = swarm_center - odometry_;
+       EigenOdometry center_vector = swarm_center - odometry_true;
        float dist_center = norm(center_vector); // length of vector, distance from the center_vector
        tempMetrics << dist_center << ",";
 
-       float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_)); // calculate length of vector
-       tempState << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ",";
-       tempState << odometry_.velocity[0] << "," << odometry_.velocity[1] << "," << odometry_.velocity[2] << ",";
+       float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_true)); // calculate length of vector
+       tempState << odometry_true.position[0] << "," << odometry_true.position[1] << "," << odometry_true.position[2] << ",";
+       tempState << odometry_true.velocity[0] << "," << odometry_true.velocity[1] << "," << odometry_true.velocity[2] << ",";
        tempState << abs_state_velocity << ",";
        tempState << obstacle_dist_min << ",";
     }

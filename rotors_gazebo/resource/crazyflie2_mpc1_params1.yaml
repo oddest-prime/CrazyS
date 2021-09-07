@@ -1,4 +1,4 @@
-# Swarm controller parameters
+# Swarm controller parameters, working properly on crazyflie hardware
 swarm: {
   neighbourhood_distance: 999.0, # global neighbourhood
   }

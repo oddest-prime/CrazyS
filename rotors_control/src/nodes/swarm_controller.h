@@ -24,6 +24,7 @@
 #include <boost/bind.hpp>
 #include <Eigen/Eigen>
 #include <stdio.h>
+#include <random>
 
 #include <geometry_msgs/PoseStamped.h>
 #include <mav_msgs/Actuators.h>
@@ -101,6 +102,7 @@ namespace rotors_control {
             bool dataStoring_active_;
             int enable_swarm_ = SWARM_DISABLED;
 
+            int obstacleScenario_;
             int droneNumber_;
             int droneCount_;
             int neighbourhood_cnt_;
@@ -109,6 +111,12 @@ namespace rotors_control {
             MpcController position_controller_;
             sensorData_t sensors_;
             EigenOdometry odometry_;
+
+            int rand_cnt_;
+            float rand_x_;
+            float rand_y_;
+            float rand_z_;
+            std::default_random_engine generator;
 
             float neighbourhood_distance_;
             float eps_move_;

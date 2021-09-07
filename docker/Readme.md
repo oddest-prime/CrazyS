@@ -20,7 +20,7 @@
 	roslaunch rotors_gazebo crazyflie2_swarm4.launch gui:=true
 	roslaunch rotors_gazebo crazyflie2_swarm9.launch gui:=true swarm_params:=mpc1_params2
 
-  roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=true swarm_mode:=gradenum swarm_params:=mpc1_params1
+  roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=true swarm_mode:=gradenum swarm_params:=mpc1_params2
 
 ### Start with hardware
   roslaunch crazyflie_demo swarm2.launch

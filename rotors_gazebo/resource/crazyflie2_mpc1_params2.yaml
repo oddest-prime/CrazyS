@@ -4,7 +4,7 @@ swarm: {
   }
 mpc1: {
   eps_move: 0.05, # 0.05, 0.1
-  n_move_max: 6, # 6
+  n_move_max: 8, # 6
   mpc_cohesion_weight: 20.0,
   mpc_separation_weight: 9.0, # 6.0, 8.5
   mpc_target_weight: 150.0, # 150.0

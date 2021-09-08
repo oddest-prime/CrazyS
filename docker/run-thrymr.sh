@@ -21,6 +21,7 @@ do
 
   test -e /tmp/stop && exit 7 # stop if flag is present
 done
+exit 0;
 
 # check gradient with enumeration based version
 for j in 2 3

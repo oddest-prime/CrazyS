@@ -54,7 +54,12 @@ Metrics%.png: Metrics%.csv
 		print sprintf(\"metric: MEDIAN of swarm radius %f\", STATS_median) \n\
 		print sprintf(\"metric: MIN of swarm radius %f\", STATS_min) \n\
 		print sprintf(\"metric: MAX of swarm radius %f\", STATS_max) \n\
-		stats \"$<\" using ((column(3)>64) ? column(7) : NaN) \n\
+		stats \"$<\" using ((column(3)>64) ? column(6) : NaN) \n\
+		print sprintf(\"metric: MEAN of dist obstacle min %f\", STATS_mean) \n\
+		print sprintf(\"metric: MEDIAN of dist obstacle min %f\", STATS_median) \n\
+		print sprintf(\"metric: MIN of dist obstacle min %f\", STATS_min) \n\
+		print sprintf(\"metric: MAX of dist obstacle min %f\", STATS_max) \n\
+		stats \"$<\" using ((column(3)>64) ? column(8) : NaN) \n\
 		print sprintf(\"metric: MEAN of neighbours count %f\", STATS_mean) \n\
 		print sprintf(\"metric: MEDIAN of neighbours count %f\", STATS_median) \n\
 		print sprintf(\"metric: MIN of neighbours count %f\", STATS_min) \n\
@@ -69,19 +74,14 @@ Metrics%.png: Metrics%.csv
 		plot     \"$<\" using (column(1)+column(2)/1000000000):(column(3)/32768) with lines title 'enable/established', \
 						 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'dist min', \
 						 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'swarm radius', \
-						 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'drone count', \
-						 \"$<\" using (column(1)+column(2)/1000000000):7 with lines title 'neighbours count'" \
+						 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'dist obstacle min', \
+						 \"$<\" using (column(1)+column(2)/1000000000):7 with lines title 'drone count', \
+						 \"$<\" using (column(1)+column(2)/1000000000):8 with lines title 'neighbours count'" \
 	 | gnuplot
 
 State%.png: State%.csv
 	echo " \
  		set datafile separator ',' \n\
-		\n\
-		stats \"$<\" using ((column(3)>64) ? column(10) : NaN) \n\
-		print sprintf(\"metric: MEAN of abs vel %f\", STATS_mean) \n\
-		print sprintf(\"metric: MEDIAN of abs vel %f\", STATS_median) \n\
-		print sprintf(\"metric: MIN of abs vel %f\", STATS_min) \n\
-		print sprintf(\"metric: MAX of abs vel %f\", STATS_max) \n\
 	  \n\
  		set term pngcairo size 1024,768 \n\
  		set grid \n\
@@ -168,11 +168,15 @@ CleanedMetrics%.csv: Metrics%.csv
 	grep ",96," $< > $@
 #	grep ",32," $< > $@
 
-CleanedAllMetrics.csv: CleanedMetrics0.csv CleanedMetrics1.csv CleanedMetrics2.csv CleanedMetrics3.csv CleanedMetrics4.csv CleanedMetrics5.csv CleanedMetrics6.csv CleanedMetrics7.csv CleanedMetrics8.csv Makefile
+CleanedAllMetrics9.csv: CleanedMetrics0.csv CleanedMetrics1.csv CleanedMetrics2.csv CleanedMetrics3.csv CleanedMetrics4.csv CleanedMetrics5.csv CleanedMetrics6.csv CleanedMetrics7.csv CleanedMetrics8.csv Makefile
 	paste CleanedMetrics0.csv CleanedMetrics1.csv CleanedMetrics2.csv CleanedMetrics3.csv CleanedMetrics4.csv CleanedMetrics5.csv CleanedMetrics6.csv CleanedMetrics7.csv CleanedMetrics8.csv |\
-	awk -F, '{print $$1","$$2",99,"$$4","$$5","$$11","$$12","$$18","$$19","$$25","$$26","$$32","$$33","$$39","$$40","$$46","$$47","$$53","$$54","$$60","$$61}' | grep -v ",," > CleanedAllMetrics.csv
+	awk -F, '{print $$1","$$2",99,"$$4","$$5","$$11","$$12","$$18","$$19","$$25","$$26","$$32","$$33","$$39","$$40","$$46","$$47","$$53","$$54","$$60","$$61}' | grep -v ",," > $@
 
-CleanedAllMetrics.png: CleanedAllMetrics.csv
+CleanedAllMetrics2.csv: CleanedMetrics0.csv CleanedMetrics1.csv
+	paste CleanedMetrics0.csv CleanedMetrics1.csv |\
+	awk -F, '{print $$1","$$2",99,"$$4","$$5","$$11","$$12}' | grep -v ",," > $@
+
+CleanedAllMetrics9.png: CleanedAllMetrics9.csv
 	echo " \
 		set datafile separator ',' \n\
 		min(a,b) = (a < b) ? a : b \n\
@@ -185,6 +189,21 @@ CleanedAllMetrics.png: CleanedAllMetrics.csv
 		set output \"$@\" \n\
 		plot     \"$<\" using (column(1)+column(2)/1000000000):(min(column(4),min(column(6),min(column(8),min(column(10),min(column(12),min(column(14),min(column(16),min(column(18),column(20)))))))))) with lines title 'dist_{min}', \
 						 \"$<\" using (column(1)+column(2)/1000000000):(max(column(5),max(column(7),max(column(9),max(column(11),max(column(13),max(column(15),max(column(17),max(column(19),column(21)))))))))) with lines title 'comp_{max}" \
+	 | gnuplot
+
+CleanedAllMetrics2.png: CleanedAllMetrics2.csv
+	echo " \
+		set datafile separator ',' \n\
+		min(a,b) = (a < b) ? a : b \n\
+		max(a,b) = (a < b) ? b : a \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		set ylabel \"Distance $< [m]\" \n\
+		set yrange [0:1.5] \n\
+		set output \"$@\" \n\
+		plot     \"$<\" using (column(1)+column(2)/1000000000):(min(column(4),column(6))) with lines title 'dist_{min}', \
+						 \"$<\" using (column(1)+column(2)/1000000000):(max(column(5),column(7))) with lines title 'comp_{max}" \
 	 | gnuplot
 
 CleanedAllMetricsVerbose.png: CleanedAllMetrics.csv

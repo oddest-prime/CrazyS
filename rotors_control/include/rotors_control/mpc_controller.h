@@ -64,6 +64,7 @@ namespace rotors_control {
             int droneNumber_;
             bool waypointFilter_active_;
             bool EKF_active_;
+            int inner_controller_;
 
             PositionControllerParameters controller_parameters_;
             ComplementaryFilterCrazyflie2 complementary_filter_crazyflie_;

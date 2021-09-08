@@ -334,13 +334,13 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
     ROS_INFO_ONCE("SwarmController got PoseStamped message.");
 
     // received message containing own position information
-    auto odometry_true = EigenOdometry();
-    odometry_ = EigenOdometry();
-    odometry_true.timeStampSec = pose_msg->header.stamp.sec;
-    odometry_true.timeStampNsec = pose_msg->header.stamp.nsec;
-    odometry_true.position[0] = pose_msg->pose.position.x;
-    odometry_true.position[1] = pose_msg->pose.position.y;
-    odometry_true.position[2] = pose_msg->pose.position.z;
+    odometry_gt_ = EigenOdometry();
+    odometry_gt_.timeStampSec = pose_msg->header.stamp.sec;
+    odometry_gt_.timeStampNsec = pose_msg->header.stamp.nsec;
+    odometry_gt_.position[0] = pose_msg->pose.position.x;
+    odometry_gt_.position[1] = pose_msg->pose.position.y;
+    odometry_gt_.position[2] = pose_msg->pose.position.z;
+    odometry_ = odometry_gt_;
 
     // gaussian random number generator
     const double mean = 0.0;
@@ -355,18 +355,16 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       rand_z_ = dist(generator);
       ROS_INFO_ONCE("SwarmController %d random noise x=%f y=%f z=%f", droneNumber_, rand_x_, rand_y_, rand_z_);
     }
-    odometry_ = odometry_true;
-    odometry_true.position[0] += rand_x_;
-    odometry_true.position[1] += rand_y_;
-    odometry_true.position[2] += rand_z_;
-
+    odometry_.position[0] += rand_x_;
+    odometry_.position[1] += rand_y_;
+    odometry_.position[2] += rand_z_;
 
     // setpoint for message to be sent to low-level controller
     geometry_msgs::PoseStamped set_point;
     set_point.header.stamp = pose_msg->header.stamp;
 
     for (size_t i = 0; i < droneCount_; i++)
-        dronestate[i].UpdateDistance(&odometry_);
+        dronestate[i].UpdateDistance(&odometry_, &odometry_gt_);
 
     // obstacle definition
     int obstacle_count = 0;
@@ -394,33 +392,35 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
     obstacle_position[2].position[2] = odometry_.position[2]; // todo, remove fix for infinite z obstacles
     float obstacle_radius = 0.15;
 
-    float obstacle_dist_min = FLT_MAX;
+    float obstacle_dist_min_gt = FLT_MAX;
     for(int i = 0; i < obstacle_count; i++) // iterate over all obstacles
     {
-      float obstacle_dist = norm(odometry_true - obstacle_position[i]);
-      obstacle_dist_min = min(obstacle_dist_min, obstacle_dist);
+      float obstacle_dist_gt = norm(odometry_gt_ - obstacle_position[i]);
+      obstacle_dist_min_gt = min(obstacle_dist_min_gt, obstacle_dist_gt);
     }
 
     // for logging into files
     std::stringstream tempDistance;
     tempDistance.precision(24);
-    tempDistance << odometry_true.timeStampSec << "," << odometry_true.timeStampNsec << "," << enable_swarm_ << ",";
+    tempDistance << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
     std::stringstream tempMetrics;
     tempMetrics.precision(24);
-    tempMetrics << odometry_true.timeStampSec << "," << odometry_true.timeStampNsec << "," << enable_swarm_ << ",";
+    tempMetrics << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
     std::stringstream tempState;
     tempState.precision(24);
-    tempState << odometry_true.timeStampSec << "," << odometry_true.timeStampNsec << "," << enable_swarm_ << ",";
+    tempState << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
 
     // calculate swarm center, save distances to other drones
     EigenOdometry swarm_center;
+    EigenOdometry swarm_center_gt;
     float dist_min = FLT_MAX;
     for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
     {
         swarm_center = swarm_center + dronestate[i].odometry_;
+        swarm_center_gt = swarm_center_gt + dronestate[i].odometry_gt_;
         if(i != droneNumber_) // sum without own drone
         {
-            float dist = dronestate[i].GetDistance(&odometry_true);
+            float dist = dronestate[i].GetDistance(&odometry_gt_);
             dist_min = min(dist, dist_min);
             if(dataStoring_active_) // save distance to log file for current position
                 tempDistance << dist << ",";
@@ -428,21 +428,23 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
         }
     }
     swarm_center = swarm_center / (float)droneCount_;
+    swarm_center_gt = swarm_center_gt / (float)droneCount_;
     ROS_INFO_ONCE("SwarmController %d swarm center x=%f y=%f z=%f", droneNumber_, swarm_center.position[0], swarm_center.position[1], swarm_center.position[2]);
 
     if(dataStoring_active_) // save minimum distance to log file for current position
     {
        tempMetrics << dist_min << ",";
 
-       EigenOdometry center_vector = swarm_center - odometry_true;
-       float dist_center = norm(center_vector); // length of vector, distance from the center_vector
-       tempMetrics << dist_center << ",";
+       EigenOdometry center_vector_gt = swarm_center_gt - odometry_gt_;
+       float dist_center_gt = norm(center_vector_gt); // length of vector, distance from the center_vector
+       tempMetrics << dist_center_gt << ",";
 
-       float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_true)); // calculate length of vector
-       tempState << odometry_true.position[0] << "," << odometry_true.position[1] << "," << odometry_true.position[2] << ",";
-       tempState << odometry_true.velocity[0] << "," << odometry_true.velocity[1] << "," << odometry_true.velocity[2] << ",";
-       tempState << abs_state_velocity << ",";
-       tempState << obstacle_dist_min << ",";
+       tempMetrics << obstacle_dist_min_gt << ",";
+
+       //float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_gt_)); // calculate length of vector
+       tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";
+       // tempState << odometry_gt_.velocity[0] << "," << odometry_gt_.velocity[1] << "," << odometry_gt_.velocity[2] << ",";
+       // tempState << abs_state_velocity << ",";
     }
 
     ROS_INFO_ONCE("SwarmController got odometry message: x=%f y=%f z=%f (%d)", odometry_.position[0], odometry_.position[1], odometry_.position[2], enable_swarm_);
@@ -1012,10 +1014,21 @@ float DroneStateWithTime::GetDistance(EigenOdometry* odometry) {
     return sqrt(distance_x*distance_x + distance_y*distance_y + distance_z*distance_z);
 }
 
-void DroneStateWithTime::UpdateDistance(EigenOdometry* odometry) {
-    distance_ = this->GetDistance(odometry);
+float DroneStateWithTime::GetDistance_gt(EigenOdometry* odometry_gt) {
+    if(self_ == other_)
+        return 0;
 
-    ROS_INFO_ONCE("DroneStateWithTime distance=%f (self:%d, other:%d)", distance_, self_, other_);
+    float distance_x = fabs(odometry_gt_.position[0] - odometry_gt->position[0]);
+    float distance_y = fabs(odometry_gt_.position[1] - odometry_gt->position[1]);
+    float distance_z = fabs(odometry_gt_.position[2] - odometry_gt->position[2]);
+    return sqrt(distance_x*distance_x + distance_y*distance_y + distance_z*distance_z);
+}
+
+void DroneStateWithTime::UpdateDistance(EigenOdometry* odometry, EigenOdometry* odometry_gt) {
+    distance_ = this->GetDistance(odometry);
+    distance_gt_ = this->GetDistance_gt(odometry_gt);
+
+    ROS_INFO_ONCE("DroneStateWithTime distance=%f distance_gt=%f (self:%d, other:%d)", distance_, distance_gt_, self_, other_);
 }
 
 void DroneStateWithTime::SetId(int self, int other)

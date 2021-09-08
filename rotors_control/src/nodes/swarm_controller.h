@@ -76,13 +76,16 @@ namespace rotors_control {
      public:
       void SetId(int self, int other);
       void PoseCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg);
-      void UpdateDistance(EigenOdometry* odometry);
+      void UpdateDistance(EigenOdometry* odometry, EigenOdometry* odometry_gt);
       float GetDistance(EigenOdometry* odometry);
+      float GetDistance_gt(EigenOdometry* odometry_gt);
 
       int self_;
       int other_;
-      float distance_;
-      EigenOdometry odometry_;
+      float distance_; // with simulated sensor noise
+      float distance_gt_; // ground-truth
+      EigenOdometry odometry_; // with simulated sensor noise
+      EigenOdometry odometry_gt_; // ground-truth
     };
 
     class SwarmController{
@@ -110,7 +113,8 @@ namespace rotors_control {
 //            PositionController position_controller_;
             MpcController position_controller_;
             sensorData_t sensors_;
-            EigenOdometry odometry_;
+            EigenOdometry odometry_; // with simulated sensor noise
+            EigenOdometry odometry_gt_; // ground-truth
 
             int rand_cnt_;
             float rand_x_;

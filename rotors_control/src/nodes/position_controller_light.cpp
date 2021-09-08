@@ -81,11 +81,11 @@ void PositionControllerLight::CallbackSaveData(const ros::TimerEvent& event){
 
       ROS_INFO("CallbackSavaData PositionControllerLight. droneNumber: %d", droneNumber_);
 
-      fileDistance.open(std::string("/tmp/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      fileMetrics.open(std::string("/tmp/log_output/Metrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      fileState.open(std::string("/tmp/log_output/State") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileDistance.open(std::string("/tmp/log_output/PosDistance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileMetrics.open(std::string("/tmp/log_output/PosMetrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileState.open(std::string("/tmp/log_output/PosState") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
 
-      // Saving distances from every to every dron in a file
+      // Saving distances from every to every drone in a file
       for (unsigned n=0; n < listDistance_.size(); ++n) {
           fileDistance << listDistance_.at( n );
       }
@@ -195,6 +195,7 @@ void PositionControllerLight::InitializeParams() {
     GetRosParameter(pnh, "reynolds/accel_limit", (float)0.5, &reynolds_accel_limit_);
 
     GetRosParameter(pnh, "gradient/scale_factor", (float)0.01, &gradient_scale_factor_);
+    GetRosParameter(pnh, "inner/controller", (int)'a', &inner_controller_);
 
     reynolds_velocity_factor_ *= reynolds_global_factor_;
     reynolds_cohesion_factor_ *= reynolds_global_factor_;
@@ -203,23 +204,9 @@ void PositionControllerLight::InitializeParams() {
     reynolds_target_accel_limit_ *= reynolds_global_factor_;
     reynolds_accel_limit_ *= reynolds_global_factor_;
 
-    ROS_INFO_ONCE("[Swarm Controller] GetRosParameter values:");
-    ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
-    ROS_INFO_ONCE("  mpc1/eps_move=%f", eps_move_);
-    ROS_INFO_ONCE("  mpc1/n_move_max=%d", n_move_max_);
-    ROS_INFO_ONCE("  mpc1/mpc_cohesion_weight=%f", mpc_cohesion_weight_);
-    ROS_INFO_ONCE("  mpc1/mpc_separation_weight=%f", mpc_separation_weight_);
-    ROS_INFO_ONCE("  mpc1/mpc_target_weight=%f", mpc_target_weight_);
-    ROS_INFO_ONCE("  mpc1/mpc_obstacle_weight=%f", mpc_obstacle_weight_);
-    ROS_INFO_ONCE("  reynolds/weighted_delta_t=%f", weighted_delta_t_);
-    ROS_INFO_ONCE("  reynolds/global_factor=%f", reynolds_global_factor_);
-    ROS_INFO_ONCE("  reynolds/velocity_factor=%f", reynolds_velocity_factor_);
-    ROS_INFO_ONCE("  reynolds/cohesion_factor=%f", reynolds_cohesion_factor_);
-    ROS_INFO_ONCE("  reynolds/separation_factor=%f", reynolds_separation_factor_);
-    ROS_INFO_ONCE("  reynolds/target_factor=%f", reynolds_target_factor_);
-    ROS_INFO_ONCE("  reynolds/target_accel_limit=%f", reynolds_target_accel_limit_);
-    ROS_INFO_ONCE("  reynolds/accel_limit=%f", reynolds_accel_limit_);
-    ROS_INFO_ONCE("  gradient/scale_factor=%f", gradient_scale_factor_);
+    ROS_INFO_ONCE("[PositionControllerLight] GetRosParameter values:");
+    ROS_INFO_ONCE("  inner/controller=%d", inner_controller_);
+    position_controller_.inner_controller_ = inner_controller_;
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
@@ -239,7 +226,7 @@ void PositionControllerLight::InitializeParams() {
 
      if (pnh.getParam("droneNumber", droneNumber)){
          ROS_INFO("Got param 'droneNumber': %d", droneNumber);
-         // position_controller_.droneNumber_ = droneNumber;
+         position_controller_.droneNumber_ = droneNumber;
          droneNumber_ = droneNumber;
      }
      else

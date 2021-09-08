@@ -64,6 +64,7 @@ MpcController::MpcController()
     dataStoring_active_(false),
     dataStoringTime_(0),
     droneNumber_(255),
+    inner_controller_(255),
     phi_command_ki_(0),
     theta_command_ki_(0),
     p_command_ki_(0),
@@ -876,8 +877,14 @@ void MpcController::AttitudeController(double* p_command, double* q_command) {
       phi_command = setpoint_roll_;
     }
     else
-      XYController(&theta_command, &phi_command);
-//      XYControllerExplicit(&theta_command, &phi_command);
+    {
+      if(inner_controller_ == 1) // PID controller
+        XYController(&theta_command, &phi_command);
+      else if(inner_controller_ == 2) // explicit controller
+          XYControllerExplicit(&theta_command, &phi_command);
+      else
+          ROS_FATAL("MpcController: invalid value for inner_controller_ : %c", inner_controller_);
+    }
 
     double phi_error, theta_error;
     phi_error = phi_command - roll;

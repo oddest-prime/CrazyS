@@ -1,18 +1,18 @@
 # Swarm controller parameters
 swarm: {
-  neighbourhood_distance: 0.75, # approx 1m
+  neighbourhood_distance: 999.0, # global neighbourhood
   }
 mpc1: {
-  eps_move: 0.05, # 0.05, 0.1
-  n_move_max: 6, # 6
+  eps_move: 0.05,
+  n_move_max: 8,
   mpc_cohesion_weight: 20.0,
-  mpc_separation_weight: 9.0, # 6.0, 8.5
-  mpc_target_weight: 150.0, # 150.0
-  mpc_obstacle_weight: 20.0 # 20.0
+  mpc_separation_weight: 9.0,
+  mpc_target_weight: 150.0,
+  mpc_obstacle_weight: 20.0
   }
 gradient: {
-  scale_factor: 0.007 # 0.03
+  scale_factor: 0.007
   }
 inner: {
-  controller: 2 # 1 -> PID, 2 -> explicit
+  controller: 1 # 1 -> PID (A), 2 -> explicit (B)
   }

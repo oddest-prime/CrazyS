@@ -174,7 +174,7 @@ CleanedAllMetrics9.csv: CleanedMetrics0.csv CleanedMetrics1.csv CleanedMetrics2.
 
 CleanedAllMetrics2.csv: CleanedMetrics0.csv CleanedMetrics1.csv
 	paste CleanedMetrics0.csv CleanedMetrics1.csv |\
-	awk -F, '{print $$1","$$2",99,"$$4","$$5","$$11","$$12}' | grep -v ",," > $@
+	awk -F, '{print $$1","$$2",99,"$$4","$$5","$$6","$$12","$$13","$$14}' | grep -v ",," > $@
 
 CleanedAllMetrics9.png: CleanedAllMetrics9.csv
 	echo " \
@@ -200,10 +200,12 @@ CleanedAllMetrics2.png: CleanedAllMetrics2.csv
 		set grid \n\
 		set xlabel \"Time [s]\" \n\
 		set ylabel \"Distance $< [m]\" \n\
-		set yrange [0:1.5] \n\
+		set yrange [0:2.0] \n\
+		set autoscale ymax \n\
 		set output \"$@\" \n\
-		plot     \"$<\" using (column(1)+column(2)/1000000000):(min(column(4),column(6))) with lines title 'dist_{min}', \
-						 \"$<\" using (column(1)+column(2)/1000000000):(max(column(5),column(7))) with lines title 'comp_{max}" \
+		plot     \"$<\" using (column(1)+column(2)/1000000000):(min(column(4),column(7))) with lines title 'dist_{min}', \
+					   \"$<\" using (column(1)+column(2)/1000000000):(min(column(5),column(8))) with lines title 'comp_{max}', \
+						 \"$<\" using (column(1)+column(2)/1000000000):(max(column(6),column(9))) with lines title 'clear_{obj}" \
 	 | gnuplot
 
 CleanedAllMetricsVerbose.png: CleanedAllMetrics.csv

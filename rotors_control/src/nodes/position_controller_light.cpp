@@ -81,9 +81,9 @@ void PositionControllerLight::CallbackSaveData(const ros::TimerEvent& event){
 
       ROS_INFO("CallbackSavaData PositionControllerLight. droneNumber: %d", droneNumber_);
 
-      fileDistance.open(std::string("/tmp/log_output/PosDistance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      fileMetrics.open(std::string("/tmp/log_output/PosMetrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
-      fileState.open(std::string("/tmp/log_output/PosState") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::app);
+      fileDistance.open(std::string("/tmp/log_output/PosDistance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileMetrics.open(std::string("/tmp/log_output/PosMetrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileState.open(std::string("/tmp/log_output/PosState") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
 
       // Saving distances from every to every drone in a file
       for (unsigned n=0; n < listDistance_.size(); ++n) {

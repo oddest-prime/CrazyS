@@ -344,7 +344,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
 
     // gaussian random number generator
     const double mean = 0.0;
-    const double stddev = 0.15; // 15 cm
+    const double stddev = 0.10; // 10 cm
     std::normal_distribution<double> dist(mean, stddev);
     rand_cnt_++;
     if(rand_cnt_ > 10) // reduce frequency of noise
@@ -385,11 +385,9 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       obstacle_position[2].position[0] = 0.0;
       obstacle_position[2].position[1] = 3.0;
     }
-    // obstacle_position.position[0] = 1; // test obstacle for 2 drone scenario
-    // obstacle_position.position[1] = 0.1; // test obstacle for 2 drone scenario
-    obstacle_position[0].position[2] = odometry_.position[2]; // todo, remove fix for infinite z obstacles
-    obstacle_position[1].position[2] = odometry_.position[2]; // todo, remove fix for infinite z obstacles
-    obstacle_position[2].position[2] = odometry_.position[2]; // todo, remove fix for infinite z obstacles
+    obstacle_position[0].position[2] = odometry_gt_.position[2]; // todo, remove workaround for infinite z obstacles
+    obstacle_position[1].position[2] = odometry_gt_.position[2]; // todo, remove workaround for infinite z obstacles
+    obstacle_position[2].position[2] = odometry_gt_.position[2]; // todo, remove workaround for infinite z obstacles
     float obstacle_radius = 0.15;
 
     float obstacle_dist_min_gt = FLT_MAX;
@@ -398,6 +396,9 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       float obstacle_dist_gt = norm(odometry_gt_ - obstacle_position[i]);
       obstacle_dist_min_gt = min(obstacle_dist_min_gt, obstacle_dist_gt);
     }
+    obstacle_position[0].position[2] = odometry_.position[2]; // todo, remove workaround for infinite z obstacles
+    obstacle_position[1].position[2] = odometry_.position[2]; // todo, remove workaround for infinite z obstacles
+    obstacle_position[2].position[2] = odometry_.position[2]; // todo, remove workaround for infinite z obstacles
 
     // for logging into files
     std::stringstream tempDistance;
@@ -413,27 +414,27 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
     // calculate swarm center, save distances to other drones
     EigenOdometry swarm_center;
     EigenOdometry swarm_center_gt;
-    float dist_min = FLT_MAX;
+    float dist_min_gt = FLT_MAX;
     for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
     {
         swarm_center = swarm_center + dronestate[i].odometry_;
         swarm_center_gt = swarm_center_gt + dronestate[i].odometry_gt_;
         if(i != droneNumber_) // sum without own drone
         {
-            float dist = dronestate[i].GetDistance(&odometry_gt_);
-            dist_min = min(dist, dist_min);
+            float dist_gt = dronestate[i].GetDistance_gt(&odometry_gt_);
+            dist_min_gt = min(dist_gt, dist_min_gt);
             if(dataStoring_active_) // save distance to log file for current position
-                tempDistance << dist << ",";
-            ROS_INFO_ONCE("SwarmController %d distance to %d l=%f", droneNumber_, (int)i, dist);
+                tempDistance << dist_gt << ",";
+            ROS_INFO_ONCE("SwarmController %d distance_gt to %d l=%f", droneNumber_, (int)i, dist_gt);
         }
     }
     swarm_center = swarm_center / (float)droneCount_;
     swarm_center_gt = swarm_center_gt / (float)droneCount_;
-    ROS_INFO_ONCE("SwarmController %d swarm center x=%f y=%f z=%f", droneNumber_, swarm_center.position[0], swarm_center.position[1], swarm_center.position[2]);
+    ROS_INFO_ONCE("SwarmController %d swarm center_gt x=%f y=%f z=%f", droneNumber_, swarm_center_gt.position[0], swarm_center_gt.position[1], swarm_center_gt.position[2]);
 
     if(dataStoring_active_) // save minimum distance to log file for current position
     {
-       tempMetrics << dist_min << ",";
+       tempMetrics << dist_min_gt << ",";
 
        EigenOdometry center_vector_gt = swarm_center_gt - odometry_gt_;
        float dist_center_gt = norm(center_vector_gt); // length of vector, distance from the center_vector
@@ -994,14 +995,31 @@ void DroneStateWithTime::PoseCallback(const geometry_msgs::PoseStampedConstPtr& 
     ROS_INFO_ONCE("DroneStateWithTime got first odometry message.");
 
     // received message containing other drone position information
-    odometry_ = EigenOdometry();
-    odometry_.timeStampSec = pose_msg->header.stamp.sec;
-    odometry_.timeStampNsec = pose_msg->header.stamp.nsec;
-    odometry_.position[0] = pose_msg->pose.position.x;
-    odometry_.position[1] = pose_msg->pose.position.y;
-    odometry_.position[2] = pose_msg->pose.position.z;
+    odometry_gt_ = EigenOdometry();
+    odometry_gt_.timeStampSec = pose_msg->header.stamp.sec;
+    odometry_gt_.timeStampNsec = pose_msg->header.stamp.nsec;
+    odometry_gt_.position[0] = pose_msg->pose.position.x;
+    odometry_gt_.position[1] = pose_msg->pose.position.y;
+    odometry_gt_.position[2] = pose_msg->pose.position.z;
+    odometry_ = odometry_gt_;
 
-    ROS_INFO_ONCE("DroneStateWithTime got odometry message: x=%f y=%f z=%f (self:%d, other:%d)", odometry_.position[0], odometry_.position[1], odometry_.position[2], self_, other_);
+    // gaussian random number generator
+    const double mean = 0.0;
+    const double stddev = 0.10; // 10 cm
+    std::normal_distribution<double> dist(mean, stddev);
+    rand_cnt_++;
+    if(rand_cnt_ > 10) // reduce frequency of noise
+    {
+      rand_cnt_ = 0;
+      rand_x_ = dist(generator);
+      rand_y_ = dist(generator);
+      rand_z_ = dist(generator);
+    }
+    odometry_.position[0] += rand_x_;
+    odometry_.position[1] += rand_y_;
+    odometry_.position[2] += rand_z_;
+
+    ROS_INFO_ONCE("DroneStateWithTime got odometry message: x=%f y=%f z=%f (self:%d, other:%d)", odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2], self_, other_);
 }
 
 float DroneStateWithTime::GetDistance(EigenOdometry* odometry) {

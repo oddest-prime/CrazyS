@@ -80,6 +80,12 @@ namespace rotors_control {
       float GetDistance(EigenOdometry* odometry);
       float GetDistance_gt(EigenOdometry* odometry_gt);
 
+      int rand_cnt_;
+      float rand_x_;
+      float rand_y_;
+      float rand_z_;
+      std::default_random_engine generator;
+
       int self_;
       int other_;
       float distance_; // with simulated sensor noise

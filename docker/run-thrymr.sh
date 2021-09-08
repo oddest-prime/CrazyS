@@ -9,19 +9,6 @@ cd ~/SWARM/crazys
 #exit 0;
 
 
-# check gradient based version with vector distance
-for j in 2 3 4 5
-do
-  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15_obstacle2 gradient mpc1_params$j "obs15_params$j" &
-  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9_obstacle2 gradient mpc1_params$j "obs9_params$j" &
-  sleep 150 # delay compilation by 150 seconds in second two docker containers
-  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2_obstacle2 gradient mpc1_params$j "obs2_params$j" &
-  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4_obstacle2 gradient mpc1_params$j "obs4_params$j" &
-  wait
-
-  test -e /tmp/stop && exit 7 # stop if flag is present
-done
-
 # check gradient with enumeration based version
 for j in 2 3 4 5
 do
@@ -30,19 +17,6 @@ do
   sleep 150 # delay compilation by 150 seconds in second two docker containers
   docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2_obstacle2 gradenum mpc1_params$j "obs2_params$j" &
   docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4_obstacle2 gradenum mpc1_params$j "obs4_params$j" &
-  wait
-
-  test -e /tmp/stop && exit 7 # stop if flag is present
-done
-
-# check gradient based version with vector distance
-for j in 2 3 4 5
-do
-  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradient mpc1_params$j "free15_params$j" &
-  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradient mpc1_params$j "free9_params$j" &
-  sleep 150 # delay compilation by 150 seconds in second two docker containers
-  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 gradient mpc1_params$j "free2_params$j" &
-  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 gradient mpc1_params$j "free4_params$j" &
   wait
 
   test -e /tmp/stop && exit 7 # stop if flag is present
@@ -61,6 +35,33 @@ do
   test -e /tmp/stop && exit 7 # stop if flag is present
 done
 exit 0;
+
+# check gradient based version with vector distance
+for j in 2 3 4 5
+do
+  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15_obstacle2 gradient mpc1_params$j "obs15_params$j" &
+  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9_obstacle2 gradient mpc1_params$j "obs9_params$j" &
+  sleep 150 # delay compilation by 150 seconds in second two docker containers
+  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2_obstacle2 gradient mpc1_params$j "obs2_params$j" &
+  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4_obstacle2 gradient mpc1_params$j "obs4_params$j" &
+  wait
+
+  test -e /tmp/stop && exit 7 # stop if flag is present
+done
+
+# check gradient based version with vector distance
+for j in 2 3 4 5
+do
+  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradient mpc1_params$j "free15_params$j" &
+  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradient mpc1_params$j "free9_params$j" &
+  sleep 150 # delay compilation by 150 seconds in second two docker containers
+  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 gradient mpc1_params$j "free2_params$j" &
+  docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 gradient mpc1_params$j "free4_params$j" &
+  wait
+
+  test -e /tmp/stop && exit 7 # stop if flag is present
+done
+
 
 
 

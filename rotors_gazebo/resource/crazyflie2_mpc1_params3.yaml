@@ -3,8 +3,8 @@ swarm: {
   neighbourhood_distance: 0.75, # local neighbourhood with radius of 75cm
   }
 mpc1: {
-  eps_move: 0.05,
-  n_move_max: 5,
+  eps_move: 0.07,
+  n_move_max: 3,
   mpc_cohesion_weight: 20.0,
   mpc_separation_weight: 11.0,
   mpc_target_weight: 150.0,

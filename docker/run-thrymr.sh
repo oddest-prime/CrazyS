@@ -23,7 +23,7 @@ do
 done
 
 # check gradient with enumeration based version
-for j in 2 3 4 5
+for j in 2 3
 do
   docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradenum mpc1_params$j "free9_params$j" &
   docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradenum mpc1_params$j "free15_params$j" &
@@ -37,7 +37,7 @@ done
 exit 0;
 
 # check gradient based version with vector distance
-for j in 2 3 4 5
+for j in 2 3
 do
   docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15_obstacle2 gradient mpc1_params$j "obs15_params$j" &
   docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9_obstacle2 gradient mpc1_params$j "obs9_params$j" &

@@ -382,7 +382,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
     {
       obstacle_count = 3;
       obstacle_position[0].position[0] = 2.0;
-      obstacle_position[0].position[1] = 2.0;
+      obstacle_position[0].position[1] = 1.5;
       obstacle_position[1].position[0] = 3.5;
       obstacle_position[1].position[1] = 3.5;
       obstacle_position[2].position[0] = 0.0;

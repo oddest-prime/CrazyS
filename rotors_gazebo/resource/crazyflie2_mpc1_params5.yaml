@@ -1,10 +1,10 @@
 # Swarm controller parameters
 swarm: {
   position_noise: 0.1, # simulate gaussian sensor noise, sigma = 10 cm
-  neighbourhood_distance: 0.75, # local neighbourhood with radius of 75cm
+  neighbourhood_distance: 0.90, # local neighbourhood with radius of 90cm
   }
 mpc1: {
-  eps_move: 0.05,
+  eps_move: 0.06,
   n_move_max: 5,
   mpc_cohesion_weight: 20.0,
   mpc_separation_weight: 11.0,

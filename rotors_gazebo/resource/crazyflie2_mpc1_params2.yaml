@@ -4,7 +4,7 @@ swarm: {
   neighbourhood_distance: 999.0, # global neighbourhood
   }
 mpc1: {
-  eps_move: 0.07,
+  eps_move: 0.06,
   n_move_max: 3,
   mpc_cohesion_weight: 20.0,
   mpc_separation_weight: 11.0,
@@ -12,7 +12,7 @@ mpc1: {
   mpc_obstacle_weight: 20.0
   }
 gradient: {
-  scale_factor: 0.007
+  scale_factor: 0.005
   }
 inner: {
   controller: 2 # 1 -> PID (A), 2 -> explicit (B)

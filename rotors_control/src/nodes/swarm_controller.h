@@ -74,7 +74,7 @@ namespace rotors_control {
 
     class DroneStateWithTime {
      public:
-      void SetId(int self, int other);
+      void SetId(int self, int other, float position_noise);
       void PoseCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg);
       void UpdateDistance(EigenOdometry* odometry, EigenOdometry* odometry_gt);
       float GetDistance(EigenOdometry* odometry);
@@ -85,6 +85,7 @@ namespace rotors_control {
       float rand_y_;
       float rand_z_;
       std::default_random_engine generator;
+      float position_noise_;
 
       int self_;
       int other_;
@@ -128,6 +129,7 @@ namespace rotors_control {
             float rand_z_;
             std::default_random_engine generator;
 
+            float position_noise_;
             float neighbourhood_distance_;
             float eps_move_;
             int n_move_max_;

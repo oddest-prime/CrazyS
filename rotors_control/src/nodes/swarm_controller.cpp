@@ -91,7 +91,7 @@ SwarmController::SwarmController() {
     };
     for (size_t i = 0; i < droneCount_; i++)
     {
-      dronestate[i].SetId(droneNumber_, i);
+      dronestate[i].SetId(droneNumber_, i, position_noise_);
       ROS_INFO("SwarmController: Setup subscriber %s/lps_pose.", nhq[i].getNamespace().c_str());
       pose_other_sub_[i] = nhq[i].subscribe("lps_pose", 1, &DroneStateWithTime::PoseCallback, &dronestate[i]);
     }
@@ -199,6 +199,7 @@ void SwarmController::InitializeParams() {
 
   if(!enable_mellinger_controller_ && !enable_internal_model_controller_){
 
+    GetRosParameter(pnh, "swarm/position_noise", (float)0.0, &position_noise_);
     GetRosParameter(pnh, "swarm/neighbourhood_distance", (float)99, &neighbourhood_distance_);
     GetRosParameter(pnh, "mpc1/eps_move", (float)0.1, &eps_move_);
     GetRosParameter(pnh, "mpc1/n_move_max", (int)2, &n_move_max_);
@@ -226,6 +227,7 @@ void SwarmController::InitializeParams() {
     reynolds_accel_limit_ *= reynolds_global_factor_;
 
     ROS_INFO_ONCE("[Swarm Controller] GetRosParameter values:");
+    ROS_INFO_ONCE("  swarm/position_noise=%f", position_noise_);
     ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
     ROS_INFO_ONCE("  mpc1/eps_move=%f", eps_move_);
     ROS_INFO_ONCE("  mpc1/n_move_max=%d", n_move_max_);
@@ -242,6 +244,9 @@ void SwarmController::InitializeParams() {
     ROS_INFO_ONCE("  reynolds/target_accel_limit=%f", reynolds_target_accel_limit_);
     ROS_INFO_ONCE("  reynolds/accel_limit=%f", reynolds_accel_limit_);
     ROS_INFO_ONCE("  gradient/scale_factor=%f", gradient_scale_factor_);
+
+    for (size_t i = 0; i < droneCount_; i++)
+      dronestate[i].SetId(droneNumber_, i, position_noise_);
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
@@ -343,17 +348,15 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
     odometry_ = odometry_gt_;
 
     // gaussian random number generator
-    const float mean = 0.0;
-    const float stddev = 0.10; // 10 cm
-    std::normal_distribution<float> dist(mean, stddev);
+    std::normal_distribution<float> dist(0.0, position_noise_);
     rand_cnt_++;
     if(rand_cnt_ > 10) // reduce frequency of noise
     {
       rand_cnt_ = 0;
-      rand_x_ = max(-5*stddev, min((float)dist(generator), 5*stddev));
-      rand_y_ = max(-5*stddev, min((float)dist(generator), 5*stddev));
-      rand_z_ = max(-5*stddev, min((float)dist(generator), 5*stddev));
-      ROS_INFO_ONCE("SwarmController %d random noise x=%f y=%f z=%f", droneNumber_, rand_x_, rand_y_, rand_z_);
+      rand_x_ = max(-5*position_noise_, min((float)dist(generator), 5*position_noise_));
+      rand_y_ = max(-5*position_noise_, min((float)dist(generator), 5*position_noise_));
+      rand_z_ = max(-5*position_noise_, min((float)dist(generator), 5*position_noise_));
+      ROS_INFO_ONCE("SwarmController %d random noise (stddev=%f) x=%f y=%f z=%f", droneNumber_, position_noise_, rand_x_, rand_y_, rand_z_);
     }
     odometry_.position[0] = odometry_gt_.position[0] + rand_x_;
     odometry_.position[1] = odometry_gt_.position[1] + rand_y_;
@@ -468,7 +471,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
         }
         else
         {
-            ROS_INFO("SwarmController %d no-neighbour=%d dist=%f", droneNumber_, (int)i, dist);
+            ROS_INFO_ONCE("SwarmController %d no-neighbour=%d dist=%f", droneNumber_, (int)i, dist);
             neighbourhood_bool[i] = false;
         }
     }
@@ -476,7 +479,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
     if(neighbourhood_cnt_ != neighbourhood_cnt)
     {
         neighbourhood_cnt_ = neighbourhood_cnt;
-        ROS_INFO("SwarmController %d droneCount=%d neighbourhood_cnt=%d", droneNumber_, droneCount_, neighbourhood_cnt);
+        ROS_INFO_ONCE("SwarmController %d droneCount=%d neighbourhood_cnt=%d", droneNumber_, droneCount_, neighbourhood_cnt);
     }
 
     tempMetrics << droneCount_ << ",";
@@ -1011,21 +1014,20 @@ void DroneStateWithTime::PoseCallback(const geometry_msgs::PoseStampedConstPtr& 
     odometry_ = odometry_gt_;
 
     // gaussian random number generator
-    const float mean = 0.0;
-    const float stddev = 0.10; // 10 cm
-    std::normal_distribution<float> dist(mean, stddev);
+    std::normal_distribution<float> dist(0.0, position_noise_);
     rand_cnt_++;
     if(rand_cnt_ > 10) // reduce frequency of noise
     {
       rand_cnt_ = 0;
-      rand_x_ = max(-5*stddev, min((float)dist(generator), 5*stddev));
-      rand_y_ = max(-5*stddev, min((float)dist(generator), 5*stddev));
-      rand_z_ = max(-5*stddev, min((float)dist(generator), 5*stddev));
+      rand_x_ = max(-5*position_noise_, min((float)dist(generator), 5*position_noise_));
+      rand_y_ = max(-5*position_noise_, min((float)dist(generator), 5*position_noise_));
+      rand_z_ = max(-5*position_noise_, min((float)dist(generator), 5*position_noise_));
     }
     odometry_.position[0] = odometry_gt_.position[0] + rand_x_;
     odometry_.position[1] = odometry_gt_.position[1] + rand_y_;
     odometry_.position[2] = odometry_gt_.position[2] + rand_z_;
 
+    ROS_INFO_ONCE("DroneStateWithTime %d/%d random noise (position_noise=%f) x=%f y=%f z=%f", self_, other_, position_noise_, rand_x_, rand_y_, rand_z_);
     ROS_INFO_ONCE("DroneStateWithTime got odometry message: x=%f y=%f z=%f (self:%d, other:%d)", odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2], self_, other_);
 }
 
@@ -1056,10 +1058,11 @@ void DroneStateWithTime::UpdateDistance(EigenOdometry* odometry, EigenOdometry* 
     ROS_INFO_ONCE("DroneStateWithTime distance=%f distance_gt=%f (self:%d, other:%d)", distance_, distance_gt_, self_, other_);
 }
 
-void DroneStateWithTime::SetId(int self, int other)
+void DroneStateWithTime::SetId(int self, int other, float position_noise)
 {
     self_ = self;
     other_ = other;
+    position_noise_ = position_noise;
 
     rand_cnt_ = 0;
     rand_x_ = 0;

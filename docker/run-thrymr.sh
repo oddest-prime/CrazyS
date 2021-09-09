@@ -67,7 +67,7 @@ do
 done
 
 
-
+exit 0; # ###################################
 
 # this was the big simulation batch per 2021-06-29...
 for i in 2 # dyn_n

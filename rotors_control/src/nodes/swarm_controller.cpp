@@ -355,11 +355,9 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       rand_z_ = max(-5*stddev, min((float)dist(generator), 5*stddev));
       ROS_INFO_ONCE("SwarmController %d random noise x=%f y=%f z=%f", droneNumber_, rand_x_, rand_y_, rand_z_);
     }
-    /*
-    odometry_.position[0] += rand_x_;
-    odometry_.position[1] += rand_y_;
-    odometry_.position[2] += rand_z_;
-    */
+    odometry_.position[0] = odometry_gt_.position[0] + rand_x_;
+    odometry_.position[1] = odometry_gt_.position[1] + rand_y_;
+    odometry_.position[2] = odometry_gt_.position[2] + rand_z_;
 
     // setpoint for message to be sent to low-level controller
     geometry_msgs::PoseStamped set_point;
@@ -1024,11 +1022,9 @@ void DroneStateWithTime::PoseCallback(const geometry_msgs::PoseStampedConstPtr& 
       rand_y_ = max(-5*stddev, min((float)dist(generator), 5*stddev));
       rand_z_ = max(-5*stddev, min((float)dist(generator), 5*stddev));
     }
-    /*
-    odometry_.position[0] += rand_x_;
-    odometry_.position[1] += rand_y_;
-    odometry_.position[2] += rand_z_;
-    */
+    odometry_.position[0] = odometry_gt_.position[0] + rand_x_;
+    odometry_.position[1] = odometry_gt_.position[1] + rand_y_;
+    odometry_.position[2] = odometry_gt_.position[2] + rand_z_;
 
     ROS_INFO_ONCE("DroneStateWithTime got odometry message: x=%f y=%f z=%f (self:%d, other:%d)", odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2], self_, other_);
 }
@@ -1064,6 +1060,11 @@ void DroneStateWithTime::SetId(int self, int other)
 {
     self_ = self;
     other_ = other;
+
+    rand_cnt_ = 0;
+    rand_x_ = 0;
+    rand_y_ = 0;
+    rand_z_ = 0;
 }
 
 EigenOdometry CrossProduct(EigenOdometry* a, EigenOdometry* b)

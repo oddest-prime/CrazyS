@@ -1,18 +1,19 @@
 # Swarm controller parameters
 swarm: {
-  neighbourhood_distance: 0.8, # approx 1m
+  position_noise: 0.0, # simulate gaussian sensor noise, sigma = 10 cm
+  neighbourhood_distance: 0.90, # local neighbourhood with radius of 90cm
   }
 mpc1: {
-  eps_move: 0.05, # 0.05,
-  n_move_max: 6, # max 10 looks also good,
+  eps_move: 0.05,
+  n_move_max: 3,
   mpc_cohesion_weight: 20.0,
-  mpc_separation_weight: 6.0,
-  mpc_target_weight: 150.0, # 50.0
-  mpc_obstacle_weight: 2.5
+  mpc_separation_weight: 11.0,
+  mpc_target_weight: 150.0,
+  mpc_obstacle_weight: 20.0
   }
 gradient: {
-  scale_factor: 0.007 # 0.03
+  scale_factor: 0.005
   }
 inner: {
-  controller: 2 # 1 -> PID, 2 -> explicit
+  controller: 2 # 1 -> PID (A), 2 -> explicit (B)
   }

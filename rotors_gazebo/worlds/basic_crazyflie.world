@@ -138,8 +138,8 @@
         <visualize>true</visualize>
       </sensor>
     </link>
-
     </model>
+
     <model name="camera4">
     <link name="link">
       <gravity>0</gravity>
@@ -185,6 +185,26 @@
     </link>
     </model>
 
+    <model name="marker0_model">
+      <static>true</static>
+      <link name="marker0_link">
+          <visual name="marker0_visual">
+              <pose>0 0 0 0 0 0</pose>
+              <!--plugin name="simple_markers" filename="librotors_gazebo_simple_markers.so"/-->
+              <geometry>
+                <sphere>
+                  <radius>0.05</radius>
+                </sphere>
+              </geometry>
+              <material>
+                <script>
+                  <name>Gazebo/RedTransparentOverlay</name>
+                  <uri>__default__</uri>
+                </script>
+              </material>
+          </visual>
+      </link>
+  </model>
 
     <!-- Only one ROS interface plugin is required per world, as any other plugin can connect a Gazebo
          topic to a ROS topic (or vise versa). -->

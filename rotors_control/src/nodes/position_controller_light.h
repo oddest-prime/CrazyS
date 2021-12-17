@@ -149,6 +149,7 @@ namespace rotors_control {
             ros::Publisher pose_pub_;
 
             ros::ServiceClient gazebo_client_;
+            float visual_cnt_;
 
             mav_msgs::EigenTrajectoryPointDeque commands_;
             std::deque<ros::Duration> command_waiting_times_;

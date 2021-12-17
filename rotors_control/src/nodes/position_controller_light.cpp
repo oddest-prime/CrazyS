@@ -66,6 +66,7 @@ PositionControllerLight::PositionControllerLight() {
     pose_pub_ = nh.advertise<geometry_msgs::PoseStamped>("lps_pose", 1);
 
     // To publish the current pose for gazebo visual
+    visual_cnt_ = 0;
     gazebo_client_ = nh.serviceClient<gazebo_msgs::SetModelState>("/gazebo/set_model_state");
 }
 
@@ -295,8 +296,8 @@ void PositionControllerLight::OdometryCallback(const nav_msgs::OdometryConstPtr&
 
     // debug, testing
     geometry_msgs::Point pr2_position;
-    pr2_position.x = odometry_msg->pose.pose.position.x;
-    pr2_position.y = odometry_msg->pose.pose.position.y;
+    pr2_position.x = odometry_msg->pose.pose.position.x + sin(visual_cnt_)* 0.15;
+    pr2_position.y = odometry_msg->pose.pose.position.y + cos(visual_cnt_)* 0.15;
     pr2_position.z = odometry_msg->pose.pose.position.z;
     geometry_msgs::Quaternion pr2_orientation;
     pr2_orientation.x = 0.0;
@@ -313,6 +314,7 @@ void PositionControllerLight::OdometryCallback(const nav_msgs::OdometryConstPtr&
     srv.request.model_state = pr2_modelstate;
     if(!gazebo_client_.call(srv))
       ROS_ERROR("Failed to move marker! Error msg:%s",srv.response.status_message.c_str());
+    visual_cnt_ += 2*3.14159265358979323846 / 200;
 
     if(waypointHasBeenPublished_){
 

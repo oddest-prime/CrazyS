@@ -53,6 +53,9 @@ DistanceMeasurementSim::DistanceMeasurementSim() {
 
     ros::NodeHandle nh;
     ros::NodeHandle pnh_node("~");
+
+    distances_pub_ = nh.advertise<std_msgs::Float32MultiArray>("drone_distances", 1);
+
     InitializeParams();
 
     ros::NodeHandle nhq[N_DRONES_MAX] = { // NodeHandles for each drone (separate namespace)
@@ -129,13 +132,10 @@ void DistanceMeasurementSim::InitializeParams() {
     }
 
     for (size_t i = 0; i < droneCount_; i++)
-      dronestate[i].SetId(droneNumber_, droneCount_, distance_noise_, dronestate);
+      dronestate[i].SetId((int)i, droneCount_, distance_noise_, dronestate, &distances_pub_);
 
     ros::NodeHandle nh;
     //timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &DistanceMeasurementSim::CallbackSaveData, this, false, true);
-}
-
-void DistanceMeasurementSim::Publish(){
 }
 
 void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg) {
@@ -161,100 +161,38 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         pow(odometry_gt_.position[0] - dronestate_[i].odometry_gt_.position[0], 2) +
         pow(odometry_gt_.position[1] - dronestate_[i].odometry_gt_.position[1], 2) +
         pow(odometry_gt_.position[2] - dronestate_[i].odometry_gt_.position[2], 2));
-      float rand_value = max(-5*distance_noise_, min((float)dist(generator_), 5*distance_noise_));
+      float rand_value = std::max(-5*distance_noise_, std::min((float)dist(generator_), 5*distance_noise_));
       distances_[i] = distances_gt_[i] + rand_value;
-      ROS_INFO("DroneStateWithTime: distance_gt=%f distance=%f (droneNumber:%d, i:%d)", distances_gt_[i], distances_[i], droneNumber_, (int)i);
+      ROS_INFO_ONCE("DroneStateWithTime: distance_gt=%f distance=%f (droneNumber:%d, i:%d)", distances_gt_[i], distances_[i], droneNumber_, (int)i);
     }
+
+    std_msgs::Float32MultiArray dat;
+    dat.layout.dim.push_back(std_msgs::MultiArrayDimension());
+    dat.layout.dim.push_back(std_msgs::MultiArrayDimension());
+    dat.layout.dim[0].label = "from_drone";
+    dat.layout.dim[1].label = "do_drone";
+    dat.layout.dim[0].size = droneCount_;
+    dat.layout.dim[1].size = droneCount_;
+    dat.layout.dim[0].stride = droneCount_*droneCount_;
+    dat.layout.dim[1].stride = droneCount_;
+    dat.layout.data_offset = 0;
+    std::vector<float> vec(droneCount_*droneCount_, 0);
+    for (int i=0; i<droneCount_; i++)
+      for (int j=0; j<droneCount_; j++)
+        vec[i*droneCount_ + j] = dronestate_[i].distances_gt_[j];
+    dat.data = vec;
+    distances_pub_->publish(dat);
 }
 
-void DroneStateWithTime::SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate)
+void DroneStateWithTime::SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub)
 {
     droneNumber_ = droneNumber;
     droneCount_ = droneCount;
     distance_noise_ = position_noise;
 
     dronestate_ = dronestate;
+    distances_pub_ = distances_pub;
 }
-
-EigenOdometry CrossProduct(EigenOdometry* a, EigenOdometry* b)
-{
-    EigenOdometry r;
-    r.position[0] = a->position[1]*b->position[2] - a->position[2]*b->position[1];
-    r.position[1] = a->position[2]*b->position[0] - a->position[0]*b->position[2];
-    r.position[2] = a->position[0]*b->position[1] - a->position[1]*b->position[0];
-    return r;
-}
-
-EigenOdometry operator-(const EigenOdometry& a, const EigenOdometry& b)
-{
-    EigenOdometry r;
-    r.position[0] = a.position[0] - b.position[0];
-    r.position[1] = a.position[1] - b.position[1];
-    r.position[2] = a.position[2] - b.position[2];
-    return r;
-}
-
-EigenOdometry DifferenceVelocity(EigenOdometry* a, EigenOdometry* b)
-{
-    EigenOdometry r;
-    r.velocity[0] = a->velocity[0] - b->velocity[0];
-    r.velocity[1] = a->velocity[1] - b->velocity[1];
-    r.velocity[2] = a->velocity[2] - b->velocity[2];
-    return r;
-}
-
-EigenOdometry operator+(const EigenOdometry& a, const EigenOdometry& b)
-{
-    EigenOdometry r;
-    r.position[0] = a.position[0] + b.position[0];
-    r.position[1] = a.position[1] + b.position[1];
-    r.position[2] = a.position[2] + b.position[2];
-    return r;
-}
-
-EigenOdometry SumVelocity(EigenOdometry* a, EigenOdometry* b)
-{
-    EigenOdometry r;
-    r.velocity[0] = a->velocity[0] + b->velocity[0];
-    r.velocity[1] = a->velocity[1] + b->velocity[1];
-    r.velocity[2] = a->velocity[2] + b->velocity[2];
-    return r;
-}
-
-EigenOdometry operator*(const EigenOdometry& a, const float& b)
-{
-    EigenOdometry r;
-    r.position[0] = a.position[0] * b;
-    r.position[1] = a.position[1] * b;
-    r.position[2] = a.position[2] * b;
-    return r;
-}
-
-EigenOdometry operator/(const EigenOdometry& a, const float& b)
-{
-    EigenOdometry r;
-    r.position[0] = a.position[0] / b;
-    r.position[1] = a.position[1] / b;
-    r.position[2] = a.position[2] / b;
-    return r;
-}
-
-
-float norm_squared(const EigenOdometry& a)
-{
-    return (float) (a.position[0]*a.position[0] + a.position[1]*a.position[1] + a.position[2]*a.position[2]);
-}
-
-float norm(const EigenOdometry& a)
-{
-  return (float) sqrt(norm_squared(a));
-}
-
-float SquaredScalarVelocity(EigenOdometry* a)
-{
-    return (float) (a->velocity[0]*a->velocity[0] + a->velocity[1]*a->velocity[1] + a->velocity[2]*a->velocity[2]);
-}
-
 }
 
 int main(int argc, char** argv){

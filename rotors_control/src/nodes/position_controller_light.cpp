@@ -64,10 +64,6 @@ PositionControllerLight::PositionControllerLight() {
 
     // To publish the current pose
     pose_pub_ = nh.advertise<geometry_msgs::PoseStamped>("lps_pose", 1);
-
-    // To publish the current pose for gazebo visual
-    visual_cnt_ = 0;
-    gazebo_client_ = nh.serviceClient<gazebo_msgs::SetModelState>("/gazebo/set_model_state");
 }
 
 PositionControllerLight::~PositionControllerLight(){}
@@ -293,30 +289,6 @@ void PositionControllerLight::OdometryCallback(const nav_msgs::OdometryConstPtr&
     current_pose.header.stamp = odometry_msg->header.stamp;
     current_pose.pose = odometry_msg->pose.pose;
     pose_pub_.publish(current_pose);
-
-//    if(droneNumber_ == 0) // move red indicator sphere for testing purposes
-//    {
-      geometry_msgs::Point pr2_position;
-      pr2_position.x = odometry_msg->pose.pose.position.x + sin(visual_cnt_)* 0.1;
-      pr2_position.y = odometry_msg->pose.pose.position.y + cos(visual_cnt_)* 0.1;
-      pr2_position.z = odometry_msg->pose.pose.position.z;
-      geometry_msgs::Quaternion pr2_orientation;
-      pr2_orientation.x = 0.0;
-      pr2_orientation.y = 0.0;
-      pr2_orientation.z = 0.0;
-      pr2_orientation.w = 1.0;
-      geometry_msgs::Pose pr2_pose;
-      pr2_pose.position = pr2_position;
-      pr2_pose.orientation = pr2_orientation;
-      gazebo_msgs::ModelState pr2_modelstate;
-      pr2_modelstate.model_name = (std::string) "marker_crazyflie2_" + std::to_string(droneNumber_);
-      pr2_modelstate.pose = pr2_pose;
-      gazebo_msgs::SetModelState srv;
-      srv.request.model_state = pr2_modelstate;
-      if(!gazebo_client_.call(srv))
-        ROS_ERROR("Failed to move marker! Error msg:%s",srv.response.status_message.c_str());
-      visual_cnt_ += 2*3.14159265358979323846 / 200;
-//    }
 
     if(waypointHasBeenPublished_){
 

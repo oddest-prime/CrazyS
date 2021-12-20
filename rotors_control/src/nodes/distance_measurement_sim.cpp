@@ -177,8 +177,8 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     dat.layout.dim[1].stride = droneCount_;
     dat.layout.data_offset = 0;
     std::vector<float> vec(droneCount_*droneCount_, 0);
-    for (int i=0; i<droneCount_; i++)
-      for (int j=0; j<droneCount_; j++)
+    for (size_t i = 0; i < droneCount_; i++)
+      for (size_t j = 0; j < droneCount_; j++)
         vec[i*droneCount_ + j] = dronestate_[i].distances_gt_[j];
     dat.data = vec;
     distances_pub_->publish(dat);
@@ -193,6 +193,7 @@ void DroneStateWithTime::SetId(int droneNumber, int droneCount, float position_n
     dronestate_ = dronestate;
     distances_pub_ = distances_pub;
 }
+
 }
 
 int main(int argc, char** argv){

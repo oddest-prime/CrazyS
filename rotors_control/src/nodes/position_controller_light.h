@@ -26,7 +26,6 @@
 #include <stdio.h>
 
 #include <geometry_msgs/PoseStamped.h>
-#include <gazebo_msgs/SetModelState.h>
 #include <mav_msgs/Actuators.h>
 #include <mav_msgs/DroneState.h>
 #include <mav_msgs/AttitudeThrust.h>
@@ -147,9 +146,6 @@ namespace rotors_control {
             //publisher
             ros::Publisher motor_velocity_reference_pub_;
             ros::Publisher pose_pub_;
-
-            ros::ServiceClient gazebo_client_;
-            float visual_cnt_;
 
             mav_msgs::EigenTrajectoryPointDeque commands_;
             std::deque<ros::Duration> command_waiting_times_;

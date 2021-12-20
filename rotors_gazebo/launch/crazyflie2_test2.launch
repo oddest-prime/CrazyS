@@ -30,7 +30,7 @@
 
   <group ns="$(arg mav_name)_0">
   <!-- The following lines simulate the Crazyflie dynamics -->
-    <include file="$(find rotors_gazebo)/launch/spawn_mav_crazyflie.launch">
+    <include file="$(find rotors_gazebo)/launch/spawn_mav_crazyflie_with_marker.launch">
       <arg name="mav_name" value="$(arg mav_name)" />
       <arg name="namespace" value="$(arg mav_name)_0" />
       <arg name="model" value="$(find rotors_description)/urdf/mav_generic_odometry_sensor.gazebo" />
@@ -74,7 +74,7 @@
 
   <group ns="$(arg mav_name)_1">
   <!-- The following lines simulate the Crazyflie dynamics -->
-    <include file="$(find rotors_gazebo)/launch/spawn_mav_crazyflie.launch">
+    <include file="$(find rotors_gazebo)/launch/spawn_mav_crazyflie_with_marker.launch">
       <arg name="mav_name" value="$(arg mav_name)" />
       <arg name="namespace" value="$(arg mav_name)_1" />
       <arg name="model" value="$(find rotors_description)/urdf/mav_generic_odometry_sensor.gazebo" />
@@ -83,7 +83,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="-0.5"/>
-      <arg name="y" value="-1.0"/>
+      <arg name="y" value="-0.5"/>
       <arg name="z" value="0.45"/>
     </include>
    <!-- The Crazyflie position controller -->
@@ -116,7 +116,7 @@
 
   <group ns="$(arg mav_name)_2">
   <!-- The following lines simulate the Crazyflie dynamics -->
-    <include file="$(find rotors_gazebo)/launch/spawn_mav_crazyflie.launch">
+    <include file="$(find rotors_gazebo)/launch/spawn_mav_crazyflie_with_marker.launch">
       <arg name="mav_name" value="$(arg mav_name)" />
       <arg name="namespace" value="$(arg mav_name)_2" />
       <arg name="model" value="$(find rotors_description)/urdf/mav_generic_odometry_sensor.gazebo" />
@@ -158,7 +158,7 @@
 
   <group ns="$(arg mav_name)_3">
   <!-- The following lines simulate the Crazyflie dynamics -->
-    <include file="$(find rotors_gazebo)/launch/spawn_mav_crazyflie.launch">
+    <include file="$(find rotors_gazebo)/launch/spawn_mav_crazyflie_with_marker.launch">
       <arg name="mav_name" value="$(arg mav_name)" />
       <arg name="namespace" value="$(arg mav_name)_3" />
       <arg name="model" value="$(find rotors_description)/urdf/mav_generic_odometry_sensor.gazebo" />
@@ -200,7 +200,7 @@
 
   <group ns="$(arg mav_name)_4">
   <!-- The following lines simulate the Crazyflie dynamics -->
-    <include file="$(find rotors_gazebo)/launch/spawn_mav_crazyflie.launch">
+    <include file="$(find rotors_gazebo)/launch/spawn_mav_crazyflie_with_marker.launch">
       <arg name="mav_name" value="$(arg mav_name)" />
       <arg name="namespace" value="$(arg mav_name)_4" />
       <arg name="model" value="$(find rotors_description)/urdf/mav_generic_odometry_sensor.gazebo" />
@@ -208,7 +208,7 @@
       <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
-      <arg name="x" value="2.0"/>
+      <arg name="x" value="1.75"/>
       <arg name="y" value="-0.25"/>
       <arg name="z" value="0.1"/>
     </include>

@@ -37,13 +37,13 @@
     <include>
       <uri>model://small_box</uri>
       <name>small_box_10</name>
-      <pose>-0.5 -1 0.09  0 0 0</pose>
+      <pose>-0.5 -0.5 0.09  0 0 0</pose>
       <static>true</static>
     </include>
     <include>
       <uri>model://small_box</uri>
       <name>small_box_11</name>
-      <pose>-0.5 -1 0.27  0 0 0</pose>
+      <pose>-0.5 -0.5 0.27  0 0 0</pose>
       <static>true</static>
     </include>
 
@@ -242,13 +242,21 @@
               </geometry>
               <material>
                 <script>
-                  <name>Gazebo/RedTransparentOverlay</name>
+                  <name>Gazebo/BlueTransparentOverlay</name>
                   <uri>__default__</uri>
                 </script>
               </material>
           </visual>
       </link>
     </model>
+
+    <include>
+      <uri>model://marker</uri>
+      <name>marker_1</name>
+      <pose>2 2 2  0 0 0</pose>
+      <static>true</static>
+    </include>
+
 
     <!-- Only one ROS interface plugin is required per world, as any other plugin can connect a Gazebo
          topic to a ROS topic (or vise versa). -->

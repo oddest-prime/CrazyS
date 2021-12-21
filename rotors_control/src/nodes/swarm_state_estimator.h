@@ -44,6 +44,9 @@
 #define N_DRONES_MAX  20          /* maximum number of drones */
 
 namespace rotors_control {
+
+    float Distance(EigenOdometry* a, EigenOdometry* b);
+
     class SwarmStateEstimator{
         public:
             SwarmStateEstimator();
@@ -60,6 +63,9 @@ namespace rotors_control {
 
             EigenOdometry odometry_gt_; // ground-truth
             EigenOdometry odometry_estimate_[N_DRONES_MAX]; // position estimates for other drones
+            float distances_[N_DRONES_MAX][N_DRONES_MAX]; // received distance measurements
+
+            int best_triangle_[4];
 
             std::string namespace_;
 
@@ -74,6 +80,10 @@ namespace rotors_control {
 
             void CallbackSaveData(const ros::TimerEvent& event);
             void FileSaveData(void);
+
+            void FindBestTriangle(float (*distances)[N_DRONES_MAX], int* triangle);
+            void InferPositions(float (*distances)[N_DRONES_MAX], int* triangle, EigenOdometry* positions);
+            void CheckDistances(float (*distances)[N_DRONES_MAX], EigenOdometry* positions);
 
             //subscribers
             ros::Subscriber odometry_sub_;

@@ -55,6 +55,7 @@ DistanceMeasurementSim::DistanceMeasurementSim() {
     ros::NodeHandle pnh_node("~");
 
     distances_pub_ = nh.advertise<std_msgs::Float32MultiArray>("drone_distances", 1);
+    elevation_pub_ = nh.advertise<std_msgs::Float32MultiArray>("drone_elevation", 1);
 
     InitializeParams();
 
@@ -132,7 +133,7 @@ void DistanceMeasurementSim::InitializeParams() {
     }
 
     for (size_t i = 0; i < droneCount_; i++)
-      dronestate[i].SetId((int)i, droneCount_, distance_noise_, dronestate, &distances_pub_);
+      dronestate[i].SetId((int)i, droneCount_, distance_noise_, dronestate, &distances_pub_, &elevation_pub_);
 
     ros::NodeHandle nh;
     //timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &DistanceMeasurementSim::CallbackSaveData, this, false, true);
@@ -166,6 +167,7 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
       ROS_INFO_ONCE("DroneStateWithTime: distance_gt=%f distance=%f (droneNumber:%d, i:%d)", distances_gt_[i], distances_[i], droneNumber_, (int)i);
     }
 
+    // publish distances message
     std_msgs::Float32MultiArray dat;
     dat.layout.dim.push_back(std_msgs::MultiArrayDimension());
     dat.layout.dim.push_back(std_msgs::MultiArrayDimension());
@@ -182,9 +184,22 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         vec[i*droneCount_ + j] = dronestate_[i].distances_gt_[j];
     dat.data = vec;
     distances_pub_->publish(dat);
+
+    // publish elevation message
+    std_msgs::Float32MultiArray el;
+    el.layout.dim.push_back(std_msgs::MultiArrayDimension());
+    el.layout.dim[0].label = "drone";
+    el.layout.dim[0].size = droneCount_;
+    el.layout.dim[0].stride = droneCount_*droneCount_;
+    el.layout.data_offset = 0;
+    std::vector<float> elev(droneCount_, 0);
+    for (size_t i = 0; i < droneCount_; i++)
+        elev[i] = dronestate_[i].odometry_gt_.position[2];
+    el.data = elev;
+    elevation_pub_->publish(el);
 }
 
-void DroneStateWithTime::SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub)
+void DroneStateWithTime::SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* elevation_pub)
 {
     droneNumber_ = droneNumber;
     droneCount_ = droneCount;
@@ -192,6 +207,7 @@ void DroneStateWithTime::SetId(int droneNumber, int droneCount, float position_n
 
     dronestate_ = dronestate;
     distances_pub_ = distances_pub;
+    elevation_pub_ = elevation_pub;
 }
 
 }

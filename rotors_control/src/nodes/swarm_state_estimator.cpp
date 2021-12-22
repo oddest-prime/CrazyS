@@ -169,9 +169,9 @@ void SwarmStateEstimator::DistancesCallback(const std_msgs::Float32MultiArray& d
 
     for (size_t i = 0; i < droneCount_; i++)
     {
-        odometry_estimate_[i].position[0] = 0;
-        odometry_estimate_[i].position[1] = 0;
-        odometry_estimate_[i].position[2] = 0;
+        odometry_estimate_[i][0] = 0;
+        odometry_estimate_[i][1] = 0;
+        odometry_estimate_[i][2] = 0;
     }
 
     for (size_t i = 0; i < droneCount_; i++)
@@ -191,23 +191,18 @@ void SwarmStateEstimator::DistancesCallback(const std_msgs::Float32MultiArray& d
         FindBestZset(distances_, odometry_estimate_, best_zset_);
         ROS_INFO("DistancesCallback (%d) best_zset_ = %d / %d / %d", droneNumber_, best_zset_[0], best_zset_[1], best_zset_[2]);
         CheckDistances(distances_, odometry_estimate_);
-
-        EigenOdometry axis0;
-        axis0.position[0] = 1;
-        axis0.position[1] = 2;
-        axis0.position[2] = 3;
-        axis0 = axis0 / EuclideanNorm(&axis0);
+      /*
+        Vector3f axis0 = {1,2,3};
+        axis0 = axis0 / axis0.norm();
         float angle0 = 0.3;
-        auto rotation0 = RotationMatrixFromAxisAngle(&axis0, &angle0);
-        ROS_INFO("RotationMatrixFromAxisAngle %s", toString(rotation0).c_str());
+        auto rotation0 = RotationMatrixFromAxisAngle(axis0, angle0);
+        ROS_INFO("RotationMatrixFromAxisAngle %s", MatrixToString(rotation0).c_str());
 
-        EigenOdometry tmp0;
-        axis0.position[0] = 7;
-        axis0.position[1] = 8;
-        axis0.position[2] = 9;
+        Vector3f tmp0 = {7,8,9};
         auto tmp1 = rotation0 * tmp0;
-        ROS_INFO("tmp0 %s", toString(tmp0).c_str());
-        ROS_INFO("tmp1 %s", toString(tmp1).c_str());
+        ROS_INFO("tmp0 %s", VectorToString(tmp0).c_str());
+        ROS_INFO("tmp1 %s", VectorToString(tmp1).c_str());
+        */
     }
 
     if(droneNumber_ == 0) // move red indicator spheres to indicate determined positions
@@ -218,9 +213,9 @@ void SwarmStateEstimator::DistancesCallback(const std_msgs::Float32MultiArray& d
             // pr2_position.x = odometry_gt_.position[0] + sin(visual_cnt_)* 0.1;
             // pr2_position.y = odometry_gt_.position[1] + cos(visual_cnt_)* 0.1;
             // pr2_position.z = odometry_gt_.position[2];
-            pr2_position.x = odometry_gt_.position[0] + odometry_estimate_[i].position[0];
-            pr2_position.y = odometry_gt_.position[1] + odometry_estimate_[i].position[1];
-            pr2_position.z = odometry_gt_.position[2] + odometry_estimate_[i].position[2];
+            pr2_position.x = odometry_gt_.position[0] + odometry_estimate_[i][0];
+            pr2_position.y = odometry_gt_.position[1] + odometry_estimate_[i][1];
+            pr2_position.z = odometry_gt_.position[2] + odometry_estimate_[i][2];
             geometry_msgs::Quaternion pr2_orientation;
             pr2_orientation.x = 0.0;
             pr2_orientation.y = 0.0;
@@ -277,7 +272,7 @@ void SwarmStateEstimator::FindBestTriangle(float (*distances)[N_DRONES_MAX], int
     triangle[3] = z_max_ind; // TODO: determine actual best z-index drone
 }
 
-void SwarmStateEstimator::FindBestZset(float (*distances)[N_DRONES_MAX], EigenOdometry* positions, int* zset) {
+void SwarmStateEstimator::FindBestZset(float (*distances)[N_DRONES_MAX], Vector3f* positions, int* zset) {
     //find drone with the largest distance to own drone
     float maxdist = 0;
     int maxdist_ind = -1;
@@ -291,15 +286,14 @@ void SwarmStateEstimator::FindBestZset(float (*distances)[N_DRONES_MAX], EigenOd
     }
 
     // find drone with the largest projected distance to the vector (own drone, maxdist_ind)
-    EigenOdometry md = UnitVector(&positions[maxdist_ind]);
+    Vector3f md = positions[maxdist_ind] / positions[maxdist_ind].norm();
     float maxproj = 0;
     int maxproj_ind = -1;
     for (size_t i = 0; i < droneCount_; i++)
     {
         if(i == maxdist_ind)
             continue;
-        EigenOdometry dist_vect = positions[i] - md * DotProduct(&positions[i], &md);
-        float dist = EuclideanNorm(&dist_vect);
+        float dist = (positions[i] - md * positions[i].dot(md)).norm();
         if(dist > maxproj)
         {
             maxproj = dist;
@@ -308,7 +302,7 @@ void SwarmStateEstimator::FindBestZset(float (*distances)[N_DRONES_MAX], EigenOd
     }
 
     // find third drone as tie-breaker (use drone with the largest projected distance to the vector (own drone, maxproj_ind))
-    EigenOdometry mdd = UnitVector(&positions[maxproj_ind]);
+    Vector3f mdd = positions[maxproj_ind] / positions[maxproj_ind].norm();
     float tie_breaker = 0;
     int tie_breaker_ind = -1;
     for (size_t i = 0; i < droneCount_; i++)
@@ -317,8 +311,7 @@ void SwarmStateEstimator::FindBestZset(float (*distances)[N_DRONES_MAX], EigenOd
             continue;
         if(i == maxproj_ind)
             continue;
-        EigenOdometry dist_vect = positions[i] - mdd * DotProduct(&positions[i], &mdd);
-        float dist = EuclideanNorm(&dist_vect);
+        float dist = (positions[i] - mdd * positions[i].dot(mdd)).norm();
         if(dist > tie_breaker)
         {
             tie_breaker = dist;
@@ -330,7 +323,7 @@ void SwarmStateEstimator::FindBestZset(float (*distances)[N_DRONES_MAX], EigenOd
     zset[2] = tie_breaker_ind;
 }
 
-void SwarmStateEstimator::InferPositions(float (*distances)[N_DRONES_MAX], int* triangle, EigenOdometry* positions) {
+void SwarmStateEstimator::InferPositions(float (*distances)[N_DRONES_MAX], int* triangle, Vector3f* positions) {
     int a = triangle[1];
     int b = triangle[2];
     int c = triangle[3];
@@ -338,34 +331,34 @@ void SwarmStateEstimator::InferPositions(float (*distances)[N_DRONES_MAX], int* 
 
     float positions_quality[N_DRONES_MAX];
 
-    positions[triangle[0]].position[0] = 0; // relative x-coordinate
-    positions[triangle[0]].position[1] = 0; // relative y-coordinate
-    positions[triangle[0]].position[2] = 0; // relative z-coordinate
+    positions[triangle[0]][0] = 0; // relative x-coordinate
+    positions[triangle[0]][1] = 0; // relative y-coordinate
+    positions[triangle[0]][2] = 0; // relative z-coordinate
     positions_quality[triangle[0]] = 3; // high quality of point (part of triangle)
 
-    ROS_INFO_ONCE("InferPositions (%d) tr0_:%d at x:%f y:%f z:%f", droneNumber_, triangle[0], positions[triangle[0]].position[0], positions[triangle[0]].position[1], positions[triangle[0]].position[2]);
+    ROS_INFO_ONCE("InferPositions (%d) tr0_:%d at x:%f y:%f z:%f", droneNumber_, triangle[0], positions[triangle[0]][0], positions[triangle[0]][1], positions[triangle[0]][2]);
 
-    positions[triangle[1]].position[0] = distances[triangle[0]][triangle[1]]; // relative x-coordinate
-    positions[triangle[1]].position[1] = 0; // relative y-coordinate
-    positions[triangle[1]].position[2] = 0; // relative z-coordinate
+    positions[triangle[1]][0] = distances[triangle[0]][triangle[1]]; // relative x-coordinate
+    positions[triangle[1]][1] = 0; // relative y-coordinate
+    positions[triangle[1]][2] = 0; // relative z-coordinate
     positions_quality[triangle[1]] = 3; // high quality of point (part of triangle)
 
-    ROS_INFO_ONCE("InferPositions (%d) tr1_:%d at x:%f y:%f z:%f", droneNumber_, triangle[1], positions[triangle[1]].position[0], positions[triangle[1]].position[1], positions[triangle[1]].position[2]);
+    ROS_INFO_ONCE("InferPositions (%d) tr1_:%d at x:%f y:%f z:%f", droneNumber_, triangle[1], positions[triangle[1]][0], positions[triangle[1]][1], positions[triangle[1]][2]);
 
     // https://en.wikipedia.org/wiki/True-range_multilateration#Two_Cartesian_dimensions,_two_measured_slant_ranges_(Trilateration)
-    positions[triangle[2]].position[0] = ( // relative x-coordinate
+    positions[triangle[2]][0] = ( // relative x-coordinate
                                             pow(distances[triangle[0]][triangle[2]], 2) -
                                             pow(distances[triangle[1]][triangle[2]], 2) +
                                             pow(distances[triangle[0]][triangle[1]], 2)
                                           ) / (2*distances[triangle[0]][triangle[1]]);
-    float t1 = (pow(distances[triangle[0]][triangle[2]], 2) - pow(positions[triangle[2]].position[0], 2));
+    float t1 = (pow(distances[triangle[0]][triangle[2]], 2) - pow(positions[triangle[2]][0], 2));
     if (t1 < 0) // should not be the case, but it can happen because noisy measurements: sum of two edges of the triangle is shorter than the third edge
-        positions[triangle[2]].position[1] = 0.001; // relative y-coordinate
+        positions[triangle[2]][1] = 0.001; // relative y-coordinate
     else
-        positions[triangle[2]].position[1] = sqrt(pow(distances[triangle[0]][triangle[2]], 2) - pow(positions[triangle[2]].position[0], 2)); // relative y-coordinate
-    positions[triangle[2]].position[2] = 0; // relative z-coordinate
+        positions[triangle[2]][1] = sqrt(pow(distances[triangle[0]][triangle[2]], 2) - pow(positions[triangle[2]][0], 2)); // relative y-coordinate
+    positions[triangle[2]][2] = 0; // relative z-coordinate
     positions_quality[triangle[2]] = 3; // high quality of point (part of triangle)
-    ROS_INFO_ONCE("InferPositions (%d) tr2_:%d at x:%f y:%f z:%f", droneNumber_, triangle[2], positions[triangle[2]].position[0], positions[triangle[2]].position[1], positions[triangle[2]].position[2]);
+    ROS_INFO_ONCE("InferPositions (%d) tr2_:%d at x:%f y:%f z:%f", droneNumber_, triangle[2], positions[triangle[2]][0], positions[triangle[2]][1], positions[triangle[2]][2]);
 
     float z_max = 0;
     int z_max_ind = -1;
@@ -382,52 +375,52 @@ void SwarmStateEstimator::InferPositions(float (*distances)[N_DRONES_MAX], int* 
     {
         int i = *num;
 
-        positions[i].position[0] = ( // relative x-coordinate
+        positions[i][0] = ( // relative x-coordinate
                                       pow(distances[triangle[0]][i], 2) -
                                       pow(distances[triangle[1]][i], 2) +
                                       pow(distances[triangle[0]][triangle[1]], 2)
                                     ) / (2 * distances[triangle[0]][triangle[1]]);
-        positions[i].position[1] = (
+        positions[i][1] = (
                                       pow(distances[triangle[0]][i], 2) -
                                       pow(distances[triangle[2]][i], 2) +
                                       pow(distances[triangle[0]][triangle[2]], 2) -
-                                      2*positions[triangle[2]].position[0]*positions[i].position[0]
-                                    ) / (2*positions[triangle[2]].position[1]);
-        float t1 = (pow(distances[triangle[0]][i], 2) - pow(positions[i].position[0], 2) - pow(positions[i].position[1], 2));
+                                      2*positions[triangle[2]][0]*positions[i][0]
+                                    ) / (2*positions[triangle[2]][1]);
+        float t1 = (pow(distances[triangle[0]][i], 2) - pow(positions[i][0], 2) - pow(positions[i][1], 2));
         if(t1 > 0)
-            positions[i].position[2] = sqrt(t1);
+            positions[i][2] = sqrt(t1);
         else
-            positions[i].position[2] = 0;
+            positions[i][2] = 0;
 
-        if(abs(positions[i].position[2]) > z_max)
+        if(abs(positions[i][2]) > z_max)
         {
-            z_max = abs(positions[i].position[2]);
+            z_max = abs(positions[i][2]);
             z_max_ind = i;
         }
-        positions_quality[i] = positions[i].position[2]; // quality of point proportional to z elevation
-        ROS_INFO_ONCE("InferPositions (%d) loop:%d at x:%f y:%f z:%f", droneNumber_, i, positions[i].position[0], positions[i].position[1], positions[i].position[2]);
+        positions_quality[i] = positions[i][2]; // quality of point proportional to z elevation
+        ROS_INFO_ONCE("InferPositions (%d) loop:%d at x:%f y:%f z:%f", droneNumber_, i, positions[i][0], positions[i][1], positions[i][2]);
 
         // use fourth drone (tie-breaker) to check if relative z-coordinate may be flipped
         if(c >= 0)
         {
-            EigenOdometry pos_neg = positions[i];
-            pos_neg.position[2] = 0 - positions[i].position[2];
-            float dist_pos = Distance(&positions[c], &positions[i]);
-            float dist_neg = Distance(&positions[c], &pos_neg);
+            Vector3f pos_neg = positions[i];
+            pos_neg[2] = 0 - positions[i][2];
+            float dist_pos = (positions[c] - positions[i]).norm();
+            float dist_neg = (positions[c] - pos_neg).norm();
             if(abs(dist_neg - distances[c][i]) < abs(dist_pos - distances[c][i]))
-                positions[i].position[2] = pos_neg.position[2];
+                positions[i][2] = pos_neg[2];
         }
         if(c < 0)
             c = i;
     }
 
     for (size_t i = 0; i < droneCount_; i++)
-        ROS_INFO_ONCE("InferPositions (%d) drone:%d at x:%f y:%f z:%f", droneNumber_, i, positions[i].position[0], positions[i].position[1], positions[i].position[2]);
+        ROS_INFO_ONCE("InferPositions (%d) drone:%d at x:%f y:%f z:%f", droneNumber_, i, positions[i][0], positions[i][1], positions[i][2]);
 
   //  return positions, positions_quality, z_max_ind
 }
 
-void InferRotationZ(EigenOdometry* positions, float* elevation, int* zset, Eigen::Matrix3f* rotation) {
+void InferRotationZ(Vector3f* positions, float* elevation, int* zset, Eigen::Matrix3f* rotation) {
     int mm0_ind = zset[0];
     int mm1_ind = zset[1];
     int mm2_ind = zset[2];
@@ -440,7 +433,7 @@ void InferRotationZ(EigenOdometry* positions, float* elevation, int* zset, Eigen
     auto mm2 = positions[mm2_ind];
 
     float projection;
-    float d = EuclideanNorm(&mm0);
+    float d = mm0.norm();
     if(d > elev0)
         projection = sqrt(pow(d, 2) - pow(elev0, 2));
     else
@@ -456,30 +449,30 @@ void InferRotationZ(EigenOdometry* positions, float* elevation, int* zset, Eigen
     print("----------------") */
 
     // pre rotation: rotate only around z-axis, s.t. a0 points towards the direction of y-axis
-    EigenOdometry a0 = mm0; a0.position[2] = 0;
-    a0 = UnitVector(&a0);
-    a0 = a0 * DotProduct(&mm0, &a0); // projection of mm0 onto z-plane
-    EigenOdometry b0; b0.position[0] = 0; b0.position[1] = 1; b0.position[2] = 0;
+    Vector3f a0 = mm0; a0[2] = 0;
+    a0 = a0 / a0.norm();
+    a0 = a0 * mm0.dot(a0); // projection of mm0 onto z-plane
+    Vector3f b0 = {0,1,0};
     // get axis of rotation by cross-product of a0, b0
-    EigenOdometry axis0 = CrossProduct(&a0, &b0);
+    Vector3f axis0 = a0.cross(b0);
     float angle0;
     Eigen::Matrix3f rotation0;
     //print("a0:{}, b0:{}, axis0:{}".format(a0, b0, axis0))
-    if(EuclideanNorm(&axis0) < 0.0001) // a0 is already aligned with b0, use identity matrix for first rotation
+    if(axis0.norm() < 0.0001) // a0 is already aligned with b0, use identity matrix for first rotation
     {
         //print("a0 is already aligned with b0, use identity matrix for pre rotation")
         rotation0 = IdentityMatrix();
     }
     else
     {
-        axis0 = axis0 / EuclideanNorm(&axis0);
+        axis0 = axis0 / axis0.norm();
         // get angle of rotation by scalar-product of a0, b0
-        angle0 = acos(DotProduct(&a0, &b0) / (EuclideanNorm(&a0) * EuclideanNorm(&b0)));
-        rotation0 = RotationMatrixFromAxisAngle(&axis0, &angle0);
+        angle0 = acos(a0.dot(b0) / (a0.norm() * b0.norm()));
+        rotation0 = RotationMatrixFromAxisAngle(axis0, angle0);
     }
 
     //positions0 = rotate_positions(positions, rotation0)
-    auto tmp = positions[mm0_ind] * rotation0;
+    //Vector3f tmp = positions[mm0_ind] * rotation0;
 /*
     # ## first rotation: align point a1=mm0 to b1=(0, projection, elev0)
     a1 = positions0[mm0_ind]
@@ -614,13 +607,13 @@ void InferRotationZ(EigenOdometry* positions, float* elevation, int* zset, Eigen
     */
 }
 
-void SwarmStateEstimator::CheckDistances(float (*distances)[N_DRONES_MAX], EigenOdometry* positions) {
+void SwarmStateEstimator::CheckDistances(float (*distances)[N_DRONES_MAX], Vector3f* positions) {
     float eps = 0.01;
 
     for (size_t i = 0; i < droneCount_; i++)
         for (size_t j = 0; j < droneCount_; j++)
         {
-            float dist = Distance(&positions[i], &positions[j]);
+            float dist = (positions[i] - positions[j]).norm();
             if(abs(distances[i][j] - dist) > eps)
                 ROS_INFO("CheckDistances (%d) distance missmatch at i:%d j:%d dist:%f positions:%f", droneNumber_, i, j, distances[i][j], dist);
             else
@@ -638,11 +631,6 @@ float EuclideanNorm(EigenOdometry* a) {
     return sqrt(pow(a->position[0], 2) +
                 pow(a->position[1], 2) +
                 pow(a->position[2], 2));
-}
-
-EigenOdometry UnitVector(EigenOdometry* a) {
-    EigenOdometry b = *a / EuclideanNorm(a);
-    return b;
 }
 
 EigenOdometry CrossProduct(EigenOdometry* a, EigenOdometry* b)
@@ -716,14 +704,14 @@ EigenOdometry operator*(const EigenOdometry& a, const Eigen::Matrix3f& b)
     return r;
 }
 
-Eigen::Matrix3f RotationMatrixFromAxisAngle(EigenOdometry* axis, float* angle)
+Eigen::Matrix3f RotationMatrixFromAxisAngle(const Eigen::Vector3f& axis, const float& angle)
 {
-    float n1 = axis->position[0];
-    float n2 = axis->position[1];
-    float n3 = axis->position[2];
+    float n1 = axis[0];
+    float n2 = axis[1];
+    float n3 = axis[2];
 
-    float c1 = cos(*angle);
-    float s1 = sin(*angle);
+    float c1 = cos(angle);
+    float s1 = sin(angle);
     // https://de.wikipedia.org/wiki/Drehmatrix
     Eigen::Matrix3f rotation;
       /*
@@ -763,19 +751,28 @@ Eigen::Matrix3f IdentityMatrix()
     return rotation;
 }
 
-std::string toString(const Eigen::Matrix3f& a)
+std::string MatrixToString(const Eigen::Matrix3f& a)
 {
     std::stringstream ss;
+    /*
     ss << "[[ " << a(0,0) << ", " << a(0,1) << ", " << a(0,2) << " ]" << std::endl;
     ss << " [ " << a(1,0) << ", " << a(1,1) << ", " << a(1,2) << " ]" << std::endl;
     ss << " [ " << a(2,0) << ", " << a(2,1) << ", " << a(2,2) << " ]]" << std::endl;
+*/
+    return ss.str();
+}
+
+std::string VectorToString(const Eigen::Vector3f& a)
+{
+    std::stringstream ss;
+    ss << "[ " << a[0] << ", " << a[1] << ", " << a[2] << " ]" << std::endl;
     return ss.str();
 }
 
 std::string toString(const EigenOdometry& a)
 {
     std::stringstream ss;
-    ss << "[ " << a.position[0] << ", " << a.position[1] << ", " << a.position[3] << " ]" << std::endl;
+    ss << "[ " << a.position[0] << ", " << a.position[1] << ", " << a.position[2] << " ]" << std::endl;
     return ss.str();
 }
 

@@ -44,10 +44,10 @@
 #define N_DRONES_MAX  20          /* maximum number of drones */
 
 namespace rotors_control {
+    using namespace Eigen;
 
     float Distance(EigenOdometry* a, EigenOdometry* b);
     float EuclideanNorm(EigenOdometry* a);
-    EigenOdometry UnitVector(EigenOdometry* a);
     EigenOdometry CrossProduct(EigenOdometry* a, EigenOdometry* b);
     float DotProduct(EigenOdometry* a, EigenOdometry* b);
 
@@ -58,9 +58,10 @@ namespace rotors_control {
     EigenOdometry operator*(const Eigen::Matrix3f& b, const EigenOdometry& a);
     EigenOdometry operator*(const EigenOdometry& a, const Eigen::Matrix3f& b);
 
-    Eigen::Matrix3f RotationMatrixFromAxisAngle(EigenOdometry* axis, float* angle);
+    Eigen::Matrix3f RotationMatrixFromAxisAngle(const Eigen::Vector3f& axis, const float& angle);
     Eigen::Matrix3f IdentityMatrix();
-    std::string toString(const Eigen::Matrix3f& a);
+    std::string MatrixToString(const Eigen::Matrix3f& a);
+    std::string VectorToString(const Eigen::Vector3f& a);
     std::string toString(const EigenOdometry& a);
 
     class SwarmStateEstimator{
@@ -78,7 +79,7 @@ namespace rotors_control {
             int neighbourhood_cnt_;
 
             EigenOdometry odometry_gt_; // ground-truth
-            EigenOdometry odometry_estimate_[N_DRONES_MAX]; // position estimates for other drones
+            Vector3f odometry_estimate_[N_DRONES_MAX]; // position estimates for other drones
             float distances_[N_DRONES_MAX][N_DRONES_MAX]; // received distance measurements
             float elevation_[N_DRONES_MAX]; // received elevation measurements
 
@@ -101,10 +102,10 @@ namespace rotors_control {
             void FileSaveData(void);
 
             void FindBestTriangle(float (*distances)[N_DRONES_MAX], int* triangle);
-            void FindBestZset(float (*distances)[N_DRONES_MAX], EigenOdometry* positions, int* zset);
-            void InferPositions(float (*distances)[N_DRONES_MAX], int* triangle, EigenOdometry* positions);
+            void FindBestZset(float (*distances)[N_DRONES_MAX], Vector3f* positions, int* zset);
+            void InferPositions(float (*distances)[N_DRONES_MAX], int* triangle, Vector3f* positions);
             void InferRotationZ(EigenOdometry* positions, float* elevation, int* zset, Eigen::Matrix3f* rotation);
-            void CheckDistances(float (*distances)[N_DRONES_MAX], EigenOdometry* positions);
+            void CheckDistances(float (*distances)[N_DRONES_MAX], Vector3f* positions);
 
             //subscribers
             ros::Subscriber odometry_sub_;

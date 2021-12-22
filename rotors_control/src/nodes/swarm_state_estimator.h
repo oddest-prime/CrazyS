@@ -76,15 +76,19 @@ namespace rotors_control {
 
             int droneNumber_;
             int droneCount_;
-            int neighbourhood_cnt_;
+
+            int history_cnt_;
 
             EigenOdometry odometry_gt_; // ground-truth
+            EigenOdometry odometry_gt_history_; // ground-truth
             Vector3f odometry_estimate_[N_DRONES_MAX]; // position estimates for other drones
+            Vector3f odometry_estimate_history_[N_DRONES_MAX]; // position estimate history for other drones
             float distances_[N_DRONES_MAX][N_DRONES_MAX]; // received distance measurements
             float elevation_[N_DRONES_MAX]; // received elevation measurements
 
             int best_triangle_[4];
             int best_zset_[3];
+            int best_xydist_[3];
 
             std::string namespace_;
 
@@ -103,8 +107,10 @@ namespace rotors_control {
 
             void FindBestTriangle(float (*distances)[N_DRONES_MAX], int* triangle);
             void FindBestZset(float (*distances)[N_DRONES_MAX], Vector3f* positions, int* zset);
+            void FindBestXYdist(Vector3f* positions, int* xydist);
             void InferPositions(float (*distances)[N_DRONES_MAX], int* triangle, Vector3f* positions);
-            void InferRotationZ(Vector3f* positions, float* elevation, int* zset, Eigen::Matrix3f* rotation);            
+            void InferRotationZ(Vector3f* positions, float* elevation, int* zset);
+            void InferRotationMovement(Vector3f* positions, Vector3f* positions_moved, int* xydist, const Vector3f& movement);
             void CheckDistances(float (*distances)[N_DRONES_MAX], Vector3f* positions);
             void RotatePositions(Vector3f* positions, Eigen::Matrix3f* rotation, Vector3f* result);
 

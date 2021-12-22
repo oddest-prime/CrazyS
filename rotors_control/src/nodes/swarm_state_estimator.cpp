@@ -73,6 +73,8 @@ void SwarmStateEstimator::InitializeParams() {
 
     ROS_INFO_ONCE("[SwarmStateEstimator] InitializeParams");
 
+    history_cnt_ = 0;
+
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
     int droneCount;
@@ -129,6 +131,7 @@ void SwarmStateEstimator::OdometryCallback(const nav_msgs::OdometryConstPtr& odo
     odometry_gt_.position[2] = odometry_msg->pose.pose.position.z;
     ROS_INFO_ONCE("SwarmStateEstimator got odometry message: x=%f y=%f z=%f (%d)", odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2], droneNumber_);
 
+    history_cnt_ ++;
 
 /*  if(droneNumber_ == 0) // move red indicator sphere for testing purposes
     {
@@ -185,15 +188,41 @@ void SwarmStateEstimator::DistancesCallback(const std_msgs::Float32MultiArray& d
 
     if(droneNumber_ == 0)
     {
-        Matrix3f tmp;
-
         FindBestTriangle(distances_, best_triangle_);
         ROS_INFO_ONCE("DistancesCallback (%d) best_triangle_ = %d / %d / %d / %d", droneNumber_, best_triangle_[0], best_triangle_[1], best_triangle_[2], best_triangle_[3]);
         InferPositions(distances_, best_triangle_, odometry_estimate_);
+
         FindBestZset(distances_, odometry_estimate_, best_zset_);
-        InferRotationZ(odometry_estimate_, elevation_, best_zset_, &tmp);
-        ROS_INFO("DistancesCallback (%d) best_zset_ = %d / %d / %d", droneNumber_, best_zset_[0], best_zset_[1], best_zset_[2]);
+        InferRotationZ(odometry_estimate_, elevation_, best_zset_);
+        ROS_INFO_ONCE("DistancesCallback (%d) best_zset_ = %d / %d / %d", droneNumber_, best_zset_[0], best_zset_[1], best_zset_[2]);
+
+        Vector3f odometry_estimate_unrotated[N_DRONES_MAX]; // position estimates for other drones
+        for (size_t i = 0; i < droneCount_; i++)
+        {
+            odometry_estimate_[i][1] = -odometry_estimate_[i][1]; // TODO: correctly fix mirroring hotfix
+            odometry_estimate_unrotated[i] = odometry_estimate_[i];
+        }
+
+        FindBestXYdist(odometry_estimate_, best_xydist_);
+        Vector3f movement;
+        movement[0] = odometry_gt_.position[0] - odometry_gt_history_.position[0];
+        movement[1] = odometry_gt_.position[1] - odometry_gt_history_.position[1];
+        movement[2] = odometry_gt_.position[2] - odometry_gt_history_.position[2];
+        InferRotationMovement(odometry_estimate_history_, odometry_estimate_, best_xydist_, movement);
+        ROS_INFO_ONCE("DistancesCallback (%d) best_xydist_ = %d / %d / %d", droneNumber_, best_xydist_[0], best_xydist_[1], best_xydist_[2]);
+
         CheckDistances(distances_, odometry_estimate_);
+
+        if(history_cnt_ > 50)
+        {
+            ROS_INFO("DistancesCallback (%d) history_cnt_ over threshold, movement: %s", droneNumber_, VectorToString(movement).c_str());
+
+            for (size_t i = 0; i < droneCount_; i++)
+                odometry_estimate_history_[i] = odometry_estimate_unrotated[i];
+            odometry_gt_history_ = odometry_gt_;
+
+            history_cnt_ = 0;
+        }
 
 /*
         Vector3f axis0 = {1,2,3};
@@ -327,6 +356,62 @@ void SwarmStateEstimator::FindBestZset(float (*distances)[N_DRONES_MAX], Vector3
     zset[2] = tie_breaker_ind;
 }
 
+void SwarmStateEstimator::FindBestXYdist(Vector3f* positions, int* xydist) {
+    float xy_distance;
+    int xy_distance_ind;
+
+    xy_distance = 0;
+    xy_distance_ind = -1;
+    for (size_t i = 0; i < droneCount_; i++)
+    {
+        if(i == droneNumber_)
+            continue;
+        float dist = pow(positions[i][0] - positions[droneNumber_][0], 2) + pow(positions[i][1] - positions[droneNumber_][1], 2);
+        if(dist > xy_distance)
+        {
+            xy_distance = dist;
+            xy_distance_ind = i;
+        }
+    }
+    xydist[0] = xy_distance_ind;
+
+    xy_distance = 0;
+    xy_distance_ind = -1;
+    for (size_t i = 0; i < droneCount_; i++)
+    {
+        if(i == droneNumber_)
+            continue;
+        if(i == xydist[0])
+            continue;
+        float dist = pow(positions[i][0] - positions[droneNumber_][0], 2) + pow(positions[i][1] - positions[droneNumber_][1], 2);
+        if(dist > xy_distance)
+        {
+            xy_distance = dist;
+            xy_distance_ind = i;
+        }
+    }
+    xydist[1] = xy_distance_ind;
+
+    xy_distance = 0;
+    xy_distance_ind = -1;
+    for (size_t i = 0; i < droneCount_; i++)
+    {
+        if(i == droneNumber_)
+            continue;
+        if(i == xydist[0])
+            continue;
+        if(i == xydist[1])
+            continue;
+        float dist = pow(positions[i][0] - positions[droneNumber_][0], 2) + pow(positions[i][1] - positions[droneNumber_][1], 2);
+        if(dist > xy_distance)
+        {
+            xy_distance = dist;
+            xy_distance_ind = i;
+        }
+    }
+    xydist[2] = xy_distance_ind;
+}
+
 void SwarmStateEstimator::InferPositions(float (*distances)[N_DRONES_MAX], int* triangle, Vector3f* positions) {
     int a = triangle[1];
     int b = triangle[2];
@@ -424,7 +509,7 @@ void SwarmStateEstimator::InferPositions(float (*distances)[N_DRONES_MAX], int* 
   //  return positions, positions_quality, z_max_ind
 }
 
-void SwarmStateEstimator::InferRotationZ(Vector3f* positions, float* elevation, int* zset, Eigen::Matrix3f* rotation) {
+void SwarmStateEstimator::InferRotationZ(Vector3f* positions, float* elevation, int* zset) {
     int mm0_ind = zset[0];
     int mm1_ind = zset[1];
     int mm2_ind = zset[2];
@@ -496,7 +581,7 @@ void SwarmStateEstimator::InferRotationZ(Vector3f* positions, float* elevation, 
         axis1 = axis1 / axis1.norm(); // divide by norm to get unit vector
         angle1 = acos(a1.dot(b1) / (a1.norm() * b1.norm())); // get angle of rotation by scalar-product of a0, b0
         rotation1 = RotationMatrixFromAxisAngle(axis1, angle1);
-      }
+    }
 
     Matrix3f rotation01 = rotation1 * rotation0;
 
@@ -520,7 +605,7 @@ void SwarmStateEstimator::InferRotationZ(Vector3f* positions, float* elevation, 
     float l = sqrt(pow(mm1_tmp[2], 2) + pow(mm1_tmp[0], 2));
     float x2 = sqrt(pow(mm1_tmp[2], 2) + pow(mm1_tmp[0], 2) - pow(b, 2));
 
-    // /////////////  second rotation: align point x
+    // ///////////// second rotation: align point x
     Vector3f axis3 = b1;
     axis3 = axis3 / axis3.norm(); // divide by norm to get unit vector
     // get angle of rotation
@@ -559,42 +644,92 @@ void SwarmStateEstimator::InferRotationZ(Vector3f* positions, float* elevation, 
         rotation3 = rotation3mm;
     }
 
-    Matrix3f rotation9 = rotation3 * rotation01;
+    Matrix3f rotation31 = rotation3 * rotation01;
 
+    // Decomposing rotation matrix https://nghiaho.com/?page_id=846
+    float phi_x = atan2(rotation31(2,1), rotation31(2,2));
+    float phi_y = atan2(-rotation31(2,0), sqrt(pow(rotation31(2,1), 2) - pow(rotation31(2,2), 2)));
+    float phi_z = atan2(rotation31(1,0), rotation31(0,0));
+
+    // ///////////// last rotation: compensate rotation along z-axis from first rotation, s.t. coresponding rotation does not rotate along z-axis
+    Vector3f axis4 = {0, 0, 1};
+    Matrix3f rotation4 = RotationMatrixFromAxisAngle(axis4, -phi_z);
+
+    Matrix3f rotation431 = rotation4 * rotation31;
+
+    // actually rotate positions
     for (size_t i = 0; i < droneCount_; i++)
-       positions[i] = rotation9 * positions[i];
+       positions[i] = rotation431 * positions[i];
+}
 
-/*
-    # Decomposing rotation matrix https://nghiaho.com/?page_id=846
-    phi_x = np.arctan2(rotation[2][1], rotation[2][2])
-    phi_y = np.arctan2(-rotation[2][0], np.sqrt(pow(rotation[2][1], 2) - pow(rotation[2][2], 2)))
-    phi_z = np.arctan2(rotation[1][0], rotation[0][0])
+void SwarmStateEstimator::InferRotationMovement(Vector3f* positions, Vector3f* positions_moved, int* xydist, const Vector3f& movement) {
+    Vector3f p0 = positions[xydist[0]];
+    Vector3f p1 = positions[xydist[1]];
+    Vector3f p2 = positions[xydist[2]];
+    Vector3f pm0 = positions_moved[xydist[0]];
+    Vector3f pm1 = positions_moved[xydist[1]];
+    Vector3f pm2 = positions_moved[xydist[2]];
 
-    # ## last rotation: compensate rotation along z-axis from first rotation, s.t. coresponding rotation does not rotate along z-axis
-    rotation_z = np.array([
-            [np.cos(-phi_z), -np.sin(-phi_z), 0],
-            [np.sin(-phi_z),  np.cos(-phi_z), 0],
-            [             0,               0, 1]
-                        ])
+    Vector3f center = (p0 + p1 + p2) / 3;
+    Vector3f center_moved = (pm0 + pm1 + pm2) / 3;
+    ROS_INFO("InferRotationMovement (%d) center:%s", droneNumber_, VectorToString(center).c_str());
+    ROS_INFO("InferRotationMovement (%d) center_moved:%s", droneNumber_, VectorToString(center_moved).c_str());
 
-    rotation_total = np.matmul(rotation_z, rotation)
-    rotation = rotation_total
-    # Decomposing rotation matrix https://nghiaho.com/?page_id=846
-    phi_x = np.arctan2(rotation[2][1], rotation[2][2])
-    phi_y = np.arctan2(-rotation[2][0], np.sqrt(pow(rotation[2][1], 2) - pow(rotation[2][2], 2)))
-    phi_z = np.arctan2(rotation[1][0], rotation[0][0])
+    Vector3f centered_p0 = p0 - center;
+    Vector3f centered_p1 = p1 - center;
+    Vector3f centered_p2 = p2 - center;
+    Vector3f centered_pm0 = pm0 - center_moved;
+    Vector3f centered_pm1 = pm1 - center_moved;
+    Vector3f centered_pm2 = pm2 - center_moved;
 
-    rotated = rotate_positions(positions, rotation_total)
+    float angle0 = atan2(centered_p0[1], centered_p0[0]);
+    float angle0_moved = atan2(centered_pm0[1], centered_pm0[0]);
 
-    for i in range(0, nquads):
-        print("mm0_ind:{}, mm1_ind:{}, i:{}, elevation:{}, z:{}".format(mm0_ind, mm1_ind, i, elevations[i], rotated[i][2]))
+    float phi_z = angle0_moved - angle0;
+    ROS_INFO("InferRotationMovement (%d) angle0_moved:%f, angle0:%f", droneNumber_, angle0_moved, angle0);
 
-    print("phi_x:{}".format(phi_x))
-    print("phi_y:{}".format(phi_y))
-    print("phi_z:{}".format(phi_z))
+    // ///////////// compensate rotation between original and moved position
+    Vector3f axis_z = {0, 0, 1};
+    Matrix3f rotation_z = RotationMatrixFromAxisAngle(axis_z, -phi_z);
 
-    return rotation_total
-    */
+    Vector3f pr0 = rotation_z * positions_moved[xydist[0]];
+    Vector3f pr1 = rotation_z * positions_moved[xydist[1]];
+    Vector3f pr2 = rotation_z * positions_moved[xydist[2]];
+    Vector3f center_rotated = (pr0 + pr1 + pr2) / 3;
+    ROS_INFO("InferRotationMovement (%d) center_rotated:%s", droneNumber_, VectorToString(center_rotated).c_str());
+
+    float dist = sqrt(pow(center[0] - center_rotated[0], 2) + pow(center[1] - center_rotated[1], 2));
+
+    // ///////////// total rotation
+    Vector3f a1 = center_rotated - center;
+    Vector3f b1 = movement;
+    ROS_INFO("InferRotationMovement (%d) center_rotated - center:%s", droneNumber_, VectorToString(a1).c_str());
+    ROS_INFO("InferRotationMovement (%d) movement:%s", droneNumber_, VectorToString(movement).c_str());
+    a1 = a1 / a1.norm(); // divide by norm to get unit vector
+    b1 = b1 / b1.norm(); // divide by norm to get unit vector
+    Vector3f axis1 = a1.cross(b1); // get axis of rotation by cross-product of a1, b1
+    Matrix3f rotation1;
+    float angle1;
+    if(axis1.norm() < 0.0001) // a0 is already aligned with b0, use identity matrix for first rotation
+    {
+        rotation1 = IdentityMatrix();
+    }
+    else if(sqrt(pow(movement[0], 2) + pow(movement[1], 2)) < 0.05) // x,y-movement is too small
+    {
+        ROS_INFO("InferRotationMovement (%d) x,y-movement is too small", droneNumber_);
+        rotation1 = IdentityMatrix();
+    }
+    else
+    {
+        axis1 = axis1 / axis1.norm(); // divide by norm to get unit vector
+        angle1 = acos(a1.dot(b1) / (a1.norm() * b1.norm())); // get angle of rotation by scalar-product of a1, b1
+        rotation1 = RotationMatrixFromAxisAngle(axis1, angle1);
+    }
+    ROS_INFO("InferRotationMovement (%d) angle1:%f, axis1:%s", droneNumber_, angle1, VectorToString(axis1).c_str());
+
+    // actually rotate positions
+    for (size_t i = 0; i < droneCount_; i++)
+       positions_moved[i] = rotation1 * positions_moved[i];
 }
 
 void SwarmStateEstimator::CheckDistances(float (*distances)[N_DRONES_MAX], Vector3f* positions) {
@@ -724,8 +859,8 @@ Eigen::Matrix3f IdentityMatrix()
 {
     Eigen::Matrix3f rotation;
 
-    rotation(0,0) = 0;
-    rotation(0,1) = 1;
+    rotation(0,0) = 1;
+    rotation(0,1) = 0;
     rotation(0,2) = 0;
 
     rotation(1,0) = 0;

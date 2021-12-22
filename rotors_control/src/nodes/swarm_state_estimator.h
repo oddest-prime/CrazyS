@@ -104,8 +104,9 @@ namespace rotors_control {
             void FindBestTriangle(float (*distances)[N_DRONES_MAX], int* triangle);
             void FindBestZset(float (*distances)[N_DRONES_MAX], Vector3f* positions, int* zset);
             void InferPositions(float (*distances)[N_DRONES_MAX], int* triangle, Vector3f* positions);
-            void InferRotationZ(EigenOdometry* positions, float* elevation, int* zset, Eigen::Matrix3f* rotation);
+            void InferRotationZ(Vector3f* positions, float* elevation, int* zset, Eigen::Matrix3f* rotation);            
             void CheckDistances(float (*distances)[N_DRONES_MAX], Vector3f* positions);
+            void RotatePositions(Vector3f* positions, Eigen::Matrix3f* rotation, Vector3f* result);
 
             //subscribers
             ros::Subscriber odometry_sub_;

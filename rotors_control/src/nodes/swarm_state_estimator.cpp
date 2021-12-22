@@ -160,7 +160,7 @@ void SwarmStateEstimator::ElevationCallback(const std_msgs::Float32MultiArray& e
     for (size_t i = 0; i < droneCount_; i++)
     {
         elevation_[i] = elevation_msg.data[i];
-        ROS_INFO_ONCE("ElevationCallback drone#%d elevation=%f.", i, elevation_[i]);
+        ROS_INFO_ONCE("ElevationCallback drone#%d elevation=%f.", (int)i, elevation_[i]);
     }
 }
 
@@ -179,19 +179,23 @@ void SwarmStateEstimator::DistancesCallback(const std_msgs::Float32MultiArray& d
         for (size_t j = 0; j < droneCount_; j++)
         {
             distances_[i][j] = distances_msg.data[i*droneCount_ + j];
-            ROS_INFO_ONCE("DistancesCallback drone#%d -> drone#%d: distance=%f.", i, j, distances_[i][j]);
+            ROS_INFO_ONCE("DistancesCallback drone#%d -> drone#%d: distance=%f.", (int)i, (int)j, distances_[i][j]);
         }
     }
 
-    if(droneNumber_ == 2)
+    if(droneNumber_ == 0)
     {
+        Matrix3f tmp;
+
         FindBestTriangle(distances_, best_triangle_);
         ROS_INFO_ONCE("DistancesCallback (%d) best_triangle_ = %d / %d / %d / %d", droneNumber_, best_triangle_[0], best_triangle_[1], best_triangle_[2], best_triangle_[3]);
         InferPositions(distances_, best_triangle_, odometry_estimate_);
         FindBestZset(distances_, odometry_estimate_, best_zset_);
+        InferRotationZ(odometry_estimate_, elevation_, best_zset_, &tmp);
         ROS_INFO("DistancesCallback (%d) best_zset_ = %d / %d / %d", droneNumber_, best_zset_[0], best_zset_[1], best_zset_[2]);
         CheckDistances(distances_, odometry_estimate_);
-      /*
+
+/*
         Vector3f axis0 = {1,2,3};
         axis0 = axis0 / axis0.norm();
         float angle0 = 0.3;
@@ -202,7 +206,7 @@ void SwarmStateEstimator::DistancesCallback(const std_msgs::Float32MultiArray& d
         auto tmp1 = rotation0 * tmp0;
         ROS_INFO("tmp0 %s", VectorToString(tmp0).c_str());
         ROS_INFO("tmp1 %s", VectorToString(tmp1).c_str());
-        */
+*/
     }
 
     if(droneNumber_ == 0) // move red indicator spheres to indicate determined positions
@@ -398,7 +402,7 @@ void SwarmStateEstimator::InferPositions(float (*distances)[N_DRONES_MAX], int* 
             z_max_ind = i;
         }
         positions_quality[i] = positions[i][2]; // quality of point proportional to z elevation
-        ROS_INFO_ONCE("InferPositions (%d) loop:%d at x:%f y:%f z:%f", droneNumber_, i, positions[i][0], positions[i][1], positions[i][2]);
+        ROS_INFO_ONCE("InferPositions (%d) loop:%d at x:%f y:%f z:%f", droneNumber_, (int)i, positions[i][0], positions[i][1], positions[i][2]);
 
         // use fourth drone (tie-breaker) to check if relative z-coordinate may be flipped
         if(c >= 0)
@@ -415,19 +419,19 @@ void SwarmStateEstimator::InferPositions(float (*distances)[N_DRONES_MAX], int* 
     }
 
     for (size_t i = 0; i < droneCount_; i++)
-        ROS_INFO_ONCE("InferPositions (%d) drone:%d at x:%f y:%f z:%f", droneNumber_, i, positions[i][0], positions[i][1], positions[i][2]);
+        ROS_INFO_ONCE("InferPositions (%d) drone:%d at x:%f y:%f z:%f", droneNumber_, (int)i, positions[i][0], positions[i][1], positions[i][2]);
 
   //  return positions, positions_quality, z_max_ind
 }
 
-void InferRotationZ(Vector3f* positions, float* elevation, int* zset, Eigen::Matrix3f* rotation) {
+void SwarmStateEstimator::InferRotationZ(Vector3f* positions, float* elevation, int* zset, Eigen::Matrix3f* rotation) {
     int mm0_ind = zset[0];
     int mm1_ind = zset[1];
     int mm2_ind = zset[2];
 
-    float elev0 = elevation[mm0_ind];
-    float elev1 = elevation[mm1_ind];
-    float elev2 = elevation[mm2_ind];
+    float elev0 = elevation[mm0_ind] - elevation[droneNumber_];
+    float elev1 = elevation[mm1_ind] - elevation[droneNumber_];
+    float elev2 = elevation[mm2_ind] - elevation[droneNumber_];
     auto mm0 = positions[mm0_ind];
     auto mm1 = positions[mm1_ind];
     auto mm2 = positions[mm2_ind];
@@ -448,15 +452,15 @@ void InferRotationZ(Vector3f* positions, float* elevation, int* zset, Eigen::Mat
     print("elev1 (mm1)  ", elev1)
     print("----------------") */
 
-    // pre rotation: rotate only around z-axis, s.t. a0 points towards the direction of y-axis
+    // ///////////// pre rotation: rotate only around z-axis, s.t. a0 points towards the direction of y-axis
     Vector3f a0 = mm0; a0[2] = 0;
-    a0 = a0 / a0.norm();
+    a0 = a0 / a0.norm(); // divide by norm to get unit vector
     a0 = a0 * mm0.dot(a0); // projection of mm0 onto z-plane
-    Vector3f b0 = {0,1,0};
+    Vector3f b0 = {0, 1, 0};
     // get axis of rotation by cross-product of a0, b0
     Vector3f axis0 = a0.cross(b0);
     float angle0;
-    Eigen::Matrix3f rotation0;
+    Matrix3f rotation0;
     //print("a0:{}, b0:{}, axis0:{}".format(a0, b0, axis0))
     if(axis0.norm() < 0.0001) // a0 is already aligned with b0, use identity matrix for first rotation
     {
@@ -465,116 +469,102 @@ void InferRotationZ(Vector3f* positions, float* elevation, int* zset, Eigen::Mat
     }
     else
     {
-        axis0 = axis0 / axis0.norm();
-        // get angle of rotation by scalar-product of a0, b0
-        angle0 = acos(a0.dot(b0) / (a0.norm() * b0.norm()));
+        axis0 = axis0 / axis0.norm(); // divide by norm to get unit vector
+        angle0 = acos(a0.dot(b0) / (a0.norm() * b0.norm())); // get angle of rotation by scalar-product of a0, b0
         rotation0 = RotationMatrixFromAxisAngle(axis0, angle0);
     }
 
-    //positions0 = rotate_positions(positions, rotation0)
+    //RotatePositions
+    //positions0 = RotatePositions(positions, rotation0)
     //Vector3f tmp = positions[mm0_ind] * rotation0;
+
+    //result = rotation * positions[i];
+
+    // ///////////// first rotation: align point a1=mm0 to b1=(0, projection, elev0)
+    Vector3f a1 = rotation0 * positions[mm0_ind];
+    Vector3f b1 = {0, projection, elev0};
+    a1 = a1 / a1.norm(); // divide by norm to get unit vector
+    b1 = b1 / b1.norm(); // divide by norm to get unit vector
+    Vector3f axis1 = a1.cross(b1); // get axis of rotation by cross-product of a1, b1
+    float angle1;
+    Matrix3f rotation1;
+    //print("a1:{}, b1:{}, axis1:{}".format(a1, b1, axis1))
+    if(axis1.norm() < 0.0001) // a1 is already aligned with b1, use identity matrix for first rotation
+        rotation1 = IdentityMatrix();
+    else
+    {
+        axis1 = axis1 / axis1.norm(); // divide by norm to get unit vector
+        angle1 = acos(a1.dot(b1) / (a1.norm() * b1.norm())); // get angle of rotation by scalar-product of a0, b0
+        rotation1 = RotationMatrixFromAxisAngle(axis1, angle1);
+      }
+
+    Matrix3f rotation01 = rotation1 * rotation0;
+
+    // ///////////// helper rotation: rotation axis to Y-axis
+    Vector3f bb1 = b1;
+    Vector3f h2 = {0, 1, 0};
+    Vector3f axis2 = bb1.cross(h2);
+    axis2 = axis2 / axis2.norm(); // divide by norm to get unit vector
+    float angle2 = acos(bb1.dot(h2) / (bb1.norm() * h2.norm())); // get angle of rotation by scalar-product of bb1, h2
+    if(axis2[0] < 0)
+    {
+        axis2 = -axis2;
+        angle2 = -angle2;
+    }
+    Matrix3f rotation2 = RotationMatrixFromAxisAngle(axis2, angle2);
+    Vector3f mm0_tmp = (rotation2 * rotation01) * mm0;
+    Vector3f mm1_tmp = (rotation2 * rotation01) * mm1;
+
+    float h = elev1 / sin(-angle2);
+    float b = tan(-angle2) * (h - mm1_tmp[1]);
+    float l = sqrt(pow(mm1_tmp[2], 2) + pow(mm1_tmp[0], 2));
+    float x2 = sqrt(pow(mm1_tmp[2], 2) + pow(mm1_tmp[0], 2) - pow(b, 2));
+
+    // /////////////  second rotation: align point x
+    Vector3f axis3 = b1;
+    axis3 = axis3 / axis3.norm(); // divide by norm to get unit vector
+    // get angle of rotation
+    float atanp = atan2(b, x2);
+    float atanm = atan2(b, -x2);
+
+    // TODO: check if less options are feasable
+    float angle3p = atan2(mm1_tmp[2], mm1_tmp[0]) - atanp;
+    float angle3m = atan2(mm1_tmp[2], mm1_tmp[0]) - atanm;
+    Matrix3f rotation3pp = RotationMatrixFromAxisAngle(axis3, angle3p);
+    Matrix3f rotation3mp = RotationMatrixFromAxisAngle(axis3, -angle3p);
+    Matrix3f rotation3pm = RotationMatrixFromAxisAngle(axis3, angle3m);
+    Matrix3f rotation3mm = RotationMatrixFromAxisAngle(axis3, -angle3m);
+
+    // determine direction of rotation
+    Vector3f mm2_tmp3pp = (rotation3pp * rotation01) * positions[mm2_ind];
+    Vector3f mm2_tmp3mp = (rotation3mp * rotation01) * positions[mm2_ind];
+    Vector3f mm2_tmp3pm = (rotation3pm * rotation01) * positions[mm2_ind];
+    Vector3f mm2_tmp3mm = (rotation3mm * rotation01) * positions[mm2_ind];
+    // use rotation version with smallest error for tie-breaker drone
+    float tmp_err = abs(mm2_tmp3pp[2] - elev2);
+    Matrix3f rotation3 = rotation3pp;
+    if(abs(mm2_tmp3pm[2] - elev2) < tmp_err)
+    {
+        tmp_err = abs(mm2_tmp3pm[2] - elev2);
+        rotation3 = rotation3pm;
+    }
+    if(abs(mm2_tmp3mp[2] - elev2) < tmp_err)
+    {
+        tmp_err = abs(mm2_tmp3mp[2] - elev2);
+        rotation3 = rotation3mp;
+    }
+    if(abs(mm2_tmp3mm[2] - elev2) < tmp_err)
+    {
+        tmp_err = abs(mm2_tmp3mm[2] - elev2);
+        rotation3 = rotation3mm;
+    }
+
+    Matrix3f rotation9 = rotation3 * rotation01;
+
+    for (size_t i = 0; i < droneCount_; i++)
+       positions[i] = rotation9 * positions[i];
+
 /*
-    # ## first rotation: align point a1=mm0 to b1=(0, projection, elev0)
-    a1 = positions0[mm0_ind]
-    b1 = [0, projection, elev0]
-    a1 = a1 / np.linalg.norm(a1) # divide by norm to get unit vector
-    b1 = b1 / np.linalg.norm(b1) # divide by norm to get unit vector
-    # get axis of rotation by cross-product of a1, b1
-    axis1 = np.cross(a1, b1)
-    print("a1:{}, b1:{}, axis1:{}".format(a1, b1, axis1))
-    if abs(np.linalg.norm(axis1)) < 0.000001: # a1 is already aligned with b1, use identity matrix for first rotation
-        #print("a1 is already aligned with b1, use identity matrix for first rotation")
-        rotation1 = np.identity(3)
-    else:
-        axis1 = axis1 / np.linalg.norm(axis1)
-        # get angle of rotation by scalar-product of a1, b1
-        angle1 = np.arccos(np.dot(a1, b1) / (np.linalg.norm(a1) * np.linalg.norm(b1)))
-        rotation1 = rotation_matrix_helper(axis1, angle1)
-/*
-
-    print("----------------")
-#    print("rotation1:\n{}".format(rotation1))
-#    print("after rotation0 and 1:\n{}".format(rotate_positions(positions, np.matmul(rotation1, rotation0))))
-
-    rotation01 = np.matmul(rotation1, rotation0)
-
-    # ########################################
-
-    # ## helper rotation: rotation axis to Y-axis
-    bb1 = b1
-    h2 = np.array([0, 1, 0])
-    axis2 = np.cross(bb1, h2)
-    axis2 = axis2 / np.linalg.norm(axis2)
-    # get angle of rotation by scalar-product of bb1, h2
-    angle2 = np.arccos(np.dot(bb1, h2) / (np.linalg.norm(bb1) * np.linalg.norm(h2)))
-    if axis2[0] < 0:
-        axis2 = -axis2
-        angle2 = -angle2
-    rotation2 = rotation_matrix_helper(axis2, angle2)
-    mm0_tmp = np.matmul(np.matmul(rotation2, rotation01), mm0)
-    mm1_tmp = np.matmul(np.matmul(rotation2, rotation01), mm1)
-    print("angle2: {}, axis2: {} (must be x-axis)".format(angle2, axis2)) # must be x-axis
-    print("mm0_tmp: {} (must only have y-value != 0)".format(mm0_tmp))
-    print("mm1_tmp: {}".format(mm1_tmp))
-    print("----------------")
-
-    h = elev1 / np.sin(-angle2)
-    b = np.tan(-angle2) * (h - mm1_tmp[1])
-    l = np.sqrt(pow(mm1_tmp[2], 2) + pow(mm1_tmp[0], 2))
-    print("h: {}, b: {}, l: {}".format(h, b, l))
-    x2 = np.sqrt(pow(mm1_tmp[2], 2) + pow(mm1_tmp[0], 2) - pow(b, 2))
-    print("h: {}, b: {}, x2: {},".format(h, b, x2))
-    print("----------------")
-
-    # ## second rotation: align point x
-    #print("a2:{}, b2:{}".format(a2, b2))
-    # get axis as vector b1
-    axis3 = b1
-    axis3 = axis3 / np.linalg.norm(axis3)
-    #axis2 = np.array([0, 1, 0])
-    # get angle of rotation
-    print("np.arctan2(mm1_tmp[2], mm1_tmp[0]) = ", np.arctan2(mm1_tmp[2], mm1_tmp[0]))
-    print("np.arctan2(b, x2) = ", np.arctan2(b, x2))
-    print("np.arctan2(b, -x2) = ", np.arctan2(b, -x2))
-
-    atanp = np.arctan2(b, x2)
-    atanm = np.arctan2(b, -x2)
-
-    angle3p = np.arctan2(mm1_tmp[2], mm1_tmp[0]) - atanp
-    angle3m = np.arctan2(mm1_tmp[2], mm1_tmp[0]) - atanm
-    print("angle3p: {}, angle3m: {}, axis3: {}".format(angle3p, angle3m, axis3))
-    rotation3pp = rotation_matrix_helper(axis3, angle3p)
-    rotation3mp = rotation_matrix_helper(axis3, -angle3p)
-    rotation3pm = rotation_matrix_helper(axis3, angle3m)
-    rotation3mm = rotation_matrix_helper(axis3, -angle3m)
-
-    # determine direction of rotation
-    mm1_tmp3pp = np.matmul(np.matmul(rotation3pp, rotation01), positions[mm1_ind])
-    mm1_tmp3mp = np.matmul(np.matmul(rotation3mp, rotation01), positions[mm1_ind])
-    mm1_tmp3pm = np.matmul(np.matmul(rotation3pm, rotation01), positions[mm1_ind])
-    mm1_tmp3mm = np.matmul(np.matmul(rotation3mm, rotation01), positions[mm1_ind])
-    mm2_tmp3pp = np.matmul(np.matmul(rotation3pp, rotation01), positions[mm2_ind])
-    mm2_tmp3mp = np.matmul(np.matmul(rotation3mp, rotation01), positions[mm2_ind])
-    mm2_tmp3pm = np.matmul(np.matmul(rotation3pm, rotation01), positions[mm2_ind])
-    mm2_tmp3mm = np.matmul(np.matmul(rotation3mm, rotation01), positions[mm2_ind])
-    print("mm1_tmp3pp:{}, mm2_tmp3pp:{}".format(abs(mm1_tmp3pp[2] - elev1), abs(mm2_tmp3pp[2] - elev2)))
-    print("mm1_tmp3pm:{}, mm2_tmp3pm:{}".format(abs(mm1_tmp3pm[2] - elev1), abs(mm2_tmp3pm[2] - elev2)))
-    print("mm1_tmp3mp:{}, mm2_tmp3mp:{}".format(abs(mm1_tmp3mp[2] - elev1), abs(mm2_tmp3mp[2] - elev2)))
-    print("mm1_tmp3mm:{}, mm2_tmp3mm:{}".format(abs(mm1_tmp3mm[2] - elev1), abs(mm2_tmp3mm[2] - elev2)))
-    # use rotation version with smallest error for tie-breaker drone
-    tmp_err = abs(mm2_tmp3pp[2] - elev2)
-    rotation3 = rotation3pp
-    if abs(mm2_tmp3pm[2] - elev2) < tmp_err:
-        tmp_err = abs(mm2_tmp3pm[2] - elev2)
-        rotation3 = rotation3pm
-    if abs(mm2_tmp3mp[2] - elev2) < tmp_err:
-        tmp_err = abs(mm2_tmp3mp[2] - elev2)
-        rotation3 = rotation3mp
-    if abs(mm2_tmp3mm[2] - elev2) < tmp_err:
-        tmp_err = abs(mm2_tmp3mm[2] - elev2)
-        rotation3 = rotation3mm
-
-    rotation = np.matmul(rotation3, rotation01)
     # Decomposing rotation matrix https://nghiaho.com/?page_id=846
     phi_x = np.arctan2(rotation[2][1], rotation[2][2])
     phi_y = np.arctan2(-rotation[2][0], np.sqrt(pow(rotation[2][1], 2) - pow(rotation[2][2], 2)))
@@ -615,11 +605,18 @@ void SwarmStateEstimator::CheckDistances(float (*distances)[N_DRONES_MAX], Vecto
         {
             float dist = (positions[i] - positions[j]).norm();
             if(abs(distances[i][j] - dist) > eps)
-                ROS_INFO("CheckDistances (%d) distance missmatch at i:%d j:%d dist:%f positions:%f", droneNumber_, i, j, distances[i][j], dist);
+                ROS_INFO("CheckDistances (%d) distance missmatch at i:%d j:%d dist:%f positions:%f", droneNumber_, (int)i, (int)j, distances[i][j], dist);
             else
-                ROS_INFO_ONCE("CheckDistances (%d) distance ok at        i:%d j:%d dist:%f positions:%f", droneNumber_, i, j, distances[i][j], dist);
+                ROS_INFO_ONCE("CheckDistances (%d) distance ok at        i:%d j:%d dist:%f positions:%f", droneNumber_, (int)i, (int)j, distances[i][j], dist);
         }
 }
+
+void SwarmStateEstimator::RotatePositions(Vector3f* positions, Eigen::Matrix3f* rotation, Vector3f* result)
+{
+   for (size_t i = 0; i < droneCount_; i++)
+      result[i] = (*rotation) * positions[i];
+}
+
 
 float Distance(EigenOdometry* a, EigenOdometry* b) {
     return sqrt(pow(a->position[0] - b->position[0], 2) +
@@ -688,16 +685,6 @@ EigenOdometry operator*(const Eigen::Matrix3f& b, const EigenOdometry& a)
 //  tmp1 = rotation0 * tmp0;
     EigenOdometry r;
     ROS_INFO("my operator* b-a");
-    r.position[0] = a.position[0] * b(0,0) + a.position[1] * b(0,1) + a.position[2] * b(0,2);
-    r.position[1] = a.position[0] * b(1,0) + a.position[1] * b(1,1) + a.position[2] * b(1,2);
-    r.position[2] = a.position[0] * b(2,0) + a.position[1] * b(2,1) + a.position[2] * b(2,2);
-    return r;
-}
-
-EigenOdometry operator*(const EigenOdometry& a, const Eigen::Matrix3f& b)
-{
-    EigenOdometry r;
-    ROS_INFO("my operator* a-b");
     r.position[0] = a.position[0] * b(0,0) + a.position[1] * b(0,1) + a.position[2] * b(0,2);
     r.position[1] = a.position[0] * b(1,0) + a.position[1] * b(1,1) + a.position[2] * b(1,2);
     r.position[2] = a.position[0] * b(2,0) + a.position[1] * b(2,1) + a.position[2] * b(2,2);

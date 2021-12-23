@@ -213,7 +213,7 @@ void SwarmStateEstimator::DistancesCallback(const std_msgs::Float32MultiArray& d
         for (size_t i = 0; i < droneCount_; i++)
             odometry_estimate_unrotated[i] = odometry_estimate_[i];
 
-        InferRotationMovement(odometry_estimate_history2_, odometry_estimate_, best_xydist_, -movement);
+        InferRotationMovement(odometry_estimate_history2_, odometry_estimate_, best_xydist_, movement);
 
         Vector3f tmp_drone_2 = {2.5, 2.5, 0.8}; // hotfix to check for mirroring
         Vector3f own_gt = {(float)odometry_gt_.position[0], (float)odometry_gt_.position[1], (float)odometry_gt_.position[2]}; // hotfix to check for mirroring

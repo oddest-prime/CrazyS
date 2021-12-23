@@ -116,6 +116,7 @@ namespace rotors_control {
             void InferRotationMovementEzy(Vector3f* positions, Vector3f* positions_moved, int* xydist, const Vector3f& movement);
             void CheckDistances(float (*distances)[N_DRONES_MAX], Vector3f* positions);
             void RotatePositions(Vector3f* positions, Eigen::Matrix3f* rotation, Vector3f* result);
+            void MirrorHotfix(Vector3f* positions, int gt_index, const Vector3f& fixed_gt, const Vector3f& own_gt);
 
             //subscribers
             ros::Subscriber odometry_sub_;

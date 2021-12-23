@@ -213,21 +213,11 @@ void SwarmStateEstimator::DistancesCallback(const std_msgs::Float32MultiArray& d
         for (size_t i = 0; i < droneCount_; i++)
             odometry_estimate_unrotated[i] = odometry_estimate_[i];
 
-        InferRotationMovement(odometry_estimate_history2_, odometry_estimate_, best_xydist_, movement);
+        InferRotationMovement(odometry_estimate_history2_, odometry_estimate_, best_xydist_, -movement);
 
         Vector3f tmp_drone_2 = {2.5, 2.5, 0.8}; // hotfix to check for mirroring
-        Vector3f tmp_drone_diff;
-        tmp_drone_diff[0] = odometry_gt_.position[0] + odometry_estimate_[2][0] - tmp_drone_2[0];
-        tmp_drone_diff[1] = odometry_gt_.position[1] + odometry_estimate_[2][1] - tmp_drone_2[1];
-        tmp_drone_diff[2] = odometry_gt_.position[2] + odometry_estimate_[2][2] - tmp_drone_2[2];
-        if(tmp_drone_diff.norm() > 0.5)
-        {
-            Vector3f odometry_estimate_history2_flipped[N_DRONES_MAX]; // save position estimates before final rotation
-            ROS_INFO_ONCE("DistancesCallback (%d) apply flip hotfix, dist: %s", droneNumber_, VectorToString(tmp_drone_diff).c_str());
-
-            for (size_t i = 0; i < droneCount_; i++)
-                odometry_estimate_[i][0] = -odometry_estimate_[i][0]; // mirror along Y-axis
-        }
+        Vector3f own_gt = {(float)odometry_gt_.position[0], (float)odometry_gt_.position[1], (float)odometry_gt_.position[2]}; // hotfix to check for mirroring
+        //MirrorHotfix(odometry_estimate_, 2, tmp_drone_2, own_gt);
 
         CheckDistances(distances_, odometry_estimate_);
 
@@ -304,6 +294,57 @@ void SwarmStateEstimator::DistancesCallback(const std_msgs::Float32MultiArray& d
                 ROS_ERROR("Failed to move marker! Error msg:%s",srv.response.status_message.c_str());
             visual_cnt_ += 2*3.14159265358979323846 / 200;
         }
+    }
+}
+
+void SwarmStateEstimator::MirrorHotfix(Vector3f* positions, int gt_index, const Vector3f& fixed_gt, const Vector3f& own_gt)
+{
+    if(odometry_gt_history2_.position.norm() < 0.1)
+    {
+        ROS_INFO_ONCE("MirrorHotfix (%d) no valid odometry_gt_history2_, abort to not give fals impression of nice results", droneNumber_);
+        return;
+    }
+
+    Vector3f tmp_drone_diff;
+    tmp_drone_diff[0] = own_gt[0] + positions[gt_index][0] - fixed_gt[0];
+    tmp_drone_diff[1] = own_gt[1] + positions[gt_index][1] - fixed_gt[1];
+    tmp_drone_diff[2] = own_gt[2] + positions[gt_index][2] - fixed_gt[2];
+    if(tmp_drone_diff.norm() > 0.5)
+    {
+        ROS_INFO("MirrorHotfix (%d) need to mirror, vect: %s", droneNumber_, VectorToString(tmp_drone_diff).c_str());
+
+        // ///////////// pre rotation: rotate only around z-axis, s.t. a0 points towards the direction of y-axis
+        Vector3f a0 = tmp_drone_diff;
+        a0[2] = 0;
+        a0 = a0 / a0.norm(); // divide by norm to get unit vector
+        Vector3f b0 = {0, 1, 0};
+        Vector3f axis0 = a0.cross(b0); // get axis of rotation by cross-product of a0, b0
+        float angle0;
+        Matrix3f rotation0;
+        Matrix3f rotation1;
+        if(axis0.norm() < 0.0001) // a0 is already aligned with b0, use identity matrix for first rotation
+        {
+            rotation0 = IdentityMatrix();
+            rotation1 = IdentityMatrix();
+        }
+        else
+        {
+            axis0 = axis0 / axis0.norm(); // divide by norm to get unit vector
+            angle0 = acos(a0.dot(b0) / (a0.norm() * b0.norm())); // get angle of rotation by scalar-product of a0, b0
+            rotation0 = RotationMatrixFromAxisAngle(axis0, angle0);
+            rotation1 = RotationMatrixFromAxisAngle(axis0, -angle0);
+        }
+
+        // actually rotate positions
+        for (size_t i = 0; i < droneCount_; i++)
+        {
+            positions[i] = rotation0 * positions[i];
+            positions[i][1] = -positions[i][1];
+            positions[i] = rotation1 * positions[i];
+        }
+
+//        for (size_t i = 0; i < droneCount_; i++)
+//            odometry_estimate_[i][0] = -odometry_estimate_[i][0]; // mirror along Y-axis
     }
 }
 

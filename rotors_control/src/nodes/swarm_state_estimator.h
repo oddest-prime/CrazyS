@@ -80,9 +80,11 @@ namespace rotors_control {
             int history_cnt_;
 
             EigenOdometry odometry_gt_; // ground-truth
-            EigenOdometry odometry_gt_history_; // ground-truth
+            EigenOdometry odometry_gt_history1_; // ground-truth
+            EigenOdometry odometry_gt_history2_; // ground-truth
             Vector3f odometry_estimate_[N_DRONES_MAX]; // position estimates for other drones
-            Vector3f odometry_estimate_history_[N_DRONES_MAX]; // position estimate history for other drones
+            Vector3f odometry_estimate_history1_[N_DRONES_MAX]; // position estimate history for other drones
+            Vector3f odometry_estimate_history2_[N_DRONES_MAX]; // position estimate history for other drones
             float distances_[N_DRONES_MAX][N_DRONES_MAX]; // received distance measurements
             float elevation_[N_DRONES_MAX]; // received elevation measurements
 
@@ -111,6 +113,7 @@ namespace rotors_control {
             void InferPositions(float (*distances)[N_DRONES_MAX], int* triangle, Vector3f* positions);
             void InferRotationZ(Vector3f* positions, float* elevation, int* zset);
             void InferRotationMovement(Vector3f* positions, Vector3f* positions_moved, int* xydist, const Vector3f& movement);
+            void InferRotationMovementEzy(Vector3f* positions, Vector3f* positions_moved, int* xydist, const Vector3f& movement);
             void CheckDistances(float (*distances)[N_DRONES_MAX], Vector3f* positions);
             void RotatePositions(Vector3f* positions, Eigen::Matrix3f* rotation, Vector3f* result);
 

@@ -217,7 +217,7 @@ void SwarmStateEstimator::DistancesCallback(const std_msgs::Float32MultiArray& d
 
         Vector3f tmp_drone_2 = {2.5, 2.5, 0.8}; // hotfix to check for mirroring
         Vector3f own_gt = {(float)odometry_gt_.position[0], (float)odometry_gt_.position[1], (float)odometry_gt_.position[2]}; // hotfix to check for mirroring
-        //MirrorHotfix(odometry_estimate_, 2, tmp_drone_2, own_gt);
+        MirrorHotfix(odometry_estimate_, 2, tmp_drone_2, own_gt);
 
         CheckDistances(distances_, odometry_estimate_);
 
@@ -299,7 +299,7 @@ void SwarmStateEstimator::DistancesCallback(const std_msgs::Float32MultiArray& d
 
 void SwarmStateEstimator::MirrorHotfix(Vector3f* positions, int gt_index, const Vector3f& fixed_gt, const Vector3f& own_gt)
 {
-    if(odometry_gt_history2_.position.norm() < 0.1)
+    if(odometry_gt_history2_.position.norm() < 0.01)
     {
         ROS_INFO_ONCE("MirrorHotfix (%d) no valid odometry_gt_history2_, abort to not give fals impression of nice results", droneNumber_);
         return;

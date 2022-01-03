@@ -203,7 +203,7 @@ void SwarmStateEstimator::DistancesCallback(const std_msgs::Float32MultiArray& d
         ROS_INFO_ONCE("DistancesCallback (%d) best_zset_ = %d / %d / %d", droneNumber_, best_zset_[0], best_zset_[1], best_zset_[2]);
 
         FindBestXYdist(odometry_estimate_, best_xydist_);
-        ROS_INFO_ONCE("DistancesCallback (%d) best_xydist_ = %d / %d / %d", droneNumber_, best_xydist_[0], best_xydist_[1], best_xydist_[2]);
+        ROS_INFO("DistancesCallback (%d) best_xydist_ = %d / %d / %d", droneNumber_, best_xydist_[0], best_xydist_[1], best_xydist_[2]);
         Vector3f movement;
         movement[0] = odometry_gt_.position[0] - odometry_gt_history2_.position[0];
         movement[1] = odometry_gt_.position[1] - odometry_gt_history2_.position[1];
@@ -797,27 +797,41 @@ void SwarmStateEstimator::InferRotationMovement(Vector3f* positions, Vector3f* p
     float angle0_moved = atan2(centered_pm0[1], centered_pm0[0]);
 
     float phi_z = angle0_moved - angle0;
-    ROS_INFO_ONCE("InferRotationMovement (%d) angle0_moved:%f, angle0:%f", droneNumber_, angle0_moved, angle0);
+    ROS_INFO("InferRotationMovement (%d) angle0_moved:%f, angle0:%f", droneNumber_, angle0_moved, angle0);
 
     // ///////////// compensate rotation between original and moved position
     Vector3f axis_z = {0, 0, 1};
     Matrix3f rotation_z = RotationMatrixFromAxisAngle(axis_z, -phi_z);
+    Matrix3f rotation_z2 = RotationMatrixFromAxisAngle(axis_z, phi_z);
 
-    Vector3f pr0 = rotation_z * positions_moved[xydist[0]];
-    Vector3f pr1 = rotation_z * positions_moved[xydist[1]];
-    Vector3f pr2 = rotation_z * positions_moved[xydist[2]];
-    Vector3f center_rotated = (pr0 + pr1 + pr2) / 3;
-    ROS_INFO_ONCE("InferRotationMovement (%d) center_rotated:%s", droneNumber_, VectorToString(center_rotated).c_str());
+    Vector3f centered_pm0_rotated = rotation_z * centered_pm0;
+    Vector3f centered_pm1_rotated = rotation_z * centered_pm1;
+    Vector3f centered_pm2_rotated = rotation_z * centered_pm2;
+    float dist0 = (centered_p0 - centered_pm0_rotated).norm();
+    float dist1 = (centered_p1 - centered_pm1_rotated).norm();
+    float dist2 = (centered_p2 - centered_pm2_rotated).norm();
+    if(dist0 + dist1 + dist2 > 0.1)
+    {
+        ROS_INFO("InferRotationMovement (%d) Rotation error? Sum>0.1: dist0:%f dist1:%f dist2:%f", droneNumber_, (centered_p0 - centered_pm0_rotated).norm(), (centered_p1 - centered_pm1_rotated).norm(), (centered_p2 - centered_pm2_rotated).norm());
+    }
 
+    Vector3f pr0 = rotation_z * pm0;
+    Vector3f pr1 = rotation_z * pm1;
+    Vector3f pr2 = rotation_z * pm2;
+    Vector3f center_moved_rotated = (pr0 + pr1 + pr2) / 3;
+/*
     float dist = sqrt(pow(center[0] - center_rotated[0], 2) + pow(center[1] - center_rotated[1], 2));
-
+    ROS_INFO_ONCE("InferRotationMovement (%d) center_rotated:%s", droneNumber_, VectorToString(center_rotated).c_str());
+    ROS_INFO("InferRotationMovement (%d) center--center_rotated-dist:%f", droneNumber_, dist);
+    ROS_INFO("InferRotationMovement (%d)               movement-dist:%f", droneNumber_, sqrt(pow(movement[0], 2) + pow(movement[1], 2)));
+*/
     // ///////////// total rotation
-    Vector3f a1 = center_rotated - center;
+    Vector3f a1 = center - center_moved_rotated;
     Vector3f b1 = movement;
     a1[2] = 0;
     b1[2] = 0;
-    ROS_INFO_ONCE("InferRotationMovement (%d) center_rotated - center:%s", droneNumber_, VectorToString(a1).c_str());
-    ROS_INFO_ONCE("InferRotationMovement (%d) movement:%s", droneNumber_, VectorToString(movement).c_str());
+    ROS_INFO("InferRotationMovement (%d) center_rot.-center:%s", droneNumber_, VectorToString(a1).c_str());
+    ROS_INFO("InferRotationMovement (%d) movement:          %s", droneNumber_, VectorToString(movement).c_str());
     a1 = a1 / a1.norm(); // divide by norm to get unit vector
     b1 = b1 / b1.norm(); // divide by norm to get unit vector
     Vector3f axis1 = a1.cross(b1); // get axis of rotation by cross-product of a1, b1
@@ -838,9 +852,10 @@ void SwarmStateEstimator::InferRotationMovement(Vector3f* positions, Vector3f* p
         angle1 = acos(a1.dot(b1) / (a1.norm() * b1.norm())); // get angle of rotation by scalar-product of a1, b1
         rotation1 = RotationMatrixFromAxisAngle(axis1, angle1);
     }
-    ROS_INFO_ONCE("InferRotationMovement (%d) angle1:%f, axis1:%s", droneNumber_, angle1, VectorToString(axis1).c_str());
+    ROS_INFO("InferRotationMovement (%d) phi_z:%f", droneNumber_, phi_z);
+    ROS_INFO("InferRotationMovement (%d) angle1:%f, axis1:%s", droneNumber_, angle1, VectorToString(axis1).c_str());
 
-    Matrix3f rotation_z1 = rotation_z * rotation1;
+    Matrix3f rotation_z1 = rotation_z2 * rotation1;
 
     // actually rotate positions
     for (size_t i = 0; i < droneCount_; i++)

@@ -309,7 +309,7 @@ void SwarmStateEstimator::MirrorHotfix(Vector3f* positions, int gt_index, const 
     tmp_drone_diff[0] = own_gt[0] + positions[gt_index][0] - fixed_gt[0];
     tmp_drone_diff[1] = own_gt[1] + positions[gt_index][1] - fixed_gt[1];
     tmp_drone_diff[2] = own_gt[2] + positions[gt_index][2] - fixed_gt[2];
-    if(tmp_drone_diff.norm() > 0.5)
+    if(tmp_drone_diff.norm() > 0.01)
     {
         ROS_INFO("MirrorHotfix (%d) need to mirror, vect: %s", droneNumber_, VectorToString(tmp_drone_diff).c_str());
 

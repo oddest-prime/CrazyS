@@ -19,7 +19,7 @@ find_package(
 catkin_package(
   INCLUDE_DIRS include ${Eigen_INCLUDE_DIRS}
   LIBRARIES lee_position_controller position_controller mpc_controller crazyflie_onboard_controller
-    roll_pitch_yawrate_thrust_controller sensfusion6 crazyflie_complementary_filter
+    roll_pitch_yawrate_thrust_controller sensfusion6 crazyflie_complementary_filter eigen_helpers
     mellinger_controller internal_model_controller
     roll_pitch_yawrate_thrust_controller_crazyflie
   CATKIN_DEPENDS geometry_msgs mav_msgs nav_msgs roscpp sensor_msgs
@@ -61,6 +61,10 @@ add_library(crazyflie_complementary_filter
   src/library/crazyflie_complementary_filter.cpp
 )
 
+add_library(eigen_helpers
+  src/library/eigen_helpers.cpp
+)
+
 add_library(sensfusion6
   src/library/sensfusion6.cpp
 )
@@ -100,6 +104,9 @@ add_dependencies(crazyflie_onboard_controller ${catkin_EXPORTED_TARGETS})
 target_link_libraries(crazyflie_complementary_filter ${catkin_LIBRARIES})
 add_dependencies(crazyflie_complementary_filter ${catkin_EXPORTED_TARGETS})
 
+target_link_libraries(eigen_helpers ${catkin_LIBRARIES})
+add_dependencies(eigen_helpers ${catkin_EXPORTED_TARGETS})
+
 target_link_libraries(sensfusion6 ${catkin_LIBRARIES})
 add_dependencies(sensfusion6 ${catkin_EXPORTED_TARGETS})
 
@@ -129,6 +136,12 @@ target_link_libraries(swarm_controller
 add_executable(swarm_state_estimator src/nodes/swarm_state_estimator.cpp)
 add_dependencies(swarm_state_estimator ${catkin_EXPORTED_TARGETS})
 target_link_libraries(swarm_state_estimator
+  ${catkin_LIBRARIES})
+
+add_executable(relative_distance_controller src/nodes/relative_distance_controller.cpp)
+add_dependencies(relative_distance_controller ${catkin_EXPORTED_TARGETS})
+target_link_libraries(relative_distance_controller
+  eigen_helpers
   ${catkin_LIBRARIES})
 
 add_executable(distance_measurement_sim src/nodes/distance_measurement_sim.cpp)

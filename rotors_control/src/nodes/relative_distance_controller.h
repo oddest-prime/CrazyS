@@ -44,6 +44,10 @@
 #define N_DRONES_MAX  20          /* maximum number of drones */
 #define N_VECTORS_MAX  3          /* number of saved unit vectors */
 
+#define SWARM_DISABLED                0
+#define SWARM_DECLARATIVE_DISTANCES   1
+#define SWARM_LANDING                 32768
+
 namespace rotors_control {
     using namespace Eigen;
 
@@ -58,6 +62,14 @@ namespace rotors_control {
             int droneNumber_;
             int droneCount_;
 
+            int n_move_max_;
+            float spc_cohesion_weight_;
+            float spc_separation_weight_;
+            float eps_move_;
+            float neighbourhood_distance_;
+
+            int enable_swarm_ = SWARM_DECLARATIVE_DISTANCES;
+
             int history_cnt_;
 
             EigenOdometry odometry_gt_; // ground-truth
@@ -70,6 +82,8 @@ namespace rotors_control {
 
             Vector3f unit_vectors_[N_VECTORS_MAX]; // directions of unit vectors
             float distances_differences_[N_VECTORS_MAX][N_DRONES_MAX]; // change in distances for unit vectors
+            Matrix3f transform_vectors_;
+            int transform_ok_;
 
             std::string namespace_;
 

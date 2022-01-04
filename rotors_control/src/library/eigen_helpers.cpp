@@ -149,11 +149,10 @@ namespace rotors_control{
   std::string MatrixToString(const Eigen::Matrix3f& a)
   {
       std::stringstream ss;
-      /*
+      ss << std::endl;
       ss << "[[ " << a(0,0) << ", " << a(0,1) << ", " << a(0,2) << " ]" << std::endl;
       ss << " [ " << a(1,0) << ", " << a(1,1) << ", " << a(1,2) << " ]" << std::endl;
       ss << " [ " << a(2,0) << ", " << a(2,1) << ", " << a(2,2) << " ]]" << std::endl;
-  */
       return ss.str();
   }
 

@@ -33,6 +33,25 @@
       <pose>2.5 2.5 0.63  0 0 0</pose>
       <static>true</static>
     </include>
+    <include>
+      <uri>model://small_box</uri>
+      <name>small_box_04</name>
+      <pose>2.5 2.5 0.81  0 0 0</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://small_box</uri>
+      <name>small_box_05</name>
+      <pose>2.5 2.5 0.99  0 0 0</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://small_box</uri>
+      <name>small_box_06</name>
+      <pose>2.5 2.5 1.17  0 0 0</pose>
+      <static>true</static>
+    </include>
+
 
     <include>
       <uri>model://small_box</uri>
@@ -44,6 +63,18 @@
       <uri>model://small_box</uri>
       <name>small_box_11</name>
       <pose>-0.5 -0.5 0.27  0 0 0</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://small_box</uri>
+      <name>small_box_12</name>
+      <pose>-0.5 -0.5 0.45  0 0 0</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://small_box</uri>
+      <name>small_box_13</name>
+      <pose>-0.5 -0.5 0.63  0 0 0</pose>
       <static>true</static>
     </include>
 

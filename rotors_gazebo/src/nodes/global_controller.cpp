@@ -48,6 +48,8 @@
 #define SWARM_GRADIENT_ENUM       32
 #define SWARM_PHASE_ESTABLISHED   64
 #define SWARM_LANDING             32768
+#define SWARM_DECLARATIVE_DISTANCES   1
+
 
 #define OPERATION_MODE_NONE         0
 #define OPERATION_MODE_TIMED        1
@@ -391,7 +393,7 @@ int main(int argc, char** argv) {
     if(droneCount == 4)
       modulus = 2;
 
-    ROS_INFO("global_controller: Go to starting position (hovering).");
+    ROS_INFO("global_controller (timed): Go to starting position (hovering).");
     for (size_t i = 0; i < droneCount; i++) // go to starting position (hovering)
     {
       trajectory_msg.header.stamp = ros::Time::now();

@@ -2,7 +2,7 @@
 
 cd ~/SWARM/crazys
 
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` test2 gradenum mpc1_params3 "testing" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` test4 mpc1 mpc1_params3 "relative_distance" &
 exit 0;
 
 

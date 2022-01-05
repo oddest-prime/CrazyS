@@ -71,8 +71,14 @@ RelativeDistanceController::RelativeDistanceController() {
     transform_ok_ = 0;
 
     // Topics subscribe
+    // Topics subscribe
+    cmd_multi_dof_joint_trajectory_sub_ = nh.subscribe(mav_msgs::default_topics::COMMAND_TRAJECTORY, 1, &RelativeDistanceController::MultiDofJointTrajectoryCallback, this);
     odometry_sub_ = nh.subscribe(mav_msgs::default_topics::ODOMETRY, 1, &RelativeDistanceController::OdometryCallback, this);
+    enable_sub_ = nh.subscribe("enable", 1, &RelativeDistanceController::EnableCallback, this);
     distances_sub_ = nh.subscribe("/drone_distances", 1, &RelativeDistanceController::DistancesCallback, this);
+
+    // To publish the set-point
+    setpoint_pub_ = nh.advertise<geometry_msgs::PoseStamped>("set_point", 1);
 
     // To publish the current pose for gazebo visual
     visual_cnt_ = 0;
@@ -89,7 +95,7 @@ void RelativeDistanceController::InitializeParams() {
     n_move_max_ = 1;
     spc_cohesion_weight_ = 1.0;
     spc_separation_weight_ = 1.0;
-    eps_move_ = 0.1;
+    eps_move_ = 0.2;
     neighbourhood_distance_ = 999; // global neighbourhood
 
     //Reading the parameters come from the launch file
@@ -116,8 +122,23 @@ void RelativeDistanceController::InitializeParams() {
     //timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &RelativeDistanceController::CallbackSaveData, this, false, true);
 }
 
-void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg) {
+void RelativeDistanceController::EnableCallback(const std_msgs::Int32ConstPtr& enable_msg) {
+    ROS_INFO("RelativeDistanceController got enable message: %d", enable_msg->data);
 
+    enable_swarm_ = enable_msg->data;
+}
+
+void RelativeDistanceController::MultiDofJointTrajectoryCallback(const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& msg) {
+  mav_msgs::EigenTrajectoryPoint eigen_reference;
+  mav_msgs::eigenTrajectoryPointFromMsg(msg->points.front(), &eigen_reference);
+  ROS_INFO_ONCE("SwarmController got MultiDOFJointTrajectory message: x=%f, y=%f, z=%f, yaw=%f", eigen_reference.position_W[0], eigen_reference.position_W[1], eigen_reference.position_W[2], eigen_reference.getYaw());
+
+  // set target point for hovering or swarm target if in swarm mode
+  target_swarm_ = eigen_reference;
+}
+
+void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg)
+{
     ROS_INFO_ONCE("RelativeDistanceController got first odometry message.");
 
     // received message drone position information, store ground-truth pose
@@ -126,13 +147,18 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     odometry_gt_.position[0] = odometry_msg->pose.pose.position.x;
     odometry_gt_.position[1] = odometry_msg->pose.pose.position.y;
     odometry_gt_.position[2] = odometry_msg->pose.pose.position.z;
-    ROS_INFO_ONCE("RelativeDistanceController got odometry message: x=%f y=%f z=%f (%d)", odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2], droneNumber_);
+    ROS_INFO_ONCE("RelativeDistanceController (%d) odometry: x=%f y=%f z=%f", droneNumber_, odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2]);
 
+    // calculate movement vector based on current ground-truth position and history (TODO: use accelerometer data)
     Vector3f movement;
     movement[0] = odometry_gt_.position[0] - odometry_gt_history1_.position[0];
     movement[1] = odometry_gt_.position[1] - odometry_gt_history1_.position[1];
     movement[2] = odometry_gt_.position[2] - odometry_gt_history1_.position[2];
     float movement_norm = movement.norm();
+
+    // setpoint for message to be sent to low-level controller
+    geometry_msgs::PoseStamped set_point;
+    set_point.header.stamp = odometry_msg->header.stamp;
 
     history_cnt_ ++;
 //    if(history_cnt_ > 10 || true)
@@ -140,75 +166,83 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     {
         ROS_INFO_ONCE("OdometryCallback (%d) movement over threshold: %s", droneNumber_, VectorToString(movement).c_str());
 
-        movement = movement / movement_norm; // divide by norm to get unit vector
-        // find unit vector closest to the current movement vector: having the largest dot product
-        float max_dot_product = 0;
-        size_t index_dot_product = 0;
-        float same_dot[N_VECTORS_MAX]; // calculate similarity of unit_vectors to each other
-        same_dot[0] = abs(unit_vectors_[0].dot(unit_vectors_[1])) + abs(unit_vectors_[0].dot(unit_vectors_[2]));
-        same_dot[1] = abs(unit_vectors_[1].dot(unit_vectors_[0])) + abs(unit_vectors_[1].dot(unit_vectors_[2]));
-        same_dot[2] = abs(unit_vectors_[2].dot(unit_vectors_[1])) + abs(unit_vectors_[2].dot(unit_vectors_[0]));
-        for (size_t i = 0; i < N_VECTORS_MAX; i++)
+        if(enable_swarm_ != SWARM_DISABLED)
         {
-            if(unit_vectors_[i].norm() < 0.1) // this unit vector is not yet initialized, use it
+            movement = movement / movement_norm; // divide by norm to get unit vector
+
+            // calculate similarity of unit_vectors to each other
+            float same_dot[3];
+            same_dot[0] = abs(unit_vectors_[0].dot(unit_vectors_[1])) + abs(unit_vectors_[0].dot(unit_vectors_[2]));
+            same_dot[1] = abs(unit_vectors_[1].dot(unit_vectors_[0])) + abs(unit_vectors_[1].dot(unit_vectors_[2]));
+            same_dot[2] = abs(unit_vectors_[2].dot(unit_vectors_[1])) + abs(unit_vectors_[2].dot(unit_vectors_[0]));
+
+            // find unit vector closest to the current movement vector: having the largest dot product
+            float max_dot_product = 0;
+            size_t index_dot_product = 0;
+            for (size_t i = 0; i < N_VECTORS_MAX; i++)
             {
-                ROS_INFO_ONCE("OdometryCallback (%d) this unit vector is not yet initialized, use it: %d", droneNumber_, (int)i);
-                index_dot_product = i;
-                break;
-            }
-            float dot_product = abs(unit_vectors_[i].dot(movement)); // TODO: find factor for penalizing same similarity
-            //ROS_INFO("%s * %s (%d) = %f (%f)", VectorToString(unit_vectors_[i]).c_str(), VectorToString(movement).c_str(), (int)i, dot_product, same_dot[i]);
+                if(unit_vectors_[i].norm() < 0.1) // this unit vector is not yet initialized, use it
+                {
+                    ROS_INFO_ONCE("OdometryCallback (%d) this unit vector is not yet initialized, use it: %d", droneNumber_, (int)i);
+                    index_dot_product = i;
+                    break;
+                }
+                float dot_product = abs(unit_vectors_[i].dot(movement)); // TODO: find factor for penalizing same similarity
+                //ROS_INFO("%s * %s (%d) = %f (%f)", VectorToString(unit_vectors_[i]).c_str(), VectorToString(movement).c_str(), (int)i, dot_product, same_dot[i]);
 
-            if(dot_product*same_dot[i] > max_dot_product)
+                if(dot_product*same_dot[i] > max_dot_product)
+                {
+                    index_dot_product = i;
+                    max_dot_product = dot_product*same_dot[i];
+                }
+            }
+
+            ROS_INFO_ONCE("OdometryCallback (%d) replace unit vector: %d", droneNumber_, (int)index_dot_product);
+            unit_vectors_[index_dot_product] = movement;
+            for (size_t i = 0; i < droneCount_; i++)
+                distances_differences_[index_dot_product][i] = (distances_[droneNumber_][i] - distances_history1_[i]) / movement_norm;
+
+            ROS_INFO("OdometryCallback (%d) unit_vectors_0: %s", droneNumber_, VectorToString(unit_vectors_[0]).c_str());
+            ROS_INFO("OdometryCallback (%d) unit_vectors_1: %s", droneNumber_, VectorToString(unit_vectors_[1]).c_str());
+            ROS_INFO("OdometryCallback (%d) unit_vectors_2: %s\n", droneNumber_, VectorToString(unit_vectors_[2]).c_str());
+
+            Vector3f span_vectors;
+            span_vectors[0] = fmax(unit_vectors_[0][0], fmax(unit_vectors_[1][0], unit_vectors_[2][0])) - fmin(unit_vectors_[0][0], fmin(unit_vectors_[1][0], unit_vectors_[2][0]));
+            span_vectors[1] = fmax(unit_vectors_[0][1], fmax(unit_vectors_[1][1], unit_vectors_[2][1])) - fmin(unit_vectors_[0][1], fmin(unit_vectors_[1][1], unit_vectors_[2][1]));
+            span_vectors[2] = fmax(unit_vectors_[0][2], fmax(unit_vectors_[1][2], unit_vectors_[2][2])) - fmin(unit_vectors_[0][2], fmin(unit_vectors_[1][2], unit_vectors_[2][2]));
+            ROS_INFO("OdometryCallback (%d) span_vectors: %s", droneNumber_, VectorToString(span_vectors).c_str());
+
+            if(unit_vectors_[0].norm() > 0.01 &&
+               unit_vectors_[1].norm() > 0.01 &&
+               unit_vectors_[2].norm() > 0.01 &&
+               span_vectors[0] > 0.01 && span_vectors[1] > 0.01 && span_vectors[2] > 0.01 &&
+               abs(unit_vectors_[0].dot(unit_vectors_[1])) < 0.9 &&
+               abs(unit_vectors_[1].dot(unit_vectors_[2])) < 0.9 &&
+               abs(unit_vectors_[2].dot(unit_vectors_[0])) < 0.9)
             {
-                index_dot_product = i;
-                max_dot_product = dot_product*same_dot[i];
+                // calculate basis transform Matrix
+                Matrix3f transform_tmp;
+                transform_tmp(0,0) = unit_vectors_[0][0];
+                transform_tmp(1,0) = unit_vectors_[0][1];
+                transform_tmp(2,0) = unit_vectors_[0][2];
+                transform_tmp(0,1) = unit_vectors_[1][0];
+                transform_tmp(1,1) = unit_vectors_[1][1];
+                transform_tmp(2,1) = unit_vectors_[1][2];
+                transform_tmp(0,2) = unit_vectors_[2][0];
+                transform_tmp(1,2) = unit_vectors_[2][1];
+                transform_tmp(2,2) = unit_vectors_[2][2];
+                transform_vectors_ = transform_tmp.inverse();
+                ROS_INFO_ONCE("OdometryCallback (%d) transform_vectors_: %s", droneNumber_, MatrixToString(transform_vectors_).c_str());
+                transform_ok_ = 1;
+            }
+            else
+            {
+                ROS_INFO_ONCE("OdometryCallback (%d) Bad unit vectors, cannot calculate transform_vectors.", droneNumber_);
+                transform_ok_ = 0;
             }
         }
 
-        ROS_INFO_ONCE("OdometryCallback (%d) replace unit vector: %d", droneNumber_, (int)index_dot_product);
-        unit_vectors_[index_dot_product] = movement;
-        for (size_t i = 0; i < droneCount_; i++)
-            distances_differences_[index_dot_product][i] = (distances_[droneNumber_][i] - distances_history1_[i]) / movement_norm;
-
-        ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_0: %s", droneNumber_, VectorToString(unit_vectors_[0]).c_str());
-        ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_1: %s", droneNumber_, VectorToString(unit_vectors_[1]).c_str());
-        ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_2: %s\n", droneNumber_, VectorToString(unit_vectors_[2]).c_str());
-
-        Vector3f span_vectors;
-        span_vectors[0] = fmax(unit_vectors_[0][0], fmax(unit_vectors_[1][0], unit_vectors_[2][0])) - fmin(unit_vectors_[0][0], fmin(unit_vectors_[1][0], unit_vectors_[2][0]));
-        span_vectors[1] = fmax(unit_vectors_[0][1], fmax(unit_vectors_[1][1], unit_vectors_[2][1])) - fmin(unit_vectors_[0][1], fmin(unit_vectors_[1][1], unit_vectors_[2][1]));
-        span_vectors[2] = fmax(unit_vectors_[0][2], fmax(unit_vectors_[1][2], unit_vectors_[2][2])) - fmin(unit_vectors_[0][2], fmin(unit_vectors_[1][2], unit_vectors_[2][2]));
-        ROS_INFO("OdometryCallback (%d) span_vectors: %s", droneNumber_, VectorToString(span_vectors).c_str());
-
-        same_dot[0] = abs(unit_vectors_[0].dot(unit_vectors_[1])) + abs(unit_vectors_[0].dot(unit_vectors_[2]));
-        same_dot[1] = abs(unit_vectors_[1].dot(unit_vectors_[0])) + abs(unit_vectors_[1].dot(unit_vectors_[2]));
-        same_dot[2] = abs(unit_vectors_[2].dot(unit_vectors_[1])) + abs(unit_vectors_[2].dot(unit_vectors_[0]));
-        if(span_vectors[0] > 0.01 && span_vectors[1] > 0.01 && span_vectors[2] > 0.01 &&
-           same_dot[0] < (2-0.02) && same_dot[1] < (2-0.02) && same_dot[2] < (2-0.02))
-        {
-            // calculate basis transform Matrix
-            Matrix3f transform_tmp;
-            transform_tmp(0,0) = unit_vectors_[0][0];
-            transform_tmp(1,0) = unit_vectors_[0][1];
-            transform_tmp(2,0) = unit_vectors_[0][2];
-            transform_tmp(0,1) = unit_vectors_[1][0];
-            transform_tmp(1,1) = unit_vectors_[1][1];
-            transform_tmp(2,1) = unit_vectors_[1][2];
-            transform_tmp(0,2) = unit_vectors_[2][0];
-            transform_tmp(1,2) = unit_vectors_[2][1];
-            transform_tmp(2,2) = unit_vectors_[2][2];
-            transform_vectors_ = transform_tmp.inverse();
-            ROS_INFO_ONCE("OdometryCallback (%d) transform_vectors_: %s", droneNumber_, MatrixToString(transform_vectors_).c_str());
-            transform_ok_ = 1;
-        }
-        else
-        {
-            ROS_INFO("OdometryCallback (%d) Bad unit vectors, cannot calculate transform_vectors.", droneNumber_);
-            transform_ok_ = 0;
-        }
-
-        // save new history point
+        // save current point as history point
         for (size_t i = 0; i < droneCount_; i++)
         {
             distances_history2_[i] = distances_history1_[i];
@@ -224,10 +258,10 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     // ################################################################################
     if(enable_swarm_ == SWARM_DISABLED) // set target point if not in swarm mode
     {
-/*        ROS_INFO_ONCE("SwarmController %d swarm disabled x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
+        ROS_INFO_ONCE("RelativeDistanceController %d swarm disabled x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
         set_point.pose.position.x = target_swarm_.position_W[0];
         set_point.pose.position.y = target_swarm_.position_W[1];
-        set_point.pose.position.z = target_swarm_.position_W[2];*/
+        set_point.pose.position.z = target_swarm_.position_W[2];
     }
     else if(enable_swarm_ == SWARM_LANDING) // set keep target point and set small z if in landing mode
     {
@@ -236,78 +270,170 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         set_point.pose.position.y = odometry_.position[1];
         set_point.pose.position.z = max(0.0, min(odometry_.position[2] - 0.05, 0.1));*/
     }
-    else if(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES && transform_ok_ && droneNumber_ == 0)
+    else if(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES && droneNumber_ == 0)
     {
         ROS_INFO_ONCE("RelativeDistanceController starting swarm mode (SWARM_DECLARATIVE_DISTANCES)");
 
-        int min_xi = 0;
-        int min_yi = 0;
-        int min_zi = 0;
-
-        // calculate neighbourhood independently from potential position
-        int neighbourhood_cnt = 0;
-        bool neighbourhood_bool[N_DRONES_MAX];
-        for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+        if(!transform_ok_) // need to do exploration
         {
-            if(distances_[droneNumber_][i] < neighbourhood_distance_ && i != droneNumber_)
+            int exploration_info = 33;
+            Vector3f direction = {1, 1, 1};
+            if(unit_vectors_[0].norm() < 0.1) // all unit vectors empty, since they are populated sequentially
             {
-                neighbourhood_cnt ++;
-                neighbourhood_bool[i] = true;
+                // go to random direction
+                direction[0] = 2;
+                direction[1] = -3;
+                direction[2] = 0;
+                exploration_info = 0;
             }
-            else
-                neighbourhood_bool[i] = false;
-        }
-
-        float min_sum = FLT_MAX;
-        for(int xi = 0-n_move_max_; xi <= n_move_max_; xi ++) // iterate over all possible next actions in x-, y- and z-dimension
-        {
-            for(int yi = 0-n_move_max_; yi <= n_move_max_; yi ++)
+            else if(unit_vectors_[1].norm() < 0.1) // only vector 0 is not empty
             {
-                for(int zi = 0-n_move_max_; zi <= n_move_max_; zi ++)
+                Vector3f tmp = unit_vectors_[0];
+                tmp[0] += 1;
+                direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                exploration_info = 1;
+            }
+            else if(unit_vectors_[2].norm() < 0.1) // vector 0 and 1 are not empty
+            {
+                if(abs(unit_vectors_[0].dot(unit_vectors_[1])) > 0.9) // dot-procut: same direction = 1; orthogonal = 0
+                { // vectors go into the same direction, need some orthogonal move
+                    Vector3f tmp = unit_vectors_[1];
+                    tmp[1] += 1;
+                    direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 2;
+                }
+                else
+                { // vectors go into different directions, use them to calculate orthogonal move
+                    direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 3;
+                }
+            }
+            else // vector 0, 1 and 2 are not empty
+            {
+                if(abs(unit_vectors_[0].dot(unit_vectors_[1])) > 0.9 &&
+                   abs(unit_vectors_[1].dot(unit_vectors_[2])) > 0.9) // dot-procut: same direction = 1; orthogonal = 0
+                { // all three vectors go into the same direction, need some orthogonal move
+                    Vector3f tmp = unit_vectors_[0];
+                    tmp[2] += 1;
+                    direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 4;
+                }
+                else if(abs(unit_vectors_[0].dot(unit_vectors_[1])) > 0.9) // dot-procut: same direction = 1; orthogonal = 0
+                { // all three vectors 0 and 1 go into the same direction, use vector 2 to calculate orthogonal move
+                    Vector3f tmp = unit_vectors_[0];
+                    direction = unit_vectors_[0].cross(unit_vectors_[2]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 5;
+                }
+                else
                 {
-                    Vector3f potential_movement = {(float)xi * eps_move_, (float)yi * eps_move_, (float)zi * eps_move_};
-                    Vector3f potential_movement_transformed = transform_vectors_ * potential_movement;
+                    ROS_INFO("RelativeDistanceController %d unit_vectors_[0].dot(unit_vectors_[1]):%f", droneNumber_, unit_vectors_[0].dot(unit_vectors_[1]));
+                    ROS_INFO("RelativeDistanceController %d unit_vectors_[1].dot(unit_vectors_[2]):%f", droneNumber_, unit_vectors_[1].dot(unit_vectors_[2]));
+                    ROS_INFO("RelativeDistanceController %d unit_vectors_[2].dot(unit_vectors_[0]):%f", droneNumber_, unit_vectors_[2].dot(unit_vectors_[0]));
+                    exploration_info = 99;
+                }
+            }
+            direction = direction / direction.norm(); // calculate unit vector of length 1
+            set_point.pose.position.x = odometry_gt_.position[0] + direction[0];
+            set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
+            set_point.pose.position.z = odometry_gt_.position[2] + direction[2];
+            ROS_INFO("RelativeDistanceController %d explore:%d direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
+        }
+        else // possible to to exploitation
+        {
+            int min_xi = 0;
+            int min_yi = 0;
+            int min_zi = 0;
 
-                    float cohesion_sum = 0;
-                    float separation_sum = 0;
-                    float total_sum = 0;
+            // calculate neighbourhood independently from potential position
+            int neighbourhood_cnt = 0;
+            bool neighbourhood_bool[N_DRONES_MAX];
+            for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+            {
+                if(distances_[droneNumber_][i] < neighbourhood_distance_ && i != droneNumber_)
+                {
+                    neighbourhood_cnt ++;
+                    neighbourhood_bool[i] = true;
+                }
+                else
+                    neighbourhood_bool[i] = false;
+            }
 
-                    for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+            float min_sum = FLT_MAX;
+            for(int xi = 0-n_move_max_; xi <= n_move_max_; xi ++) // iterate over all possible next actions in x-, y- and z-dimension
+            {
+                for(int yi = 0-n_move_max_; yi <= n_move_max_; yi ++)
+                {
+                    for(int zi = 0-n_move_max_; zi <= n_move_max_; zi ++)
                     {
-                        float dist = distances_[droneNumber_][i] +
-                                     distances_differences_[0][i] * potential_movement_transformed[0] +
-                                     distances_differences_[1][i] * potential_movement_transformed[1] +
-                                     distances_differences_[2][i] * potential_movement_transformed[2];
+                        Vector3f potential_movement = {(float)xi * eps_move_, (float)yi * eps_move_, (float)zi * eps_move_};
+                        Vector3f potential_movement_transformed = transform_vectors_ * potential_movement;
 
-                        if(i == droneNumber_) // skip for own quadcopter
-                          continue;
+                        float cohesion_sum = 0;
+                        float separation_sum = 0;
+                        float total_sum = 0;
 
-                        cohesion_sum += dist*dist;
-                        separation_sum += 1.0/(dist*dist);
-                    }
+                        for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+                        {
+                            float dist = distances_[droneNumber_][i] +
+                                         distances_differences_[0][i] * potential_movement_transformed[0] +
+                                         distances_differences_[1][i] * potential_movement_transformed[1] +
+                                         distances_differences_[2][i] * potential_movement_transformed[2];
 
-                    // coehesion term
-                    total_sum = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
-                    // separation term
-                    total_sum += spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
+                            if(i == droneNumber_) // skip for own quadcopter
+                              continue;
 
-                    if(total_sum < min_sum)
-                    {
-                        min_sum = total_sum;
-                        min_xi = xi;
-                        min_yi = yi;
-                        min_zi = zi;
+                            cohesion_sum += dist*dist;
+                            separation_sum += 1.0/(dist*dist);
+                        }
+
+                        // coehesion term
+                        total_sum = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
+                        // separation term
+                        total_sum += spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
+
+                        if(total_sum < min_sum)
+                        {
+                            min_sum = total_sum;
+                            min_xi = xi;
+                            min_yi = yi;
+                            min_zi = zi;
+                        }
                     }
                 }
             }
+            ROS_INFO_ONCE("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
+            set_point.pose.position.x = odometry_gt_.position[0] + (float)min_xi * eps_move_;
+            set_point.pose.position.y = odometry_gt_.position[1] + (float)min_yi * eps_move_;
+            set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_;
         }
-        ROS_INFO("RelativeDistanceController %d swarm direction xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
-/*        set_point.pose.position.x = odometry_.position[0] + (float)min_xi * eps_move_;
-        set_point.pose.position.y = odometry_.position[1] + (float)min_xi * eps_move_;
-        set_point.pose.position.z = odometry_.position[2] + (float)min_xi * eps_move_;*/
+    }
 
-  }
+    if(enable_swarm_ != SWARM_DISABLED || set_point.pose.position.z > 0.01) // do not enable drone until proper target point received
+    {
+        setpoint_pub_.publish(set_point);
+        ROS_INFO_ONCE("RelativeDistanceController %d set_point x=%f y=%f z=%f", droneNumber_, set_point.pose.position.x, set_point.pose.position.y, set_point.pose.position.z);
+    }
 
+    // move gazebo marker
+    geometry_msgs::Point pr2_position;
+    pr2_position.x = set_point.pose.position.x;
+    pr2_position.y = set_point.pose.position.y;
+    pr2_position.z = set_point.pose.position.z;
+    geometry_msgs::Quaternion pr2_orientation;
+    pr2_orientation.x = 0.0;
+    pr2_orientation.y = 0.0;
+    pr2_orientation.z = 0.0;
+    pr2_orientation.w = 1.0;
+    geometry_msgs::Pose pr2_pose;
+    pr2_pose.position = pr2_position;
+    pr2_pose.orientation = pr2_orientation;
+    gazebo_msgs::ModelState pr2_modelstate;
+    pr2_modelstate.model_name = (std::string) "marker_crazyflie2_" + std::to_string(droneNumber_);
+    pr2_modelstate.pose = pr2_pose;
+    gazebo_msgs::SetModelState srv;
+    srv.request.model_state = pr2_modelstate;
+    if(!gazebo_client_.call(srv))
+        ROS_ERROR("Failed to move marker! Error msg:%s",srv.response.status_message.c_str());
 }
 
 void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiArray& distances_msg) {

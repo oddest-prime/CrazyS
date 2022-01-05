@@ -68,9 +68,10 @@ namespace rotors_control {
             float eps_move_;
             float neighbourhood_distance_;
 
-            int enable_swarm_ = SWARM_DECLARATIVE_DISTANCES;
-
+            int enable_swarm_ = SWARM_DISABLED;
             int history_cnt_;
+            bool waypointHasBeenPublished_ = false;
+            mav_msgs::EigenTrajectoryPoint target_swarm_;
 
             EigenOdometry odometry_gt_; // ground-truth
             EigenOdometry odometry_gt_history1_; // ground-truth at history point
@@ -94,15 +95,17 @@ namespace rotors_control {
 
             void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
             void DistancesCallback(const std_msgs::Float32MultiArray& distances_msg);
-            void ElevationCallback(const std_msgs::Float32MultiArray& elevation_msg);
+            void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
+            void MultiDofJointTrajectoryCallback(const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& msg);
 
             //subscribers
+            ros::Subscriber cmd_multi_dof_joint_trajectory_sub_;
             ros::Subscriber odometry_sub_;
             ros::Subscriber distances_sub_;
-            ros::Subscriber elevation_sub_;
+            ros::Subscriber enable_sub_;
 
             //publisher
-            ros::Publisher distances_pub_;
+            ros::Publisher setpoint_pub_;
     };
 }
 

@@ -56,6 +56,9 @@ RelativeDistanceController::RelativeDistanceController() {
     InitializeParams();
 
     history_cnt_ = 0;
+    random_direction_[0] = 0;
+    random_direction_[1] = 0;
+    random_direction_[2] = 0;
     odometry_gt_history1_.position[0] = 0;
     odometry_gt_history1_.position[1] = 0;
     odometry_gt_history1_.position[2] = 0;
@@ -251,6 +254,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         odometry_gt_history2_ = odometry_gt_history1_;
         odometry_gt_history1_ = odometry_gt_;
         history_cnt_ = 0;
+        random_direction_[0] = 0;
+        random_direction_[1] = 0;
+        random_direction_[2] = 0;
     }
 
 
@@ -276,29 +282,31 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
         if(!transform_ok_) // need to do exploration
         {
+            if(random_direction_.norm() <= 0.02) // need new random value, if value was cleared
+            {
+                std::normal_distribution<float> dist(0.0, 1); // gaussian random number generator
+                random_direction_[0] = dist(generator_);
+                random_direction_[1] = dist(generator_);
+                random_direction_[2] = dist(generator_);
+            }
             int exploration_info = 33;
             Vector3f direction = {1, 1, 1};
-            if(unit_vectors_[0].norm() < 0.1) // all unit vectors empty, since they are populated sequentially
+            if(unit_vectors_[0].norm() <= 0.02) // all unit vectors empty, since they are populated sequentially
             {
-                // go to random direction
-                direction[0] = 2;
-                direction[1] = -3;
-                direction[2] = 0;
+                direction = random_direction_; // go to random direction
                 exploration_info = 0;
             }
-            else if(unit_vectors_[1].norm() < 0.1) // only vector 0 is not empty
+            else if(unit_vectors_[1].norm() <= 0.02) // only vector 0 is not empty
             {
-                Vector3f tmp = unit_vectors_[0];
-                tmp[0] += 1;
+                Vector3f tmp = unit_vectors_[0] + random_direction_;
                 direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
                 exploration_info = 1;
             }
-            else if(unit_vectors_[2].norm() < 0.1) // vector 0 and 1 are not empty
+            else if(unit_vectors_[2].norm() <= 0.02) // vector 0 and 1 are not empty
             {
-                if(abs(unit_vectors_[0].dot(unit_vectors_[1])) > 0.9) // dot-procut: same direction = 1; orthogonal = 0
+                if(abs(unit_vectors_[0].dot(unit_vectors_[1])) > 0.99) // dot-procut: same direction = 1; orthogonal = 0
                 { // vectors go into the same direction, need some orthogonal move
-                    Vector3f tmp = unit_vectors_[1];
-                    tmp[1] += 1;
+                    Vector3f tmp = unit_vectors_[1] + random_direction_;
                     direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
                     exploration_info = 2;
                 }
@@ -310,26 +318,42 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             }
             else // vector 0, 1 and 2 are not empty
             {
-                if(abs(unit_vectors_[0].dot(unit_vectors_[1])) > 0.9 &&
-                   abs(unit_vectors_[1].dot(unit_vectors_[2])) > 0.9) // dot-procut: same direction = 1; orthogonal = 0
-                { // all three vectors go into the same direction, need some orthogonal move
-                    Vector3f tmp = unit_vectors_[0];
-                    tmp[2] += 1;
-                    direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 4;
+                if(abs(unit_vectors_[0].dot(unit_vectors_[1])) < 0.5) // dot-procut: same direction = 1; orthogonal = 0
+                { // vectors 0 and 1 are good enough, use to calculate orthogonal move
+                    direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 41;
                 }
-                else if(abs(unit_vectors_[0].dot(unit_vectors_[1])) > 0.9) // dot-procut: same direction = 1; orthogonal = 0
-                { // all three vectors 0 and 1 go into the same direction, use vector 2 to calculate orthogonal move
-                    Vector3f tmp = unit_vectors_[0];
-                    direction = unit_vectors_[0].cross(unit_vectors_[2]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 5;
+                else if(abs(unit_vectors_[1].dot(unit_vectors_[2])) < 0.5) // dot-procut: same direction = 1; orthogonal = 0
+                { // vectors 1 and 2 are good enough, use to calculate orthogonal move
+                    direction = unit_vectors_[1].cross(unit_vectors_[2]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 42;
+                }
+                else if(abs(unit_vectors_[2].dot(unit_vectors_[0])) < 0.5) // dot-procut: same direction = 1; orthogonal = 0
+                { // vectors 2 and 0 are good enough, use to calculate orthogonal move
+                    direction = unit_vectors_[2].cross(unit_vectors_[0]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 43;
+                }
+                else if(abs(unit_vectors_[0].dot(unit_vectors_[1])) < 0.9) // dot-procut: same direction = 1; orthogonal = 0
+                { // vectors 0 and 1 are good enough, use to calculate orthogonal move
+                    direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 51;
+                }
+                else if(abs(unit_vectors_[1].dot(unit_vectors_[2])) < 0.9) // dot-procut: same direction = 1; orthogonal = 0
+                { // vectors 1 and 2 are good enough, use to calculate orthogonal move
+                    direction = unit_vectors_[1].cross(unit_vectors_[2]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 52;
+                }
+                else if(abs(unit_vectors_[2].dot(unit_vectors_[0])) < 0.9) // dot-procut: same direction = 1; orthogonal = 0
+                { // vectors 2 and 0 are good enough, use to calculate orthogonal move
+                    direction = unit_vectors_[2].cross(unit_vectors_[0]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 53;
                 }
                 else
                 {
                     ROS_INFO("RelativeDistanceController %d unit_vectors_[0].dot(unit_vectors_[1]):%f", droneNumber_, unit_vectors_[0].dot(unit_vectors_[1]));
                     ROS_INFO("RelativeDistanceController %d unit_vectors_[1].dot(unit_vectors_[2]):%f", droneNumber_, unit_vectors_[1].dot(unit_vectors_[2]));
                     ROS_INFO("RelativeDistanceController %d unit_vectors_[2].dot(unit_vectors_[0]):%f", droneNumber_, unit_vectors_[2].dot(unit_vectors_[0]));
-                    exploration_info = 99;
+                    exploration_info = 91;
                 }
             }
             direction = direction / direction.norm(); // calculate unit vector of length 1
@@ -404,7 +428,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             ROS_INFO_ONCE("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
             set_point.pose.position.x = odometry_gt_.position[0] + (float)min_xi * eps_move_;
             set_point.pose.position.y = odometry_gt_.position[1] + (float)min_yi * eps_move_;
-            set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_;
+            set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_*2.5; // TODO: proper scaling
         }
     }
 

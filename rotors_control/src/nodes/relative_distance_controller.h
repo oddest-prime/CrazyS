@@ -59,6 +59,8 @@ namespace rotors_control {
             void InitializeParams();
 
         private:
+            std::default_random_engine generator_;
+
             int droneNumber_;
             int droneCount_;
 
@@ -70,6 +72,7 @@ namespace rotors_control {
 
             int enable_swarm_ = SWARM_DISABLED;
             int history_cnt_;
+            Vector3f random_direction_; // save random exploration direction
             bool waypointHasBeenPublished_ = false;
             mav_msgs::EigenTrajectoryPoint target_swarm_;
 

@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <model name="marker_model">
+    <static>true</static>
+    <link name="marker_link">
+        <visual name="marker_visual">
+            <pose>0 0 0 0 0 0</pose>
+            <geometry>
+              <sphere>
+                <radius>0.04</radius>
+              </sphere>
+            </geometry>
+            <material>
+              <script>
+                <name>Gazebo/BlueTransparentOverlay</name>
+                <uri>__default__</uri>
+              </script>
+            </material>
+        </visual>
+    </link>
+  </model>
+</sdf>

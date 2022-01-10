@@ -55,6 +55,8 @@ RelativeDistanceController::RelativeDistanceController() {
 
     InitializeParams();
 
+    generator_.seed(droneNumber_); // make sure random numbers are different for each drone
+
     history_cnt_ = 0;
     random_direction_[0] = 0;
     random_direction_[1] = 0;
@@ -70,6 +72,7 @@ RelativeDistanceController::RelativeDistanceController() {
         unit_vectors_[i][0] = 0;
         unit_vectors_[i][1] = 0;
         unit_vectors_[i][2] = 0;
+        unit_vectors_age_[i] = 0;
     }
     transform_ok_ = 0;
 
@@ -95,10 +98,10 @@ void RelativeDistanceController::InitializeParams() {
 
     ROS_INFO_ONCE("[RelativeDistanceController] InitializeParams");
 
-    n_move_max_ = 1;
+    n_move_max_ = 2;
+    eps_move_ = 0.1;
     spc_cohesion_weight_ = 1.0;
     spc_separation_weight_ = 1.0;
-    eps_move_ = 0.2;
     neighbourhood_distance_ = 999; // global neighbourhood
 
     //Reading the parameters come from the launch file
@@ -164,6 +167,39 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     set_point.header.stamp = odometry_msg->header.stamp;
 
     history_cnt_ ++;
+    unit_vectors_age_[0] ++;
+    unit_vectors_age_[1] ++;
+    unit_vectors_age_[2] ++;
+
+    if(unit_vectors_age_[0] > 1500) // delete old unit vectors
+    {
+        unit_vectors_[0] = unit_vectors_[2];
+        unit_vectors_age_[0] = unit_vectors_age_[2];
+        unit_vectors_[2][0] = 0;
+        unit_vectors_[2][1] = 0;
+        unit_vectors_[2][2] = 0;
+        unit_vectors_age_[2] = 0;
+        ROS_INFO("OdometryCallback (%d) deleted old unit_vectors_0", droneNumber_);
+    }
+    else if(unit_vectors_age_[1] > 1500) // delete old unit vectors
+    {
+        unit_vectors_[1] = unit_vectors_[2];
+        unit_vectors_age_[1] = unit_vectors_age_[2];
+        unit_vectors_[2][0] = 0;
+        unit_vectors_[2][1] = 0;
+        unit_vectors_[2][2] = 0;
+        unit_vectors_age_[2] = 0;
+        ROS_INFO("OdometryCallback (%d) deleted old unit_vectors_1", droneNumber_);
+    }
+    else if(unit_vectors_age_[2] > 1500) // delete old unit vectors
+    {
+        unit_vectors_[2][0] = 0;
+        unit_vectors_[2][1] = 0;
+        unit_vectors_[2][2] = 0;
+        unit_vectors_age_[2] = 0;
+        ROS_INFO("OdometryCallback (%d) deleted old unit_vectors_2", droneNumber_);
+    }
+
 //    if(history_cnt_ > 10 || true)
     if(movement_norm > 0.15) // last move was at least 15cm, TODO: find better threshold?
     {
@@ -202,18 +238,19 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
             ROS_INFO_ONCE("OdometryCallback (%d) replace unit vector: %d", droneNumber_, (int)index_dot_product);
             unit_vectors_[index_dot_product] = movement;
+            unit_vectors_age_[index_dot_product] = 0;
             for (size_t i = 0; i < droneCount_; i++)
                 distances_differences_[index_dot_product][i] = (distances_[droneNumber_][i] - distances_history1_[i]) / movement_norm;
 
-            ROS_INFO("OdometryCallback (%d) unit_vectors_0: %s", droneNumber_, VectorToString(unit_vectors_[0]).c_str());
-            ROS_INFO("OdometryCallback (%d) unit_vectors_1: %s", droneNumber_, VectorToString(unit_vectors_[1]).c_str());
-            ROS_INFO("OdometryCallback (%d) unit_vectors_2: %s\n", droneNumber_, VectorToString(unit_vectors_[2]).c_str());
+            ROS_INFO("OdometryCallback (%d) unit_vectors_0 (age:%d): %s", droneNumber_, unit_vectors_age_[0], VectorToString(unit_vectors_[0]).c_str());
+            ROS_INFO("OdometryCallback (%d) unit_vectors_1 (age:%d): %s", droneNumber_, unit_vectors_age_[1], VectorToString(unit_vectors_[1]).c_str());
+            ROS_INFO("OdometryCallback (%d) unit_vectors_2 (age:%d): %s\n", droneNumber_, unit_vectors_age_[2], VectorToString(unit_vectors_[2]).c_str());
 
             Vector3f span_vectors;
             span_vectors[0] = fmax(unit_vectors_[0][0], fmax(unit_vectors_[1][0], unit_vectors_[2][0])) - fmin(unit_vectors_[0][0], fmin(unit_vectors_[1][0], unit_vectors_[2][0]));
             span_vectors[1] = fmax(unit_vectors_[0][1], fmax(unit_vectors_[1][1], unit_vectors_[2][1])) - fmin(unit_vectors_[0][1], fmin(unit_vectors_[1][1], unit_vectors_[2][1]));
             span_vectors[2] = fmax(unit_vectors_[0][2], fmax(unit_vectors_[1][2], unit_vectors_[2][2])) - fmin(unit_vectors_[0][2], fmin(unit_vectors_[1][2], unit_vectors_[2][2]));
-            ROS_INFO("OdometryCallback (%d) span_vectors: %s", droneNumber_, VectorToString(span_vectors).c_str());
+            ROS_INFO_ONCE("OdometryCallback (%d) span_vectors: %s", droneNumber_, VectorToString(span_vectors).c_str());
 
             if(unit_vectors_[0].norm() > 0.01 &&
                unit_vectors_[1].norm() > 0.01 &&
@@ -260,6 +297,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     }
 
 
+    int exploration_info = 0;
 
     // ################################################################################
     if(enable_swarm_ == SWARM_DISABLED) // set target point if not in swarm mode
@@ -276,7 +314,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         set_point.pose.position.y = odometry_.position[1];
         set_point.pose.position.z = max(0.0, min(odometry_.position[2] - 0.05, 0.1));*/
     }
-    else if(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES && droneNumber_ == 0)
+    else if(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES)
     {
         ROS_INFO_ONCE("RelativeDistanceController starting swarm mode (SWARM_DECLARATIVE_DISTANCES)");
 
@@ -289,18 +327,18 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 random_direction_[1] = dist(generator_);
                 random_direction_[2] = dist(generator_);
             }
-            int exploration_info = 33;
+            exploration_info = 80;
             Vector3f direction = {1, 1, 1};
             if(unit_vectors_[0].norm() <= 0.02) // all unit vectors empty, since they are populated sequentially
             {
                 direction = random_direction_; // go to random direction
-                exploration_info = 0;
+                exploration_info = 10;
             }
             else if(unit_vectors_[1].norm() <= 0.02) // only vector 0 is not empty
             {
                 Vector3f tmp = unit_vectors_[0] + random_direction_;
                 direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                exploration_info = 1;
+                exploration_info = 11;
             }
             else if(unit_vectors_[2].norm() <= 0.02) // vector 0 and 1 are not empty
             {
@@ -308,12 +346,12 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 { // vectors go into the same direction, need some orthogonal move
                     Vector3f tmp = unit_vectors_[1] + random_direction_;
                     direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 2;
+                    exploration_info = 12;
                 }
                 else
                 { // vectors go into different directions, use them to calculate orthogonal move
                     direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 3;
+                    exploration_info = 13;
                 }
             }
             else // vector 0, 1 and 2 are not empty
@@ -428,7 +466,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             ROS_INFO_ONCE("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
             set_point.pose.position.x = odometry_gt_.position[0] + (float)min_xi * eps_move_;
             set_point.pose.position.y = odometry_gt_.position[1] + (float)min_yi * eps_move_;
-            set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_*2.5; // TODO: proper scaling
+            set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_*1.5; // TODO: proper scaling
         }
     }
 
@@ -438,26 +476,48 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         ROS_INFO_ONCE("RelativeDistanceController %d set_point x=%f y=%f z=%f", droneNumber_, set_point.pose.position.x, set_point.pose.position.y, set_point.pose.position.z);
     }
 
-    // move gazebo marker
-    geometry_msgs::Point pr2_position;
-    pr2_position.x = set_point.pose.position.x;
-    pr2_position.y = set_point.pose.position.y;
-    pr2_position.z = set_point.pose.position.z;
+    // move gazebo markers
+    geometry_msgs::Point pr2_position_red;
+    geometry_msgs::Point pr2_position_green;
+    pr2_position_red.x = set_point.pose.position.x;
+    pr2_position_red.y = set_point.pose.position.y;
+    pr2_position_red.z = set_point.pose.position.z;
+    if(enable_swarm_ == SWARM_DISABLED) // hovering at fixed position, use both markers
+    {
+        pr2_position_green = pr2_position_red;
+    }
+    else if(exploration_info == 0) // exploitation phase, use blue marker
+    {
+        pr2_position_green = pr2_position_red;
+        pr2_position_red.z -= 1000;
+    }
+    else // exploration phase, use green marker
+    {
+        pr2_position_green = pr2_position_red;
+        pr2_position_green.z -= 1000;
+    }
+
     geometry_msgs::Quaternion pr2_orientation;
+    geometry_msgs::Pose pr2_pose;
+    gazebo_msgs::ModelState pr2_modelstate;
+    gazebo_msgs::SetModelState srv;
     pr2_orientation.x = 0.0;
     pr2_orientation.y = 0.0;
     pr2_orientation.z = 0.0;
     pr2_orientation.w = 1.0;
-    geometry_msgs::Pose pr2_pose;
-    pr2_pose.position = pr2_position;
+    pr2_pose.position = pr2_position_red;
     pr2_pose.orientation = pr2_orientation;
-    gazebo_msgs::ModelState pr2_modelstate;
-    pr2_modelstate.model_name = (std::string) "marker_crazyflie2_" + std::to_string(droneNumber_);
+    pr2_modelstate.model_name = (std::string) "marker_red_crazyflie2_" + std::to_string(droneNumber_);
     pr2_modelstate.pose = pr2_pose;
-    gazebo_msgs::SetModelState srv;
     srv.request.model_state = pr2_modelstate;
     if(!gazebo_client_.call(srv))
-        ROS_ERROR("Failed to move marker! Error msg:%s",srv.response.status_message.c_str());
+        ROS_ERROR("Failed to move red marker! Error msg:%s",srv.response.status_message.c_str());
+    pr2_pose.position = pr2_position_green;
+    pr2_modelstate.model_name = (std::string) "marker_green_crazyflie2_" + std::to_string(droneNumber_);
+    pr2_modelstate.pose = pr2_pose;
+    srv.request.model_state = pr2_modelstate;
+    if(!gazebo_client_.call(srv))
+        ROS_ERROR("Failed to move green marker! Error msg:%s",srv.response.status_message.c_str());
 }
 
 void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiArray& distances_msg) {

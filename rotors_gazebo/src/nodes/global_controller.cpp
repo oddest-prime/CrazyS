@@ -112,7 +112,7 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
         modulus = 4;
       if(droneCount == 9)
         modulus = 3;
-      if(droneCount == 4)
+      if(droneCount == 4 || droneCount == 5)
         modulus = 2;
       if(droneCount == 2)
         modulus = 1;
@@ -390,7 +390,7 @@ int main(int argc, char** argv) {
       modulus = 4;
     if(droneCount == 9)
       modulus = 3;
-    if(droneCount == 4)
+    if(droneCount == 4 || droneCount == 5)
       modulus = 2;
 
     ROS_INFO("global_controller (timed): Go to starting position (hovering).");

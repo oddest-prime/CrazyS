@@ -32,7 +32,7 @@ test -e /tmp/cam5 && ffmpeg -r 15 -pattern_type glob -i "/tmp/cam5/default_camer
 
 ffmpeg \
 -i /tmp/my_cam1.mp4 \
--i /tmp/my_cam5.mp4 \
+-i /tmp/my_cam3.mp4 \
 -i /tmp/my_cam2.mp4 \
 -i /tmp/my_cam4.mp4 \
 -loop 1 -t 3 -i /tmp/info.png \

@@ -85,6 +85,7 @@ namespace rotors_control {
             float elevation_[N_DRONES_MAX]; // received elevation measurements
 
             Vector3f unit_vectors_[N_VECTORS_MAX]; // directions of unit vectors
+            int unit_vectors_age_[N_VECTORS_MAX]; // age of unit vectors
             float distances_differences_[N_VECTORS_MAX][N_DRONES_MAX]; // change in distances for unit vectors
             Matrix3f transform_vectors_;
             int transform_ok_;

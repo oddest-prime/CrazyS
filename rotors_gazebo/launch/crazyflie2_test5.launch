@@ -22,7 +22,7 @@
   <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find rotors_gazebo)/models"/>
   <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find rotors_gazebo)/models"/>
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find rotors_gazebo)/worlds/$(arg world_name)_crazyflie_box.world" />
+    <arg name="world_name" value="$(find rotors_gazebo)/worlds/$(arg world_name)_crazyflie_large.world" />
     <arg name="debug" value="$(arg debug)" />
     <arg name="paused" value="$(arg paused)"/>
     <arg name="gui" value="$(arg gui)" />
@@ -30,13 +30,13 @@
   </include>
 
   <node name="global_controller" required="true" pkg="rotors_gazebo" type="global_controller" output="screen">
-    <param name="droneCount" value="1"/>
-    <param name="spacingX" value="0.5"/>
-    <param name="spacingY" value="0.5"/>
-    <param name="spacingZ" value="0.2"/>
-    <param name="offsetX" value="0.0"/>
-    <param name="offsetY" value="0.0"/>
-    <param name="offsetZ" value="-0.4"/>
+    <param name="droneCount" value="5"/>
+    <param name="spacingX" value="2.0"/>
+    <param name="spacingY" value="2.0"/>
+    <param name="spacingZ" value="0.3"/>
+    <param name="offsetX" value="-1.0"/>
+    <param name="offsetY" value="-1.0"/>
+    <param name="offsetZ" value="0.5"/>
     <param name="randNoise" value="0.0"/>
     <param name="swarmMode" value="$(arg swarm_mode)"/>
   </node>
@@ -51,8 +51,8 @@
       <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
-      <arg name="x" value="0.0"/>
-      <arg name="y" value="0.0"/>
+      <arg name="x" value="-1.0"/>
+      <arg name="y" value="-1.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -91,9 +91,8 @@
       <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
-      <arg name="x" value="-0.5"/>
-      <arg name="y" value="-0.5"/>
-      <arg name="z" value="0.81"/>
+      <arg name="x" value="1.0"/>
+      <arg name="y" value="-1.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -132,9 +131,8 @@
       <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
-      <arg name="x" value="2.5"/>
-      <arg name="y" value="2.5"/>
-      <arg name="z" value="1.35"/>
+      <arg name="x" value="-1.0"/>
+      <arg name="y" value="1.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -173,9 +171,8 @@
       <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
-      <arg name="x" value="0.0"/>
-      <arg name="y" value="1.5"/>
-      <arg name="z" value="0.27"/>
+      <arg name="x" value="1.0"/>
+      <arg name="y" value="1.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -214,9 +211,8 @@
       <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
-      <arg name="x" value="1.75"/>
-      <arg name="y" value="-0.25"/>
-      <arg name="z" value="0.1"/>
+      <arg name="x" value="-1.0"/>
+      <arg name="y" value="3.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">

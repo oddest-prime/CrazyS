@@ -2,7 +2,9 @@
 
 cd ~/SWARM/crazys
 
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` test4 mpc1 mpc1_params3 "relative_distance" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` test4 mpc1 mpc1_params2 "rel_dist_5drones_boxes" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` test5 mpc1 mpc1_params2 "rel_dist_5drones_swarm" &
+wait
 exit 0;
 
 

@@ -98,11 +98,18 @@ void RelativeDistanceController::InitializeParams() {
 
     ROS_INFO_ONCE("[RelativeDistanceController] InitializeParams");
 
-    n_move_max_ = 2;
-    eps_move_ = 0.1;
-    spc_cohesion_weight_ = 1.0;
-    spc_separation_weight_ = 1.0;
-    neighbourhood_distance_ = 999; // global neighbourhood
+    GetRosParameter(pnh, "swarm/neighbourhood_distance", (float)99, &neighbourhood_distance_);
+    GetRosParameter(pnh, "dist/eps_move", (float)0.2, &eps_move_);
+    GetRosParameter(pnh, "dist/n_move_max", (int)2, &n_move_max_);
+    GetRosParameter(pnh, "dist/spc_cohesion_weight", (float)1.0, &spc_cohesion_weight_);
+    GetRosParameter(pnh, "dist/spc_separation_weight", (float)1.0, &spc_separation_weight_);
+
+    ROS_INFO_ONCE("[RelativeDistanceController] GetRosParameter values:");
+    ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
+    ROS_INFO_ONCE("  dist/eps_move=%f", eps_move_);
+    ROS_INFO_ONCE("  dist/n_move_max=%d", n_move_max_);
+    ROS_INFO_ONCE("  dist/spc_cohesion_weight=%f", spc_cohesion_weight_);
+    ROS_INFO_ONCE("  dist/spc_separation_weight=%f", spc_separation_weight_);
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
@@ -400,7 +407,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             set_point.pose.position.z = odometry_gt_.position[2] + direction[2];
             ROS_INFO("RelativeDistanceController %d explore:%d direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
         }
-        else // possible to to exploitation
+        else // possible to do exploitation
         {
             int min_xi = 0;
             int min_yi = 0;

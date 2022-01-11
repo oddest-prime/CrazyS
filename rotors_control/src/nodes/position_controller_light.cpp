@@ -217,13 +217,6 @@ void PositionControllerLight::InitializeParams() {
 
     neighbourhood_cnt_ = -1;
 
-    if (pnh.getParam("user_account", user)){
-    ROS_INFO("Got param 'user_account': %s", user.c_str());
-    position_controller_.user_ = user;
-    }
-    else
-       ROS_ERROR("Failed to get param 'user'");
-
      if (pnh.getParam("droneNumber", droneNumber)){
          ROS_INFO("Got param 'droneNumber': %d", droneNumber);
          position_controller_.droneNumber_ = droneNumber;

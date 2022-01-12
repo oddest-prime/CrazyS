@@ -6,13 +6,13 @@
   <arg name="enable_ground_truth" default="true" />
   <arg name="enable_state_estimator" default="false" />
   <arg name="log_file" default="$(arg mav_name)" />
-  <arg name="swarm_params" default="mpc1_params2"/>
   <arg name="paused" value="true"/>
   <arg name="debug" default="false"/>
   <arg name="gui" default="true"/>
   <arg name="swarm_mode" default="mpc1"/>
+  <arg name="swarm_params" default="mpc1_params2"/>
   <arg name="csvFilesStoring" default="yes"/>
-  <arg name="csvFilesStoringTime" default="30.0"/> <!-- seconds -->
+  <arg name="csvFilesStoringTime" default="85.0"/> <!-- seconds -->
   <!-- The following line causes gzmsg and gzerr messages to be printed to the console
       (even when Gazebo is started through roslaunch) -->
   <arg name="verbose" default="false"/>

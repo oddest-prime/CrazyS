@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <random>
 
-
 #include <geometry_msgs/PoseStamped.h>
 #include <mav_msgs/eigen_mav_msgs.h>
 #include <nav_msgs/Odometry.h>
@@ -46,8 +45,10 @@
 namespace rotors_control {
     class DroneStateWithTime {
      public:
-      void SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* elevation_pub);
+      void SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* elevation_pub, bool dataStoring_active);
       void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
+      void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
+      void FileSaveData(void);
 
       // int rand_cnt_;
       std::default_random_engine generator_;
@@ -56,6 +57,9 @@ namespace rotors_control {
       int droneNumber_;
       int droneCount_;
 
+      bool dataStoring_active_;
+      int enable_swarm_ = 0;
+
       DroneStateWithTime* dronestate_;
       ros::Publisher* distances_pub_;
       ros::Publisher* elevation_pub_;
@@ -63,6 +67,11 @@ namespace rotors_control {
       float distances_[N_DRONES_MAX]; // with simulated sensor noise
       float distances_gt_[N_DRONES_MAX]; // ground-truth
       EigenOdometry odometry_gt_; // ground-truth
+
+      // Lists for data saving
+      std::vector<std::string> listDistance_;
+      std::vector<std::string> listMetrics_;
+      std::vector<std::string> listState_;
     };
 
     class DistanceMeasurementSim{
@@ -74,13 +83,9 @@ namespace rotors_control {
             void Publish();
 
         private:
-            bool dataStoring_active_;
-
-            int droneNumber_;
             int droneCount_;
             int neighbourhood_cnt_;
 
-//            PositionController position_controller_;
             EigenOdometry odometry_; // with simulated sensor noise
             EigenOdometry odometry_gt_; // ground-truth
 
@@ -92,11 +97,11 @@ namespace rotors_control {
             ros::Timer timer_saveData;
 
             void CallbackSaveData(const ros::TimerEvent& event);
-            void FileSaveData(void);
 
             //subscribers
             ros::Subscriber odometry_sub_[N_DRONES_MAX];
-
+            ros::Subscriber enable_sub_[N_DRONES_MAX];
+  
             //publisher
             ros::Publisher distances_pub_;
             ros::Publisher elevation_pub_;

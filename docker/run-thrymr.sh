@@ -2,10 +2,13 @@
 
 cd ~/SWARM/crazys
 
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` test4 mpc1 mpc1_params2 "rel_dist_5drones_boxes" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` test5 mpc1 mpc1_params2 "rel_dist_5drones_swarm" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 mpc1 mpc1_params2 "rel_dist_5drones_swarm" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 mpc1 mpc1_params2 "rel_dist_9drones_swarm" &
+sleep 150 # delay compilation by 150 seconds in second two docker containers
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist1 mpc1 mpc1_params2 "rel_dist_5drones_boxes" &
 wait
-exit 0;
+
+echo -e "\n`date` - done.\n"; exit 0; # --------------- END EXECUTION
 
 
 #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradenum mpc1_params1 "obstacle9_params1" &

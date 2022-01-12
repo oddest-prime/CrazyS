@@ -85,6 +85,7 @@ DistanceMeasurementSim::DistanceMeasurementSim() {
     {
       ROS_INFO("DistanceMeasurementSim: Setup subscriber %s/%s.", nhq[i].getNamespace().c_str(), mav_msgs::default_topics::ODOMETRY);
       odometry_sub_[i] = nhq[i].subscribe(mav_msgs::default_topics::ODOMETRY, 1, &DroneStateWithTime::OdometryCallback, &dronestate[i]);
+      enable_sub_[i] = nhq[i].subscribe("enable", 1, &DroneStateWithTime::EnableCallback, &dronestate[i]);
     }
 }
 
@@ -112,16 +113,17 @@ void DistanceMeasurementSim::InitializeParams() {
      else
         ROS_ERROR("Failed to get param 'droneCount'");
 
+    bool dataStoring_active;
     if (pnh.getParam("csvFilesStoring", dataStoringActive)){
         ROS_INFO("Got param 'csvFilesStoring': %s", dataStoringActive.c_str());
 
-        dataStoring_active_ = true;
+        dataStoring_active = true;
         if(dataStoringActive == "yes" || dataStoringActive == "distance")
-            dataStoring_active_ = true;
+            dataStoring_active = true;
     }
     else {
        ROS_ERROR("Failed to get param 'csvFilesStoring'");
-       dataStoring_active_ = true;
+       dataStoring_active = true;
     }
 
     if (pnh.getParam("csvFilesStoringTime", dataStoringTime)){
@@ -133,10 +135,10 @@ void DistanceMeasurementSim::InitializeParams() {
     }
 
     for (size_t i = 0; i < droneCount_; i++)
-      dronestate[i].SetId((int)i, droneCount_, distance_noise_, dronestate, &distances_pub_, &elevation_pub_);
+      dronestate[i].SetId((int)i, droneCount_, distance_noise_, dronestate, &distances_pub_, &elevation_pub_, dataStoring_active);
 
     ros::NodeHandle nh;
-    //timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &DistanceMeasurementSim::CallbackSaveData, this, false, true);
+    timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &DistanceMeasurementSim::CallbackSaveData, this, false, true);
 }
 
 void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg) {
@@ -148,6 +150,17 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     odometry_gt_.position[0] = odometry_msg->pose.pose.position.x;
     odometry_gt_.position[1] = odometry_msg->pose.pose.position.y;
     odometry_gt_.position[2] = odometry_msg->pose.pose.position.z;
+
+    // for logging into files
+    std::stringstream tempDistance;
+    tempDistance.precision(24);
+    tempDistance << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
+    std::stringstream tempMetrics;
+    tempMetrics.precision(24);
+    tempMetrics << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
+    std::stringstream tempState;
+    tempState.precision(24);
+    tempState << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
 
     ROS_INFO_ONCE("DroneStateWithTime got odometry message: x=%f y=%f z=%f (droneNumber:%d)", odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2], droneNumber_);
 
@@ -164,6 +177,8 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         pow(odometry_gt_.position[2] - dronestate_[i].odometry_gt_.position[2], 2));
       float rand_value = std::max(-5*distance_noise_, std::min((float)dist(generator_), 5*distance_noise_));
       distances_[i] = distances_gt_[i] + rand_value;
+      if(dataStoring_active_) // save data for log files
+          tempDistance << distances_gt_[i] << ",";
       ROS_INFO_ONCE("DroneStateWithTime: distance_gt=%f distance=%f (droneNumber:%d, i:%d)", distances_gt_[i], distances_[i], droneNumber_, (int)i);
     }
 
@@ -197,13 +212,80 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         elev[i] = dronestate_[i].odometry_gt_.position[2];
     el.data = elev;
     elevation_pub_->publish(el);
+
+    if(dataStoring_active_) // save data for log files
+    {
+        tempDistance << "\n";
+        listDistance_.push_back(tempDistance.str());
+        tempMetrics << "\n";
+        listMetrics_.push_back(tempMetrics.str());
+        tempState << "\n";
+        listState_.push_back(tempState.str());
+    }
+
 }
 
-void DroneStateWithTime::SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* elevation_pub)
+void DroneStateWithTime::EnableCallback(const std_msgs::Int32ConstPtr& enable_msg) {
+  ROS_INFO("DroneStateWithTime got enable message: %d", enable_msg->data);
+
+  enable_swarm_ = enable_msg->data;
+}
+
+//The callback saves data into csv files
+void DistanceMeasurementSim::CallbackSaveData(const ros::TimerEvent& event){
+  ROS_INFO("DistanceMeasurementSim CallbackSavaData.");
+  for (size_t i = 0; i < droneCount_; i++)
+    dronestate[i].FileSaveData();
+}
+
+void DroneStateWithTime::FileSaveData(void){
+
+      if(!dataStoring_active_){
+         return;
+      }
+
+      std::ofstream fileDistance;
+      std::ofstream fileMetrics;
+      std::ofstream fileState;
+
+      ROS_INFO("DroneStateWithTime FileSaveData. droneNumber: %d", droneNumber_);
+
+      if(mkdir("/tmp/log_output/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
+          if(errno != EEXIST)
+             ROS_ERROR("Cannot create directory /tmp/log_output/");
+
+      fileDistance.open(std::string("/tmp/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileMetrics.open(std::string("/tmp/log_output/Metrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileState.open(std::string("/tmp/log_output/State") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+
+      // Saving distances from every to every drone in a file
+      for (unsigned n=0; n < listDistance_.size(); ++n) {
+          fileDistance << listDistance_.at( n );
+      }
+      // Saving quality metrics in a file
+      for (unsigned n=0; n < listMetrics_.size(); ++n) {
+          fileMetrics << listMetrics_.at( n );
+      }
+      // Saving states in a file
+      for (unsigned n=0; n < listState_.size(); ++n) {
+          fileState << listState_.at( n );
+      }
+
+      // Closing all opened files
+      fileDistance.close();
+      fileMetrics.close();
+      fileState.close();
+
+      // To have a one shot storing
+      // dataStoring_active_ = false;
+}
+
+void DroneStateWithTime::SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* elevation_pub, bool dataStoring_active)
 {
     droneNumber_ = droneNumber;
     droneCount_ = droneCount;
     distance_noise_ = position_noise;
+    dataStoring_active_ = dataStoring_active;
 
     dronestate_ = dronestate;
     distances_pub_ = distances_pub;

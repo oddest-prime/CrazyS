@@ -39,10 +39,13 @@
 #include <ros/time.h>
 
 #include "rotors_control/common.h"
+#include "rotors_control/Eigen.h"
 
 #define N_DRONES_MAX  20          /* maximum number of drones */
 
 namespace rotors_control {
+    using namespace Eigen;
+
     class DroneStateWithTime {
      public:
       void SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* elevation_pub, bool dataStoring_active);
@@ -101,7 +104,7 @@ namespace rotors_control {
             //subscribers
             ros::Subscriber odometry_sub_[N_DRONES_MAX];
             ros::Subscriber enable_sub_[N_DRONES_MAX];
-  
+
             //publisher
             ros::Publisher distances_pub_;
             ros::Publisher elevation_pub_;

@@ -42,8 +42,7 @@
 #include <sys/types.h>
 
 #include "rotors_control/parameters_ros.h"
-#include "rotors_control/stabilizer_types.h"
-// #include "rotors_control/crazyflie_complementary_filter.h"
+#include "rotors_control/Eigen.h"
 
 namespace rotors_control {
 
@@ -169,7 +168,18 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     //rand_cnt_++;
     //if(rand_cnt_ > 10) // reduce frequency of noise
 
-    for (size_t i = 0; i < droneCount_; i++)
+    Vector3f swarm_center_without_own_gt;
+    for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+    {
+        if(i == droneNumber_) // do not add own drone, this results in the distance vector to center
+            continue;
+        swarm_center_without_own_gt[0] += dronestate_[i].odometry_gt_.position[0];
+        swarm_center_without_own_gt[1] += dronestate_[i].odometry_gt_.position[1];
+        swarm_center_without_own_gt[2] += dronestate_[i].odometry_gt_.position[2];
+    }
+
+    float dist_min_gt = FLT_MAX;
+    for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
     {
       distances_gt_[i] = sqrt(
         pow(odometry_gt_.position[0] - dronestate_[i].odometry_gt_.position[0], 2) +
@@ -177,9 +187,27 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         pow(odometry_gt_.position[2] - dronestate_[i].odometry_gt_.position[2], 2));
       float rand_value = std::max(-5*distance_noise_, std::min((float)dist(generator_), 5*distance_noise_));
       distances_[i] = distances_gt_[i] + rand_value;
+      dist_min_gt = std::min(distances_gt_[i], dist_min_gt);
       if(dataStoring_active_) // save data for log files
           tempDistance << distances_gt_[i] << ",";
+
       ROS_INFO_ONCE("DroneStateWithTime: distance_gt=%f distance=%f (droneNumber:%d, i:%d)", distances_gt_[i], distances_[i], droneNumber_, (int)i);
+    }
+
+    if(dataStoring_active_) // save data for log files
+    {
+        tempMetrics << dist_min_gt << ",";
+
+        tempMetrics << swarm_center_without_own_gt.norm() << ","; // length of vector, distance from the center
+
+        tempMetrics << 0 << ","; // obstacle_dist_min_gt
+        tempMetrics << droneCount_ << ",";
+        tempMetrics << droneCount_ << ","; // neighbourhood_cnt
+
+        //float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_gt_)); // calculate length of vector
+        tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";
+        // tempState << odometry_gt_.velocity[0] << "," << odometry_gt_.velocity[1] << "," << odometry_gt_.velocity[2] << ",";
+        // tempState << abs_state_velocity << ",";
     }
 
     // publish distances message

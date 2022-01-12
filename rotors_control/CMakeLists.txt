@@ -147,6 +147,7 @@ target_link_libraries(relative_distance_controller
 add_executable(distance_measurement_sim src/nodes/distance_measurement_sim.cpp)
 add_dependencies(distance_measurement_sim ${catkin_EXPORTED_TARGETS})
 target_link_libraries(distance_measurement_sim
+  eigen_helpers
   ${catkin_LIBRARIES})
 
 add_executable(playback_node src/nodes/playback_node.cpp)

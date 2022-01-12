@@ -177,6 +177,7 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         swarm_center_without_own_gt[1] += dronestate_[i].odometry_gt_.position[1];
         swarm_center_without_own_gt[2] += dronestate_[i].odometry_gt_.position[2];
     }
+    swarm_center_without_own_gt /= (droneCount_-1);
 
     float dist_min_gt = FLT_MAX;
     for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
@@ -187,7 +188,8 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         pow(odometry_gt_.position[2] - dronestate_[i].odometry_gt_.position[2], 2));
       float rand_value = std::max(-5*distance_noise_, std::min((float)dist(generator_), 5*distance_noise_));
       distances_[i] = distances_gt_[i] + rand_value;
-      dist_min_gt = std::min(distances_gt_[i], dist_min_gt);
+      if(i != droneNumber_)
+          dist_min_gt = std::min(distances_gt_[i], dist_min_gt);
       if(dataStoring_active_) // save data for log files
           tempDistance << distances_gt_[i] << ",";
 
@@ -196,10 +198,11 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
 
     if(dataStoring_active_) // save data for log files
     {
+        ROS_INFO_ONCE("DroneStateWithTime (%d) swarm_center_without_own_gt: %s", droneNumber_, VectorToString(swarm_center_without_own_gt).c_str());
+        ROS_INFO_ONCE("DroneStateWithTime (%d) dist_min_gt=%f r=%f ", droneNumber_, dist_min_gt, swarm_center_without_own_gt.norm());
+
         tempMetrics << dist_min_gt << ",";
-
         tempMetrics << swarm_center_without_own_gt.norm() << ","; // length of vector, distance from the center
-
         tempMetrics << 0 << ","; // obstacle_dist_min_gt
         tempMetrics << droneCount_ << ",";
         tempMetrics << droneCount_ << ","; // neighbourhood_cnt

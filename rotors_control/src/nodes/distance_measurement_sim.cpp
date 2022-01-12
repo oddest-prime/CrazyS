@@ -168,16 +168,14 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     //rand_cnt_++;
     //if(rand_cnt_ > 10) // reduce frequency of noise
 
-    Vector3f swarm_center_without_own_gt;
+    Vector3f swarm_center_gt = {0,0,0};
     for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
     {
-        if(i == droneNumber_) // do not add own drone, this results in the distance vector to center
-            continue;
-        swarm_center_without_own_gt[0] += dronestate_[i].odometry_gt_.position[0];
-        swarm_center_without_own_gt[1] += dronestate_[i].odometry_gt_.position[1];
-        swarm_center_without_own_gt[2] += dronestate_[i].odometry_gt_.position[2];
+        swarm_center_gt[0] += dronestate_[i].odometry_gt_.position[0];
+        swarm_center_gt[1] += dronestate_[i].odometry_gt_.position[1];
+        swarm_center_gt[2] += dronestate_[i].odometry_gt_.position[2];
     }
-    swarm_center_without_own_gt /= (droneCount_-1);
+    swarm_center_gt /= droneCount_;
 
     float dist_min_gt = FLT_MAX;
     for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
@@ -196,13 +194,16 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
       ROS_INFO_ONCE("DroneStateWithTime: distance_gt=%f distance=%f (droneNumber:%d, i:%d)", distances_gt_[i], distances_[i], droneNumber_, (int)i);
     }
 
+    Vector3f vector_to_center_gt = {(float)(swarm_center_gt[0] - odometry_gt_.position[0]), (float)(swarm_center_gt[1] - odometry_gt_.position[1]), (float)(swarm_center_gt[2] - odometry_gt_.position[2])};
+
     if(dataStoring_active_) // save data for log files
     {
-        ROS_INFO_ONCE("DroneStateWithTime (%d) swarm_center_without_own_gt: %s", droneNumber_, VectorToString(swarm_center_without_own_gt).c_str());
-        ROS_INFO_ONCE("DroneStateWithTime (%d) dist_min_gt=%f r=%f ", droneNumber_, dist_min_gt, swarm_center_without_own_gt.norm());
+        ROS_INFO_ONCE("DroneStateWithTime (%d) swarm_center_gt:     %s", droneNumber_, VectorToString(swarm_center_gt).c_str());
+        ROS_INFO_ONCE("DroneStateWithTime (%d) vector_to_center_gt: %s", droneNumber_, VectorToString(vector_to_center_gt).c_str());
+        ROS_INFO_ONCE("DroneStateWithTime (%d) dist_min_gt=%f r=%f ", droneNumber_, dist_min_gt, vector_to_center_gt.norm());
 
         tempMetrics << dist_min_gt << ",";
-        tempMetrics << swarm_center_without_own_gt.norm() << ","; // length of vector, distance from the center
+        tempMetrics << vector_to_center_gt.norm() << ","; // length of vector, distance from the center
         tempMetrics << 0 << ","; // obstacle_dist_min_gt
         tempMetrics << droneCount_ << ",";
         tempMetrics << droneCount_ << ","; // neighbourhood_cnt

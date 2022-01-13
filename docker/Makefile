@@ -165,7 +165,8 @@ TraceYZ.png: State0.csv Makefile
  	 | gnuplot
 
 CleanedMetrics%.csv: Metrics%.csv
-	grep ",96," $< > $@
+	grep ",65," $< > $@
+#	grep ",96," $< > $@
 #	grep ",32," $< > $@
 
 CleanedAllMetrics9.csv: CleanedMetrics0.csv CleanedMetrics1.csv CleanedMetrics2.csv CleanedMetrics3.csv CleanedMetrics4.csv CleanedMetrics5.csv CleanedMetrics6.csv CleanedMetrics7.csv CleanedMetrics8.csv Makefile

@@ -12,6 +12,7 @@
   <arg name="swarm_mode" default="mpc1"/>
   <arg name="swarm_params" default="mpc1_params2"/>
   <arg name="csvFilesStoring" default="yes"/>
+  <arg name="csvFilesStoringLowLevel" default="no"/>
   <arg name="csvFilesStoringTime" default="85.0"/> <!-- seconds -->
   <!-- The following line causes gzmsg and gzerr messages to be printed to the console
       (even when Gazebo is started through roslaunch) -->
@@ -57,7 +58,7 @@
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
-      <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+      <param name="csvFilesStoring" value="$(arg csvFilesStoringLowLevel)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="9"/>
       <param name="droneNumber" value="0"/>
@@ -97,7 +98,7 @@
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
-      <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+      <param name="csvFilesStoring" value="$(arg csvFilesStoringLowLevel)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="9"/>
       <param name="droneNumber" value="1"/>
@@ -137,7 +138,7 @@
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
-      <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+      <param name="csvFilesStoring" value="$(arg csvFilesStoringLowLevel)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="9"/>
       <param name="droneNumber" value="2"/>
@@ -177,7 +178,7 @@
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
-      <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+      <param name="csvFilesStoring" value="$(arg csvFilesStoringLowLevel)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="9"/>
       <param name="droneNumber" value="3"/>
@@ -217,7 +218,7 @@
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
-      <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+      <param name="csvFilesStoring" value="$(arg csvFilesStoringLowLevel)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="9"/>
       <param name="droneNumber" value="4"/>
@@ -257,7 +258,7 @@
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
-      <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+      <param name="csvFilesStoring" value="$(arg csvFilesStoringLowLevel)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="9"/>
       <param name="droneNumber" value="5"/>
@@ -297,7 +298,7 @@
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
-      <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+      <param name="csvFilesStoring" value="$(arg csvFilesStoringLowLevel)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="9"/>
       <param name="droneNumber" value="6"/>
@@ -337,7 +338,7 @@
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
-      <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+      <param name="csvFilesStoring" value="$(arg csvFilesStoringLowLevel)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="9"/>
       <param name="droneNumber" value="7"/>
@@ -377,7 +378,7 @@
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
-      <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+      <param name="csvFilesStoring" value="$(arg csvFilesStoringLowLevel)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="9"/>
       <param name="droneNumber" value="8"/>

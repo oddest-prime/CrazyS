@@ -218,7 +218,7 @@
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
-      <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+      <param name="csvFilesStoring" value="$(arg csvFilesStoringLowLevel)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="5"/>
       <param name="droneNumber" value="4"/>

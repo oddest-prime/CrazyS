@@ -171,11 +171,31 @@ CleanedMetrics%.csv: Metrics%.csv
 
 CleanedAllMetrics9.csv: CleanedMetrics0.csv CleanedMetrics1.csv CleanedMetrics2.csv CleanedMetrics3.csv CleanedMetrics4.csv CleanedMetrics5.csv CleanedMetrics6.csv CleanedMetrics7.csv CleanedMetrics8.csv Makefile
 	paste CleanedMetrics0.csv CleanedMetrics1.csv CleanedMetrics2.csv CleanedMetrics3.csv CleanedMetrics4.csv CleanedMetrics5.csv CleanedMetrics6.csv CleanedMetrics7.csv CleanedMetrics8.csv |\
-	awk -F, '{print $$1","$$2",99,"$$4","$$5","$$11","$$12","$$18","$$19","$$25","$$26","$$32","$$33","$$39","$$40","$$46","$$47","$$53","$$54","$$60","$$61}' | grep -v ",," > $@
+	awk -F, '{print $$1","$$2",99,\
+"$$4","$$5",\
+"$$12","$$13",\
+"$$20","$$21",\
+"$$28","$$29",\
+"$$36","$$37",\
+"$$44","$$45",\
+"$$52","$$53",\
+"$$60","$$61",\
+"$$68","$$69}' | grep -v ",," > $@
+
+CleanedAllMetrics5.csv: CleanedMetrics0.csv CleanedMetrics1.csv CleanedMetrics2.csv CleanedMetrics3.csv CleanedMetrics4.csv Makefile
+	paste CleanedMetrics0.csv CleanedMetrics1.csv CleanedMetrics2.csv CleanedMetrics3.csv CleanedMetrics4.csv |\
+	awk -F, '{print $$1","$$2",99,\
+"$$4","$$5",\
+"$$12","$$13",\
+"$$20","$$21",\
+"$$28","$$29",\
+"$$36","$$37}' | grep -v ",," > $@
 
 CleanedAllMetrics2.csv: CleanedMetrics0.csv CleanedMetrics1.csv
 	paste CleanedMetrics0.csv CleanedMetrics1.csv |\
-	awk -F, '{print $$1","$$2",99,"$$4","$$5","$$6","$$12","$$13","$$14}' | grep -v ",," > $@
+	awk -F, '{print $$1","$$2",99,\
+"$$4","$$5","$$6",\
+"$$12","$$13","$$14}' | grep -v ",," > $@
 
 CleanedAllMetrics9.png: CleanedAllMetrics9.csv
 	echo " \
@@ -186,11 +206,26 @@ CleanedAllMetrics9.png: CleanedAllMetrics9.csv
 		set grid \n\
 		set xlabel \"Time [s]\" \n\
 		set ylabel \"Distance $< [m]\" \n\
-		set yrange [0:1.5] \n\
+		set yrange [0:3.0] \n\
 		set output \"$@\" \n\
 		plot     \"$<\" using (column(1)+column(2)/1000000000):(min(column(4),min(column(6),min(column(8),min(column(10),min(column(12),min(column(14),min(column(16),min(column(18),column(20)))))))))) with lines title 'dist_{min}', \
 						 \"$<\" using (column(1)+column(2)/1000000000):(max(column(5),max(column(7),max(column(9),max(column(11),max(column(13),max(column(15),max(column(17),max(column(19),column(21)))))))))) with lines title 'comp_{max}" \
 	 | gnuplot
+
+CleanedAllMetrics5.png: CleanedAllMetrics5.csv
+	echo " \
+ 		set datafile separator ',' \n\
+ 		min(a,b) = (a < b) ? a : b \n\
+ 		max(a,b) = (a < b) ? b : a \n\
+ 		set term pngcairo size 1024,768 \n\
+ 		set grid \n\
+ 		set xlabel \"Time [s]\" \n\
+ 		set ylabel \"Distance $< [m]\" \n\
+ 		set yrange [0:3.0] \n\
+ 		set output \"$@\" \n\
+ 		plot     \"$<\" using (column(1)+column(2)/1000000000):(min(column(4),min(column(6),min(column(8),min(column(10),column(12)))))) with lines title 'dist_{min}', \
+ 						 \"$<\" using (column(1)+column(2)/1000000000):(max(column(5),max(column(7),max(column(9),max(column(11),column(13)))))) with lines title 'comp_{max}" \
+ 	 | gnuplot
 
 CleanedAllMetrics2.png: CleanedAllMetrics2.csv
 	echo " \
@@ -201,7 +236,7 @@ CleanedAllMetrics2.png: CleanedAllMetrics2.csv
 		set grid \n\
 		set xlabel \"Time [s]\" \n\
 		set ylabel \"Distance $< [m]\" \n\
-		set yrange [0:2.0] \n\
+		set yrange [0:3.0] \n\
 		set autoscale ymax \n\
 		set output \"$@\" \n\
 		plot     \"$<\" using (column(1)+column(2)/1000000000):(min(column(4),column(7))) with lines title 'dist_{min}', \

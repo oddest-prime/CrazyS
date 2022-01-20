@@ -82,6 +82,7 @@ namespace rotors_control {
             float distances_[N_DRONES_MAX][N_DRONES_MAX]; // received distance measurements
             float distances_history1_[N_DRONES_MAX]; // distance measurements to own drone at history point
             float distances_history2_[N_DRONES_MAX]; // distance measurements to own drone at history point
+            Vector3f positions_gt_[N_DRONES_MAX]; // ground-truth positions of all drones, only to be used for verification of estimation
             float elevation_[N_DRONES_MAX]; // received elevation measurements
 
             Vector3f unit_vectors_[N_VECTORS_MAX]; // directions of unit vectors
@@ -99,6 +100,7 @@ namespace rotors_control {
 
             void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
             void DistancesCallback(const std_msgs::Float32MultiArray& distances_msg);
+            void PositionsCallback(const std_msgs::Float32MultiArray& positions_msg);
             void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
             void MultiDofJointTrajectoryCallback(const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& msg);
 
@@ -106,6 +108,7 @@ namespace rotors_control {
             ros::Subscriber cmd_multi_dof_joint_trajectory_sub_;
             ros::Subscriber odometry_sub_;
             ros::Subscriber distances_sub_;
+            ros::Subscriber positions_sub_;
             ros::Subscriber enable_sub_;
 
             //publisher

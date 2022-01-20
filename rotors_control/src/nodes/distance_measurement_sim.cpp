@@ -54,6 +54,7 @@ DistanceMeasurementSim::DistanceMeasurementSim() {
     ros::NodeHandle pnh_node("~");
 
     distances_pub_ = nh.advertise<std_msgs::Float32MultiArray>("drone_distances", 1);
+    positions_pub_ = nh.advertise<std_msgs::Float32MultiArray>("drone_positions", 1);
     elevation_pub_ = nh.advertise<std_msgs::Float32MultiArray>("drone_elevation", 1);
 
     InitializeParams();
@@ -134,7 +135,7 @@ void DistanceMeasurementSim::InitializeParams() {
     }
 
     for (size_t i = 0; i < droneCount_; i++)
-      dronestate[i].SetId((int)i, droneCount_, distance_noise_, dronestate, &distances_pub_, &elevation_pub_, dataStoring_active);
+      dronestate[i].SetId((int)i, droneCount_, distance_noise_, dronestate, &distances_pub_, &positions_pub_, &elevation_pub_, dataStoring_active);
 
     ros::NodeHandle nh;
     timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &DistanceMeasurementSim::CallbackSaveData, this, false, true);
@@ -232,6 +233,27 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     dat.data = vec;
     distances_pub_->publish(dat);
 
+    // publish positions message
+    std_msgs::Float32MultiArray pos;
+    pos.layout.dim.push_back(std_msgs::MultiArrayDimension());
+    pos.layout.dim.push_back(std_msgs::MultiArrayDimension());
+    pos.layout.dim[0].label = "drone";
+    pos.layout.dim[1].label = "dimension";
+    pos.layout.dim[0].size = droneCount_;
+    pos.layout.dim[1].size = 3;
+    pos.layout.dim[0].stride = droneCount_*3;
+    pos.layout.dim[1].stride = 3;
+    pos.layout.data_offset = 0;
+    std::vector<float> posi(droneCount_*droneCount_, 0);
+    for (size_t i = 0; i < droneCount_; i++)
+    {
+      posi[i*droneCount_ + 0] = dronestate_[i].odometry_gt_.position[0];
+      posi[i*droneCount_ + 1] = dronestate_[i].odometry_gt_.position[1];
+      posi[i*droneCount_ + 2] = dronestate_[i].odometry_gt_.position[2];
+    }
+    pos.data = posi;
+    positions_pub_->publish(pos);
+
     // publish elevation message
     std_msgs::Float32MultiArray el;
     el.layout.dim.push_back(std_msgs::MultiArrayDimension());
@@ -312,7 +334,7 @@ void DroneStateWithTime::FileSaveData(void){
       // dataStoring_active_ = false;
 }
 
-void DroneStateWithTime::SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* elevation_pub, bool dataStoring_active)
+void DroneStateWithTime::SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, bool dataStoring_active)
 {
     droneNumber_ = droneNumber;
     droneCount_ = droneCount;
@@ -321,6 +343,7 @@ void DroneStateWithTime::SetId(int droneNumber, int droneCount, float position_n
 
     dronestate_ = dronestate;
     distances_pub_ = distances_pub;
+    positions_pub_ = positions_pub;
     elevation_pub_ = elevation_pub;
 }
 

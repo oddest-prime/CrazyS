@@ -82,6 +82,7 @@ RelativeDistanceController::RelativeDistanceController() {
     odometry_sub_ = nh.subscribe(mav_msgs::default_topics::ODOMETRY, 1, &RelativeDistanceController::OdometryCallback, this);
     enable_sub_ = nh.subscribe("enable", 1, &RelativeDistanceController::EnableCallback, this);
     distances_sub_ = nh.subscribe("/drone_distances", 1, &RelativeDistanceController::DistancesCallback, this);
+    positions_sub_ = nh.subscribe("/drone_positions", 1, &RelativeDistanceController::PositionsCallback, this);
 
     // To publish the set-point
     setpoint_pub_ = nh.advertise<geometry_msgs::PoseStamped>("set_point", 1);
@@ -539,6 +540,21 @@ void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiA
         }
     }
 }
+
+void RelativeDistanceController::PositionsCallback(const std_msgs::Float32MultiArray& positions_msg) {
+    ROS_INFO_ONCE("PositionsCallback got positions message.");
+
+    for (size_t i = 0; i < droneCount_; i++)
+    {
+        // ground-truth positions of all drones, only to be used for verification of estimation
+        positions_gt_[i][0]= positions_msg.data[i*droneCount_ + 0];
+        positions_gt_[i][1]= positions_msg.data[i*droneCount_ + 1];
+        positions_gt_[i][2]= positions_msg.data[i*droneCount_ + 2];
+
+        ROS_INFO("PositionsCallback (%d) drone#%d @ %s.", droneNumber_, (int)i, VectorToString(positions_gt_[i]).c_str());
+    }
+}
+
 
 }
 

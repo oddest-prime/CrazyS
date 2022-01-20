@@ -48,7 +48,7 @@ namespace rotors_control {
 
     class DroneStateWithTime {
      public:
-      void SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* elevation_pub, bool dataStoring_active);
+      void SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, bool dataStoring_active);
       void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
       void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
       void FileSaveData(void);
@@ -65,6 +65,7 @@ namespace rotors_control {
 
       DroneStateWithTime* dronestate_;
       ros::Publisher* distances_pub_;
+      ros::Publisher* positions_pub_;
       ros::Publisher* elevation_pub_;
 
       float distances_[N_DRONES_MAX]; // with simulated sensor noise
@@ -107,6 +108,7 @@ namespace rotors_control {
 
             //publisher
             ros::Publisher distances_pub_;
+            ros::Publisher positions_pub_;
             ros::Publisher elevation_pub_;
 
             DroneStateWithTime dronestate[N_DRONES_MAX];

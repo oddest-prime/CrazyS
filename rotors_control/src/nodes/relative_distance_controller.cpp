@@ -72,9 +72,10 @@ RelativeDistanceController::RelativeDistanceController() {
         unit_vectors_[i][0] = 0;
         unit_vectors_[i][1] = 0;
         unit_vectors_[i][2] = 0;
-        unit_vectors_age_[i] = 0;
+        unit_vectors_age_[i] = -1;
     }
     transform_ok_ = 0;
+    transform_available_ = 0;
 
     // Topics subscribe
     // Topics subscribe
@@ -177,37 +178,30 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     set_point.header.stamp = odometry_msg->header.stamp;
 
     history_cnt_ ++;
-    unit_vectors_age_[0] ++;
-    unit_vectors_age_[1] ++;
-    unit_vectors_age_[2] ++;
+    if(unit_vectors_age_[0] >= 0) unit_vectors_age_[0] ++; // age of -1 means this unit vector is invalid
+    if(unit_vectors_age_[1] >= 0) unit_vectors_age_[1] ++; // age of -1 means this unit vector is invalid
+    if(unit_vectors_age_[2] >= 0) unit_vectors_age_[2] ++; // age of -1 means this unit vector is invalid
 
     if(unit_vectors_age_[0] > 1500) // delete old unit vectors
     {
+        Vector3f tmp = unit_vectors_[0];
         unit_vectors_[0] = unit_vectors_[2];
-        unit_vectors_age_[0] = unit_vectors_age_[2];
-        unit_vectors_[2][0] = 0;
-        unit_vectors_[2][1] = 0;
-        unit_vectors_[2][2] = 0;
-        unit_vectors_age_[2] = 0;
-        ROS_INFO("OdometryCallback (%d) deleted old unit_vectors_0", droneNumber_);
+        unit_vectors_[2] = tmp;
+        unit_vectors_age_[2] = -1;
+        ROS_INFO("OdometryCallback (%d) deleted old unit_vector_0 (moved to 2)", droneNumber_);
     }
     else if(unit_vectors_age_[1] > 1500) // delete old unit vectors
     {
+        Vector3f tmp = unit_vectors_[1];
         unit_vectors_[1] = unit_vectors_[2];
-        unit_vectors_age_[1] = unit_vectors_age_[2];
-        unit_vectors_[2][0] = 0;
-        unit_vectors_[2][1] = 0;
-        unit_vectors_[2][2] = 0;
-        unit_vectors_age_[2] = 0;
-        ROS_INFO("OdometryCallback (%d) deleted old unit_vectors_1", droneNumber_);
+        unit_vectors_[2] = tmp;
+        unit_vectors_age_[2] = -1;
+        ROS_INFO("OdometryCallback (%d) deleted old unit_vector_1 (moved to 2)", droneNumber_);
     }
     else if(unit_vectors_age_[2] > 1500) // delete old unit vectors
     {
-        unit_vectors_[2][0] = 0;
-        unit_vectors_[2][1] = 0;
-        unit_vectors_[2][2] = 0;
-        unit_vectors_age_[2] = 0;
-        ROS_INFO("OdometryCallback (%d) deleted old unit_vectors_2", droneNumber_);
+        unit_vectors_age_[2] = -1;
+        ROS_INFO("OdometryCallback (%d) deleted old unit_vector_2", droneNumber_);
     }
 
 //    if(history_cnt_ > 10 || true)
@@ -230,7 +224,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             size_t index_dot_product = 0;
             for (size_t i = 0; i < N_VECTORS_MAX; i++)
             {
-                if(unit_vectors_[i].norm() < 0.1) // this unit vector is not yet initialized, use it
+                if(unit_vectors_age_ < 0) // this unit vector is not yet initialized, use it
                 {
                     ROS_INFO_ONCE("OdometryCallback (%d) this unit vector is not yet initialized, use it: %d", droneNumber_, (int)i);
                     index_dot_product = i;
@@ -283,12 +277,17 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 transform_tmp(2,2) = unit_vectors_[2][2];
                 transform_vectors_ = transform_tmp.inverse();
                 ROS_INFO_ONCE("OdometryCallback (%d) transform_vectors_: %s", droneNumber_, MatrixToString(transform_vectors_).c_str());
-                transform_ok_ = 1;
+                if(unit_vectors_age_[0] >= 0 && unit_vectors_age_[1] >= 0 && unit_vectors_age_[2] >= 0)
+                    transform_ok_ = 1;
+                else
+                    transform_ok_ = 0;
+                transform_available_ = 1;
             }
             else
             {
                 ROS_INFO_ONCE("OdometryCallback (%d) Bad unit vectors, cannot calculate transform_vectors.", droneNumber_);
                 transform_ok_ = 0;
+                transform_available_ = 0;
             }
         }
 
@@ -339,18 +338,18 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             }
             exploration_info = 80;
             Vector3f direction = {1, 1, 1};
-            if(unit_vectors_[0].norm() <= 0.02) // all unit vectors empty, since they are populated sequentially
+            if(unit_vectors_[0].norm() <= 0.02 || unit_vectors_age_[0] < 0) // all unit vectors empty, since they are populated sequentially
             {
                 direction = random_direction_; // go to random direction
                 exploration_info = 10;
             }
-            else if(unit_vectors_[1].norm() <= 0.02) // only vector 0 is not empty
+            else if(unit_vectors_[1].norm() <= 0.02 || unit_vectors_age_[0] < 1) // only vector 0 is not empty
             {
                 Vector3f tmp = unit_vectors_[0] + random_direction_;
                 direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
                 exploration_info = 11;
             }
-            else if(unit_vectors_[2].norm() <= 0.02) // vector 0 and 1 are not empty
+            else if(unit_vectors_[2].norm() <= 0.02 || unit_vectors_age_[0] < 1) // vector 0 and 1 are not empty
             {
                 if(abs(unit_vectors_[0].dot(unit_vectors_[1])) > 0.99) // dot-procut: same direction = 1; orthogonal = 0
                 { // vectors go into the same direction, need some orthogonal move
@@ -404,7 +403,46 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                     exploration_info = 91;
                 }
             }
+
             direction = direction / direction.norm(); // calculate unit vector of length 1
+            direction = direction * 0.5; // length 0.5 for exploration vector
+
+            if(transform_available_) // check if opposite direction might be more useful (less collision probability)
+            {
+                Vector3f potential_movement_transformed_positive = transform_vectors_ * direction;
+                Vector3f potential_movement_transformed_negative = transform_vectors_ * (direction * -1);
+
+                float separation_sum_positive = 0;
+                float separation_sum_negative = 0;
+
+                for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+                {
+                    float dist_positive = distances_[droneNumber_][i] +
+                              distances_differences_[0][i] * potential_movement_transformed_positive[0] +
+                              distances_differences_[1][i] * potential_movement_transformed_positive[1] +
+                              distances_differences_[2][i] * potential_movement_transformed_positive[2];
+                   float dist_negative = distances_[droneNumber_][i] +
+                              distances_differences_[0][i] * potential_movement_transformed_negative[0] +
+                              distances_differences_[1][i] * potential_movement_transformed_negative[1] +
+                              distances_differences_[2][i] * potential_movement_transformed_negative[2];
+
+                    if(i == droneNumber_) // skip for own quadcopter
+                        continue;
+
+                    separation_sum_positive += 1.0/(dist_positive*dist_positive);
+                    separation_sum_negative += 1.0/(dist_negative*dist_negative);
+                }
+                if(separation_sum_positive < separation_sum_negative)
+                {
+                    ROS_INFO("RelativeDistanceController %d exploration positive better (%f < %f)", droneNumber_, separation_sum_positive, separation_sum_negative);
+                }
+                else
+                {
+                    ROS_INFO("RelativeDistanceController %d exploration negative better (%f > %f)", droneNumber_, separation_sum_positive, separation_sum_negative);
+                    direction = direction * -1; // invert exploration vector
+                }
+            }
+
             set_point.pose.position.x = odometry_gt_.position[0] + direction[0];
             set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
             set_point.pose.position.z = odometry_gt_.position[2] + direction[2];

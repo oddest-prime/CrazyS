@@ -91,6 +91,7 @@ namespace rotors_control {
             float distances_differences_[N_VECTORS_MAX][N_DRONES_MAX]; // change in distances for unit vectors
             Matrix3f transform_vectors_;
             int transform_ok_;
+            int transform_available_;
 
             std::string namespace_;
 

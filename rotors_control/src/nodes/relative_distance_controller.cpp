@@ -187,6 +187,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         Vector3f tmp = unit_vectors_[0];
         unit_vectors_[0] = unit_vectors_[2];
         unit_vectors_[2] = tmp;
+        unit_vectors_age_[0] = unit_vectors_age_[2];
         unit_vectors_age_[2] = -1;
         ROS_INFO("OdometryCallback (%d) deleted old unit_vector_0 (moved to 2)", droneNumber_);
     }
@@ -195,6 +196,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         Vector3f tmp = unit_vectors_[1];
         unit_vectors_[1] = unit_vectors_[2];
         unit_vectors_[2] = tmp;
+        unit_vectors_age_[1] = unit_vectors_age_[2];
         unit_vectors_age_[2] = -1;
         ROS_INFO("OdometryCallback (%d) deleted old unit_vector_1 (moved to 2)", droneNumber_);
     }
@@ -224,7 +226,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             size_t index_dot_product = 0;
             for (size_t i = 0; i < N_VECTORS_MAX; i++)
             {
-                if(unit_vectors_age_ < 0) // this unit vector is not yet initialized, use it
+                if(unit_vectors_age_[i] < 0) // this unit vector is not yet initialized, use it
                 {
                     ROS_INFO_ONCE("OdometryCallback (%d) this unit vector is not yet initialized, use it: %d", droneNumber_, (int)i);
                     index_dot_product = i;
@@ -343,13 +345,13 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 direction = random_direction_; // go to random direction
                 exploration_info = 10;
             }
-            else if(unit_vectors_[1].norm() <= 0.02 || unit_vectors_age_[0] < 1) // only vector 0 is not empty
+            else if(unit_vectors_[1].norm() <= 0.02 || unit_vectors_age_[1] < 0) // only vector 0 is not empty
             {
                 Vector3f tmp = unit_vectors_[0] + random_direction_;
                 direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
                 exploration_info = 11;
             }
-            else if(unit_vectors_[2].norm() <= 0.02 || unit_vectors_age_[0] < 1) // vector 0 and 1 are not empty
+            else if(unit_vectors_[2].norm() <= 0.02 || unit_vectors_age_[2] < 0) // vector 0 and 1 are not empty
             {
                 if(abs(unit_vectors_[0].dot(unit_vectors_[1])) > 0.99) // dot-procut: same direction = 1; orthogonal = 0
                 { // vectors go into the same direction, need some orthogonal move
@@ -594,7 +596,7 @@ void RelativeDistanceController::PositionsCallback(const std_msgs::Float32MultiA
         positions_gt_[i][1]= positions_msg.data[i*droneCount_ + 1];
         positions_gt_[i][2]= positions_msg.data[i*droneCount_ + 2];
 
-        ROS_INFO("PositionsCallback (%d) drone#%d @ %s.", droneNumber_, (int)i, VectorToString(positions_gt_[i]).c_str());
+        ROS_INFO_ONCE("PositionsCallback (%d) drone#%d @ %s.", droneNumber_, (int)i, VectorToString(positions_gt_[i]).c_str());
     }
 }
 

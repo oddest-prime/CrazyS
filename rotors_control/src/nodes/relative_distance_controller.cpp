@@ -407,12 +407,11 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             }
 
             direction = direction / direction.norm(); // calculate unit vector of length 1
-            direction = direction * 0.5; // length 0.5 for exploration vector
 
             if(transform_available_) // check if opposite direction might be more useful (less collision probability)
             {
-                Vector3f potential_movement_transformed_positive = transform_vectors_ * direction;
-                Vector3f potential_movement_transformed_negative = transform_vectors_ * (direction * -1);
+                Vector3f potential_movement_transformed_positive = transform_vectors_ * (direction * eps_move_*2);
+                Vector3f potential_movement_transformed_negative = transform_vectors_ * ((direction * -1) * eps_move_*2);
 
                 float separation_sum_positive = 0;
                 float separation_sum_negative = 0;
@@ -445,6 +444,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 }
             }
 
+            direction = direction * 0.5; // length 0.5 for exploration vector
             set_point.pose.position.x = odometry_gt_.position[0] + direction[0];
             set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
             set_point.pose.position.z = odometry_gt_.position[2] + direction[2];

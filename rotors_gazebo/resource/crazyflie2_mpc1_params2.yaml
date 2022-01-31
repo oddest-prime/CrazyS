@@ -14,6 +14,7 @@ mpc1: {
 dist: {
   eps_move: 0.07,
   n_move_max: 2,
+  sticking_bonus: 1.2,
   spc_cohesion_weight: 20.0,
   spc_separation_weight: 40.0,
   }

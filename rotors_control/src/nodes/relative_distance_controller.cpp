@@ -102,6 +102,7 @@ void RelativeDistanceController::InitializeParams() {
     GetRosParameter(pnh, "swarm/neighbourhood_distance", (float)99, &neighbourhood_distance_);
     GetRosParameter(pnh, "dist/eps_move", (float)0.2, &eps_move_);
     GetRosParameter(pnh, "dist/n_move_max", (int)2, &n_move_max_);
+    GetRosParameter(pnh, "dist/sticking_bonus", (float)1, &sticking_bonus_);
     GetRosParameter(pnh, "dist/spc_cohesion_weight", (float)1.0, &spc_cohesion_weight_);
     GetRosParameter(pnh, "dist/spc_separation_weight", (float)1.0, &spc_separation_weight_);
 
@@ -109,6 +110,7 @@ void RelativeDistanceController::InitializeParams() {
     ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
     ROS_INFO_ONCE("  dist/eps_move=%f", eps_move_);
     ROS_INFO_ONCE("  dist/n_move_max=%d", n_move_max_);
+    ROS_INFO_ONCE("  dist/sticking_bonus=%d", sticking_bonus_);
     ROS_INFO_ONCE("  dist/spc_cohesion_weight=%f", spc_cohesion_weight_);
     ROS_INFO_ONCE("  dist/spc_separation_weight=%f", spc_separation_weight_);
 
@@ -460,6 +462,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                         total_sum = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
                         // separation term
                         total_sum += spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
+
+                        if(xi == 0 && yi == 0 && zi == 0) // bonus for cost if not moving
+                            total_sum /= sticking_bonus_;
 
                         if(total_sum < min_sum)
                         {

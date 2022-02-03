@@ -45,7 +45,7 @@
 #include "rotors_control/position_controller.h"
 #include "rotors_control/crazyflie_complementary_filter.h"
 
-#define N_DRONES_MAX  20          /* maximum number of drones */
+#define N_DRONES_MAX  30          /* maximum number of drones */
 
 #define SWARM_DISABLED            0
 #define SWARM_DECLARATIVE_SIMPLE  1

@@ -67,30 +67,11 @@ SwarmController::SwarmController() {
     enable_sub_ = nh.subscribe("enable", 1, &SwarmController::EnableCallback, this);
     keyboard_sub_ = nh.subscribe("/key", 1, &SwarmController::KeyboardCallback, this);
 
-    ros::NodeHandle nhq[N_DRONES_MAX] = { // NodeHandles for each drone (separate namespace)
-      ros::NodeHandle("/crazyflie2_0"),
-      ros::NodeHandle("/crazyflie2_1"),
-      ros::NodeHandle("/crazyflie2_2"),
-      ros::NodeHandle("/crazyflie2_3"),
-      ros::NodeHandle("/crazyflie2_4"),
-      ros::NodeHandle("/crazyflie2_5"),
-      ros::NodeHandle("/crazyflie2_6"),
-      ros::NodeHandle("/crazyflie2_7"),
-      ros::NodeHandle("/crazyflie2_8"),
-      ros::NodeHandle("/crazyflie2_9"),
-      ros::NodeHandle("/crazyflie2_10"),
-      ros::NodeHandle("/crazyflie2_11"),
-      ros::NodeHandle("/crazyflie2_12"),
-      ros::NodeHandle("/crazyflie2_13"),
-      ros::NodeHandle("/crazyflie2_14"),
-      ros::NodeHandle("/crazyflie2_15"),
-      ros::NodeHandle("/crazyflie2_16"),
-      ros::NodeHandle("/crazyflie2_17"),
-      ros::NodeHandle("/crazyflie2_18"),
-      ros::NodeHandle("/crazyflie2_19")
-    };
+    ros::NodeHandle nhq[N_DRONES_MAX];
     for (size_t i = 0; i < droneCount_; i++)
     {
+      nhq[i] = ros::NodeHandle(std::string("/crazyflie2_") + std::to_string(i));
+
       dronestate[i].SetId(droneNumber_, i, position_noise_);
       ROS_INFO("SwarmController: Setup subscriber %s/lps_pose.", nhq[i].getNamespace().c_str());
       pose_other_sub_[i] = nhq[i].subscribe("lps_pose", 1, &DroneStateWithTime::PoseCallback, &dronestate[i]);

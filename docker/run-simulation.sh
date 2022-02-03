@@ -1,6 +1,7 @@
 #!/bin/bash
 
-TIMEOUT=3000
+TIMEOUT=6000
+#TIMEOUT=3000
 # TIMEOUT=500 # debug, faster runs...
 
 Xvfb -shmem -screen 0 1280x1024x24 &

@@ -352,7 +352,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
 
     // obstacle definition
     int obstacle_count = 0;
-    EigenOdometry obstacle_position[10];
+    EigenOdometry obstacle_position[N_OBSTACLE_MAX];
     if(obstacleScenario_ == 1)
     {
       obstacle_count = 1;
@@ -369,16 +369,41 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       obstacle_position[2].position[0] = 0.0;
       obstacle_position[2].position[1] = 3.0;
     }
-    obstacle_position[0].position[2] = odometry_gt_.position[2]; // todo, remove workaround for infinite z obstacles
-    obstacle_position[1].position[2] = odometry_gt_.position[2]; // todo, remove workaround for infinite z obstacles
-    obstacle_position[2].position[2] = odometry_gt_.position[2]; // todo, remove workaround for infinite z obstacles
+    else if(obstacleScenario_ == 3)
+    {
+      obstacle_count = 11;
+      obstacle_position[0].position[0] = 2.0;
+      obstacle_position[0].position[1] = 1.5;
+      obstacle_position[1].position[0] = 3.5;
+      obstacle_position[1].position[1] = 3.5;
+      obstacle_position[2].position[0] = 0.0;
+      obstacle_position[2].position[1] = 3.0;
+      obstacle_position[3].position[0] = 1.0;
+      obstacle_position[3].position[1] = 3.5;
+      obstacle_position[4].position[0] = -1.0;
+      obstacle_position[4].position[1] = 3.5;
+      obstacle_position[5].position[0] = -1.5;
+      obstacle_position[5].position[1] = 2.5;
+      obstacle_position[6].position[0] = 1.5;
+      obstacle_position[6].position[1] = 2.5;
+      obstacle_position[7].position[0] = 4.0;
+      obstacle_position[7].position[1] = 2.0;
+      obstacle_position[8].position[0] = 3.0;
+      obstacle_position[8].position[1] = 5.0;
+      obstacle_position[9].position[0] = 2.0;
+      obstacle_position[9].position[1] = 4.0;
+      obstacle_position[10].position[0] = 2.5;
+      obstacle_position[10].position[1] = 2.5;
+    }
+    for(int i = 0; i < obstacle_count; i++) // iterate over all obstacles
+        obstacle_position[i].position[2] = odometry_gt_.position[2]; // todo, remove workaround for infinite z obstacles
     float obstacle_radius = 0.15;
 
     float obstacle_dist_min_gt = FLT_MAX;
     for(int i = 0; i < obstacle_count; i++) // iterate over all obstacles
     {
-      float obstacle_dist_gt = norm(odometry_gt_ - obstacle_position[i]);
-      obstacle_dist_min_gt = min(obstacle_dist_min_gt, obstacle_dist_gt);
+        float obstacle_dist_gt = norm(odometry_gt_ - obstacle_position[i]);
+        obstacle_dist_min_gt = min(obstacle_dist_min_gt, obstacle_dist_gt);
     }
     obstacle_position[0].position[2] = odometry_.position[2]; // todo, remove workaround for infinite z obstacles
     obstacle_position[1].position[2] = odometry_.position[2]; // todo, remove workaround for infinite z obstacles

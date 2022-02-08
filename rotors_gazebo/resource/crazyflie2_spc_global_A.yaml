@@ -9,9 +9,9 @@ mpc1: {
   eps_move: 0.06,
   n_move_max: 5,
   mpc_cohesion_weight: 20.0,
-  mpc_separation_weight: 11.0,
+  mpc_separation_weight: 8.0,
   mpc_target_weight: 150.0,
-  mpc_obstacle_weight: 20.0
+  mpc_obstacle_weight: 10.0
   }
 gradient: {
   scale_factor: 0.007

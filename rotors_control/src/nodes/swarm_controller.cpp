@@ -512,7 +512,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
     }
     else if(enable_swarm_ & SWARM_DECLARATIVE_SIMPLE)
     {
-        ROS_INFO_ONCE("SwarmController starting swarm mode (SWARM_DECLARATIVE_SIMPLE)");
+        ROS_ERROR("DEPRECATED! SwarmController starting swarm mode (SWARM_DECLARATIVE_SIMPLE)");
 
         int min_xi = 0;
         int min_yi = 0;
@@ -654,7 +654,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
           if(neighbourhood_bool[i]) // only for neighbourhood
           {
               cohesion_sum = cohesion_sum + dronestate[i].odometry_;
-              separation_sum = separation_sum + (dronestate[i].odometry_ - odometry_) / pow(norm(dronestate[i].odometry_ - odometry_) - drone_radius_*2,3);
+              separation_sum = separation_sum + (dronestate[i].odometry_ - odometry_) / max(EPS0, (float)pow(norm(dronestate[i].odometry_ - odometry_) - drone_radius_*2,3)*norm(dronestate[i].odometry_ - odometry_));
               neighbourhood_center = neighbourhood_center + dronestate[i].odometry_;
 
               ROS_INFO_ONCE("SwarmController %d %d odo x=%f y=%f z=%f", droneNumber_, (int)i, odometry_.position[0], odometry_.position[1], odometry_.position[2]);
@@ -674,7 +674,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       for(int i = 0; i < obstacle_count; i++) // iterate over all obstacles
       {
         float obstacle_dist = norm(odometry_ - obstacle_position[i]);
-        obstacle_sum = obstacle_sum + (obstacle_position[i] - odometry_) * (2*mpc_obstacle_weight_ / (pow(obstacle_dist - obstacle_radius_ - drone_radius_,3) * obstacle_dist));
+        obstacle_sum = obstacle_sum + (obstacle_position[i] - odometry_) * (2*mpc_obstacle_weight_ / max(EPS0, (float)pow(obstacle_dist - obstacle_radius_ - drone_radius_,3) * obstacle_dist));
       }
       ROS_INFO_ONCE("SwarmController %d obs x=%f y=%f z=%f", droneNumber_, obstacle_sum.position[0], obstacle_sum.position[1], obstacle_sum.position[2]);
 
@@ -729,7 +729,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
           if(neighbourhood_bool[i]) // only for neighbourhood
           {
               cohesion_sum = cohesion_sum + dronestate[i].odometry_;
-              separation_sum = separation_sum + (dronestate[i].odometry_ - odometry_) / pow(norm(dronestate[i].odometry_ - odometry_) - drone_radius_*2,3);
+              separation_sum = separation_sum + (dronestate[i].odometry_ - odometry_) / max(EPS0, (float)pow(norm(dronestate[i].odometry_ - odometry_) - drone_radius_*2,3)*norm(dronestate[i].odometry_ - odometry_));
               neighbourhood_center = neighbourhood_center + dronestate[i].odometry_;
 
               ROS_INFO_ONCE("SwarmController %d %d odo x=%f y=%f z=%f", droneNumber_, (int)i, odometry_.position[0], odometry_.position[1], odometry_.position[2]);
@@ -749,7 +749,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       for(int i = 0; i < obstacle_count; i++) // iterate over all obstacles
       {
         float obstacle_dist = norm(odometry_ - obstacle_position[i]);
-        obstacle_sum = obstacle_sum + (obstacle_position[i] - odometry_) * (2*mpc_obstacle_weight_ / (pow(obstacle_dist - obstacle_radius_ - drone_radius_,3) * obstacle_dist));
+        obstacle_sum = obstacle_sum + (obstacle_position[i] - odometry_) * (2*mpc_obstacle_weight_ / max(EPS0, (float)pow(obstacle_dist - obstacle_radius_ - drone_radius_,3) * obstacle_dist));
       }
       ROS_INFO_ONCE("SwarmController %d obs x=%f y=%f z=%f", droneNumber_, obstacle_sum.position[0], obstacle_sum.position[1], obstacle_sum.position[2]);
 
@@ -784,7 +784,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
                   float dist = dronestate[i].GetDistance(&potential_pos);
 
                   cost_cohesion_sum += dist*dist;
-                  cost_separation_sum += 1.0/pow(dist - drone_radius_*2, 2);
+                  cost_separation_sum += 1.0/pow(max(EPS0, (float)(dist - drone_radius_*2)), 2);
                   potential_center = potential_center + dronestate[i].odometry_;
               }
           }
@@ -810,8 +810,8 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
           {
             obstacle_position[i].position[2] = potential_center.position[2]; // todo, remove fix for infinite z obstacles
             float obstacle_dist = norm(potential_pos - obstacle_position[i]);
-            float tmp = mpc_obstacle_weight_ * (1.0/pow(obstacle_dist - obstacle_radius_ - drone_radius_, 2));
-            cost_total_sum += mpc_obstacle_weight_ * (1.0/pow(obstacle_dist - obstacle_radius_ - drone_radius_, 2));
+            float tmp = mpc_obstacle_weight_ * (1.0/pow(max(EPS0, obstacle_dist - obstacle_radius_ - drone_radius_), 2));
+            cost_total_sum += mpc_obstacle_weight_ * (1.0/pow(max(EPS0, obstacle_dist - obstacle_radius_ - drone_radius_), 2));
             ROS_INFO_ONCE("SwarmController %d obs %d cost=%f dist=%f", droneNumber_, i, tmp, obstacle_dist);
           }
 
@@ -840,6 +840,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
   // ################################################################################
   else if(enable_swarm_ & SWARM_REYNOLDS || enable_swarm_ & SWARM_REYNOLDS_LIMITED || enable_swarm_ & SWARM_REYNOLDS_VELOCITY)
   {
+      ROS_ERROR("DEPRECATED! SwarmController starting swarm mode (SWARM_REYNOLDS*)");
       if(enable_swarm_ & SWARM_REYNOLDS)
         ROS_INFO_ONCE("SwarmController starting swarm mode (SWARM_REYNOLDS)");
       if(enable_swarm_ & SWARM_REYNOLDS_LIMITED)
@@ -972,9 +973,9 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       listDistance_.push_back(tempDistance.str());
   }
   // ################################################################################
-  else if(enable_swarm_ & SWARM_REYNOLDS_VELOCITY && false)
+  else if(enable_swarm_ & SWARM_REYNOLDS_VELOCITY)
   {
-      ROS_INFO_ONCE("SwarmController starting OLD! swarm mode (SWARM_REYNOLDS_VELOCITY)");
+      ROS_ERROR("DEPRECATED! SwarmController starting swarm mode (SWARM_REYNOLDS_VELOCITY)");
 
       ROS_INFO_ONCE("SwarmController %d vel x=%f y=%f z=%f", droneNumber_, odometry_.velocity[0], odometry_.velocity[1], odometry_.velocity[2]);
 

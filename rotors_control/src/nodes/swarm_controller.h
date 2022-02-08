@@ -47,6 +47,7 @@
 
 #define N_DRONES_MAX  30          /* maximum number of drones */
 #define N_OBSTACLE_MAX  20        /* maximum number of obstacles */
+#define EPS0  (float)0.000001     /* very small number greater than 0 */
 
 #define SWARM_DISABLED            0
 #define SWARM_DECLARATIVE_SIMPLE  1
@@ -133,7 +134,7 @@ namespace rotors_control {
             float position_noise_;
             float neighbourhood_distance_;
             float drone_radius_;
-            float obstacle_radius_;            
+            float obstacle_radius_;
             float eps_move_;
             int n_move_max_;
             float mpc_cohesion_weight_;

@@ -2,6 +2,27 @@
 
 cd ~/SWARM/crazys
 
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradenum spc_global_A "obs15" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradenum spc_global_B "obs15" &
+sleep 150 # delay compilation by 150 seconds in second two docker containers
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradenum spc_local_A "obs15" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradenum spc_local_B "obs15" &
+wait
+test -e /tmp/stop && exit 7 # stop if flag is present
+
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15_obstacle2 gradenum spc_global_A "obs15" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15_obstacle2 gradenum spc_global_B "obs15" &
+sleep 150 # delay compilation by 150 seconds in second two docker containers
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15_obstacle2 gradenum spc_local_A "obs15" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15_obstacle2 gradenum spc_local_B "obs15" &
+wait
+test -e /tmp/stop && exit 7 # stop if flag is present
+
+exit 0; # ###################################
+
+
+
+# full simulation run, February 2022
 for params in "spc_global_A" "spc_local_A" "spc_global_B" "spc_local_B"
 do
   for obstacles in "" "_obstacle2" "_obstacle3"
@@ -33,17 +54,6 @@ exit 0; # ###################################
 
 
 
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradenum mpc1_params1 "obstacle9_params1" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradenum mpc1_params1 "obstacle15_params1" &
-wait
-test -e /tmp/stop && exit 7 # stop if flag is present
-
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15_obstacle2 gradenum mpc1_params2 "obs15_params2" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15_obstacle2 gradenum mpc1_params3 "obs15_params3" &
-exit 0;
-test -e /tmp/stop && exit 7 # stop if flag is present
-
-exit 0; # ###################################
 
 
 # check gradient with enumeration based version

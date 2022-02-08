@@ -182,6 +182,8 @@ void SwarmController::InitializeParams() {
 
     GetRosParameter(pnh, "swarm/position_noise", (float)0.0, &position_noise_);
     GetRosParameter(pnh, "swarm/neighbourhood_distance", (float)99, &neighbourhood_distance_);
+    GetRosParameter(pnh, "swarm/drone_radius", (float)99, &drone_radius_);
+    GetRosParameter(pnh, "swarm/obstacle_radius", (float)99, &obstacle_radius_);
     GetRosParameter(pnh, "mpc1/eps_move", (float)0.1, &eps_move_);
     GetRosParameter(pnh, "mpc1/n_move_max", (int)2, &n_move_max_);
     GetRosParameter(pnh, "mpc1/mpc_cohesion_weight", (float)1.0, &mpc_cohesion_weight_);
@@ -210,6 +212,8 @@ void SwarmController::InitializeParams() {
     ROS_INFO_ONCE("[Swarm Controller] GetRosParameter values:");
     ROS_INFO_ONCE("  swarm/position_noise=%f", position_noise_);
     ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
+    ROS_INFO_ONCE("  swarm/drone_radius=%f", drone_radius_);
+    ROS_INFO_ONCE("  swarm/obstacle_radius=%f", obstacle_radius_);
     ROS_INFO_ONCE("  mpc1/eps_move=%f", eps_move_);
     ROS_INFO_ONCE("  mpc1/n_move_max=%d", n_move_max_);
     ROS_INFO_ONCE("  mpc1/mpc_cohesion_weight=%f", mpc_cohesion_weight_);
@@ -397,7 +401,6 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
     }
     for(int i = 0; i < obstacle_count; i++) // iterate over all obstacles
         obstacle_position[i].position[2] = odometry_gt_.position[2]; // todo, remove workaround for infinite z obstacles
-    float obstacle_radius = 0.15;
 
     float obstacle_dist_min_gt = FLT_MAX;
     for(int i = 0; i < obstacle_count; i++) // iterate over all obstacles
@@ -651,7 +654,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
           if(neighbourhood_bool[i]) // only for neighbourhood
           {
               cohesion_sum = cohesion_sum + dronestate[i].odometry_;
-              separation_sum = separation_sum + (dronestate[i].odometry_ - odometry_) / pow(norm_squared(dronestate[i].odometry_ - odometry_),2);
+              separation_sum = separation_sum + (dronestate[i].odometry_ - odometry_) / pow(norm(dronestate[i].odometry_ - odometry_) - drone_radius_*2,3);
               neighbourhood_center = neighbourhood_center + dronestate[i].odometry_;
 
               ROS_INFO_ONCE("SwarmController %d %d odo x=%f y=%f z=%f", droneNumber_, (int)i, odometry_.position[0], odometry_.position[1], odometry_.position[2]);
@@ -671,7 +674,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       for(int i = 0; i < obstacle_count; i++) // iterate over all obstacles
       {
         float obstacle_dist = norm(odometry_ - obstacle_position[i]);
-        obstacle_sum = obstacle_sum + (obstacle_position[i] - odometry_) * (2*mpc_obstacle_weight_ / (pow(obstacle_dist - obstacle_radius,3) * obstacle_dist));
+        obstacle_sum = obstacle_sum + (obstacle_position[i] - odometry_) * (2*mpc_obstacle_weight_ / (pow(obstacle_dist - obstacle_radius_ - drone_radius_,3) * obstacle_dist));
       }
       ROS_INFO_ONCE("SwarmController %d obs x=%f y=%f z=%f", droneNumber_, obstacle_sum.position[0], obstacle_sum.position[1], obstacle_sum.position[2]);
 
@@ -726,7 +729,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
           if(neighbourhood_bool[i]) // only for neighbourhood
           {
               cohesion_sum = cohesion_sum + dronestate[i].odometry_;
-              separation_sum = separation_sum + (dronestate[i].odometry_ - odometry_) / pow(norm_squared(dronestate[i].odometry_ - odometry_),2);
+              separation_sum = separation_sum + (dronestate[i].odometry_ - odometry_) / pow(norm(dronestate[i].odometry_ - odometry_) - drone_radius_*2,3);
               neighbourhood_center = neighbourhood_center + dronestate[i].odometry_;
 
               ROS_INFO_ONCE("SwarmController %d %d odo x=%f y=%f z=%f", droneNumber_, (int)i, odometry_.position[0], odometry_.position[1], odometry_.position[2]);
@@ -746,7 +749,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       for(int i = 0; i < obstacle_count; i++) // iterate over all obstacles
       {
         float obstacle_dist = norm(odometry_ - obstacle_position[i]);
-        obstacle_sum = obstacle_sum + (obstacle_position[i] - odometry_) * (2*mpc_obstacle_weight_ / (pow(obstacle_dist - obstacle_radius,3) * obstacle_dist));
+        obstacle_sum = obstacle_sum + (obstacle_position[i] - odometry_) * (2*mpc_obstacle_weight_ / (pow(obstacle_dist - obstacle_radius_ - drone_radius_,3) * obstacle_dist));
       }
       ROS_INFO_ONCE("SwarmController %d obs x=%f y=%f z=%f", droneNumber_, obstacle_sum.position[0], obstacle_sum.position[1], obstacle_sum.position[2]);
 
@@ -781,7 +784,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
                   float dist = dronestate[i].GetDistance(&potential_pos);
 
                   cost_cohesion_sum += dist*dist;
-                  cost_separation_sum += 1.0/(dist*dist);
+                  cost_separation_sum += 1.0/pow(dist - drone_radius_*2, 2);
                   potential_center = potential_center + dronestate[i].odometry_;
               }
           }
@@ -807,8 +810,8 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
           {
             obstacle_position[i].position[2] = potential_center.position[2]; // todo, remove fix for infinite z obstacles
             float obstacle_dist = norm(potential_pos - obstacle_position[i]);
-            float tmp = mpc_obstacle_weight_ * (1.0/pow(obstacle_dist - obstacle_radius, 2));
-            cost_total_sum += mpc_obstacle_weight_ * (1.0/pow(obstacle_dist - obstacle_radius, 2));
+            float tmp = mpc_obstacle_weight_ * (1.0/pow(obstacle_dist - obstacle_radius_ - drone_radius_, 2));
+            cost_total_sum += mpc_obstacle_weight_ * (1.0/pow(obstacle_dist - obstacle_radius_ - drone_radius_, 2));
             ROS_INFO_ONCE("SwarmController %d obs %d cost=%f dist=%f", droneNumber_, i, tmp, obstacle_dist);
           }
 

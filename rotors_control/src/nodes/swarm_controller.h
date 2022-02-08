@@ -132,6 +132,8 @@ namespace rotors_control {
 
             float position_noise_;
             float neighbourhood_distance_;
+            float drone_radius_;
+            float obstacle_radius_;            
             float eps_move_;
             int n_move_max_;
             float mpc_cohesion_weight_;

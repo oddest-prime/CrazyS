@@ -379,7 +379,7 @@ int main(int argc, char** argv) {
 
       desired_position(0) = ((float)(i%modulus)) * spacingX + offsetX +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); // * 0.5;
       desired_position(1) = floor((float)(i/modulus)) * spacingY + offsetY +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); // * 0.5;
-      desired_position(2) = 1.4 + ((float)(i%2)) * spacingZ + offsetZ +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); //* 0.2;
+      desired_position(2) = 2 + ((float)(i%2)) * spacingZ + offsetZ +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); //* 0.2;
       desired_yaw = 0; // not rotated
   //    desired_yaw = ((float)(i%2)) * (3.141592 / 4); // 45 degrees rotated
   //    desired_yaw = ((float)(i%2)) * (3.141592 / 2); // 90 degrees rotated
@@ -410,7 +410,7 @@ int main(int argc, char** argv) {
     trajectory_msg.header.stamp = ros::Time::now();
     desired_position(0) = 0;
     desired_position(1) = 0;
-    desired_position(2) = 1.5;
+    desired_position(2) = 2;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
     for (size_t i = 0; i < droneCount; i++) // send target point to swarm
     {
@@ -437,7 +437,7 @@ int main(int argc, char** argv) {
     trajectory_msg.header.stamp = ros::Time::now();
     desired_position(0) = 0;
     desired_position(1) = 5.0;
-    desired_position(2) = 1.5;
+    desired_position(2) = 2;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
     for (size_t i = 0; i < droneCount; i++) // send target point to swarm
     {
@@ -452,7 +452,7 @@ int main(int argc, char** argv) {
     trajectory_msg.header.stamp = ros::Time::now();
     desired_position(0) = 5.0;
     desired_position(1) = 0;
-    desired_position(2) = 1.5;
+    desired_position(2) = 2;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
     for (size_t i = 0; i < droneCount; i++) // send target point to swarm
     {

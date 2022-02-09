@@ -1,5 +1,8 @@
 #!/bin/bash
 
+RUN_START=`date`
+rm -f /tmp/stop
+
 cd ~/SWARM/crazys
 
 # full simulation run, February 2022
@@ -28,3 +31,10 @@ do
     test -e /tmp/stop && exit 7 # stop if flag is present
   done
 done
+
+RUN_END=`date`
+echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+echo "% RUN_START: ${RUN_START}"
+echo "% RUN_END:   ${RUN_END}"
+echo "%   run-thrymr-full.sh done."
+echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"

@@ -36,6 +36,7 @@
     <param name="spacingX" value="0.5"/>
     <param name="spacingY" value="0.5"/>
     <param name="spacingZ" value="0.2"/>
+    <param name="offsetY" value="-2.0"/>
     <param name="swarmMode" value="$(arg swarm_mode)"/>
   </node>
 
@@ -50,7 +51,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="0.0"/>
-      <arg name="y" value="0.0"/>
+      <arg name="y" value="-2.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -95,7 +96,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="0.5"/>
-      <arg name="y" value="0.0"/>
+      <arg name="y" value="-2.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -140,7 +141,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="1.0"/>
-      <arg name="y" value="0.0"/>
+      <arg name="y" value="-2.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -185,7 +186,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="1.5"/>
-      <arg name="y" value="0.0"/>
+      <arg name="y" value="-2.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -230,7 +231,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="2.0"/>
-      <arg name="y" value="0.0"/>
+      <arg name="y" value="-2.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -275,7 +276,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="0.0"/>
-      <arg name="y" value="0.5"/>
+      <arg name="y" value="-1.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -320,7 +321,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="0.5"/>
-      <arg name="y" value="0.5"/>
+      <arg name="y" value="-1.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -365,7 +366,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="1.0"/>
-      <arg name="y" value="0.5"/>
+      <arg name="y" value="-1.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -410,7 +411,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="1.5"/>
-      <arg name="y" value="0.5"/>
+      <arg name="y" value="-1.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -455,7 +456,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="2.0"/>
-      <arg name="y" value="0.5"/>
+      <arg name="y" value="-1.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -500,7 +501,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="0.0"/>
-      <arg name="y" value="1.0"/>
+      <arg name="y" value="-1.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -545,7 +546,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="0.5"/>
-      <arg name="y" value="1.0"/>
+      <arg name="y" value="-1.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -590,7 +591,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="1.0"/>
-      <arg name="y" value="1.0"/>
+      <arg name="y" value="-1.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -635,7 +636,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="1.5"/>
-      <arg name="y" value="1.0"/>
+      <arg name="y" value="-1.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -680,7 +681,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="2.0"/>
-      <arg name="y" value="1.0"/>
+      <arg name="y" value="-1.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -725,7 +726,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="0.0"/>
-      <arg name="y" value="1.5"/>
+      <arg name="y" value="-0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -770,7 +771,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="0.5"/>
-      <arg name="y" value="1.5"/>
+      <arg name="y" value="-0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -815,7 +816,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="1.0"/>
-      <arg name="y" value="1.5"/>
+      <arg name="y" value="-0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -860,7 +861,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="1.5"/>
-      <arg name="y" value="1.5"/>
+      <arg name="y" value="-0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -905,7 +906,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="2.0"/>
-      <arg name="y" value="1.5"/>
+      <arg name="y" value="-0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -950,7 +951,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="0.0"/>
-      <arg name="y" value="2.0"/>
+      <arg name="y" value="0.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -995,7 +996,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="0.5"/>
-      <arg name="y" value="2.0"/>
+      <arg name="y" value="0.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -1040,7 +1041,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="1.0"/>
-      <arg name="y" value="2.0"/>
+      <arg name="y" value="0.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -1085,7 +1086,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="1.5"/>
-      <arg name="y" value="2.0"/>
+      <arg name="y" value="0.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -1130,7 +1131,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="2.0"/>
-      <arg name="y" value="2.0"/>
+      <arg name="y" value="0.0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -1175,7 +1176,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="0.0"/>
-      <arg name="y" value="2.5"/>
+      <arg name="y" value="0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -1220,7 +1221,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="0.5"/>
-      <arg name="y" value="2.5"/>
+      <arg name="y" value="0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -1265,7 +1266,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="1.0"/>
-      <arg name="y" value="2.5"/>
+      <arg name="y" value="0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -1310,7 +1311,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="1.5"/>
-      <arg name="y" value="2.5"/>
+      <arg name="y" value="0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
@@ -1355,7 +1356,7 @@
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="2.0"/>
-      <arg name="y" value="2.5"/>
+      <arg name="y" value="0.5"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">

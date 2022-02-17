@@ -71,7 +71,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="0"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -116,7 +116,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="1"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -161,7 +161,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="2"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -206,7 +206,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="3"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -251,7 +251,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="4"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -296,7 +296,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="5"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -341,7 +341,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="6"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -386,7 +386,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="7"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -431,7 +431,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="8"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -476,7 +476,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="9"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -521,7 +521,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="10"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -566,7 +566,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="11"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -611,7 +611,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="12"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -656,7 +656,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="13"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -701,7 +701,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="14"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -746,7 +746,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="15"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -791,7 +791,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="16"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -836,7 +836,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="17"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -881,7 +881,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="18"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -926,7 +926,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="19"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -971,7 +971,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="20"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -1016,7 +1016,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="21"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -1061,7 +1061,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="22"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -1106,7 +1106,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="23"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -1151,7 +1151,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="24"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -1196,7 +1196,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="25"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -1241,7 +1241,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="26"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -1286,7 +1286,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="27"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -1331,7 +1331,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="28"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -1376,7 +1376,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="30"/>
       <param name="droneNumber" value="29"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="2"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>

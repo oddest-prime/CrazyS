@@ -6,7 +6,8 @@ rm -f /tmp/stop
 cd ~/SWARM/crazys
 
 # full simulation run, February 2022
-for params in "spc_global_A" "spc_local_A" "spc_global_B" "spc_local_B"
+#for params in "spc_global_A" "spc_local_A" "spc_global_B" "spc_local_B"
+for params in "spc_local_A" "spc_local_B"
 do
   for obstacles in "" "_obstacle2" "_obstacle3"
   do

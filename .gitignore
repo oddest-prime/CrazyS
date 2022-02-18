@@ -43,4 +43,4 @@
 log_output/*.csv
 log_output/*.png
 *.mp4
-tmp_logs
+tmp_*

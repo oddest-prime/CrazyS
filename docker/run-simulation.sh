@@ -87,6 +87,9 @@ echo "run time: ${iter} seconds (max: $TIMEOUT)" >> /tmp/video.info
 echo "=========================================================" >> /tmp/video.info
 
 cp /crazyflie_ws/src/crazys/docker/Makefile /tmp/log_output/Makefile
+cp /crazyflie_ws/src/crazys/docker/metrics.py /tmp/log_output/metrics.py
+chmod +x /tmp/log_output/metrics.py
+
 cd /tmp/log_output/
 make MetricsMerged.csv
 make StateMerged.csv
@@ -95,6 +98,7 @@ make StateMerged.png 2> States.txt
 make all-metrics
 make all-distance
 make all-state
+make CombinedMetrics.png
 
 echo "metrics file content:" >> /tmp/video.info
 echo "---------------------------------------------------------" >> /tmp/video.info

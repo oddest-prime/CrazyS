@@ -116,7 +116,7 @@ else:
             
             if matching:
                 print("matching directory:", i, args.path);
-                aggregate_logs(i)
+                aggregate_logs("../{}".format(i))
                 aggregate_write_out("..", "data_", "_filtered-by_{}".format('_'.join(args.path)))
             else:
                 print("other directory:", i, args.path);

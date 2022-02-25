@@ -7,6 +7,8 @@ hash="0d4686a"
 hash="05afa35"
 hash="55946a5"
 hash="2e4d40b"
+hash="2296efc"
+hash="33b8bb4"
 
 rm -f data*.csv
 

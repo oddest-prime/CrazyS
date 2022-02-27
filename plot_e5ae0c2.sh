@@ -10,6 +10,7 @@ hash="2e4d40b"
 hash="2296efc"
 hash="33b8bb4"
 hash="9eb77c0"
+hash="1a4baf1"
 
 rm -f data*.csv
 
@@ -28,16 +29,16 @@ do
 	max_radius=`grep "MAX of swarm radius" $fn/simulation.info | cut -d " " -f 6`
 	min_obstacle=`grep "MIN of dist obstacle" $fn/simulation.info | cut -d " " -f 7`
 	
-	echo "$ndrones2,controller:$controller,mode:$mode,ndrones:$ndrones,obstacles:$obstacles,neighbourhood_distance:$neighbourhood_distance,min_dist_min:$min_dist_min,med_radius:$med_radius,max_radius:$max_radius,min_obstacle:$min_obstacle,fn:$fn" | tee -a data_all.csv
+	echo "$ndrones2,controller:$controller,mode:$mode,ndrones:$ndrones,obstacles:$obstacles,neighbourhood_distance:$neighbourhood_distance,min_dist_min:$min_dist_min,med_radius:$med_radius,max_radius:$max_radius,min_obstacle:$min_obstacle,fn:$fn" | tee -a data_all_$hash.csv
 	#echo "$mode,$obstacles,$neighbourhood_distance,$ndrones2,$ndrones,$controller,$min_dist_min,$max_radius,$min_obstacle,$fn" | tee -a data_raw.csv
 	#echo "$obstacles,$neighbourhood_distance,$ndrones2,$ndrones,$mode,$controller,$min_dist_min,$max_radius,$min_obstacle,$fn" | tee -a data_raw2.csv
-	echo "$mode,$obstacles2,$neighbourhood_distance,$ndrones2,$ndrones,$controller,$min_dist_min,$max_radius,$min_obstacle,$fn,$ndrones dr. $obstacles obs." >> data_raw.csv
-	echo "$obstacles2,$neighbourhood_distance,$ndrones2,$ndrones,$mode,$controller,$min_dist_min,$max_radius,$min_obstacle,$fn" >> data_raw2.csv
+	echo "$mode,$obstacles2,$neighbourhood_distance,$ndrones2,$ndrones,$controller,$min_dist_min,$max_radius,$min_obstacle,$fn,$ndrones dr. $obstacles obs." >> data_raw_$hash.csv
+	echo "$obstacles2,$neighbourhood_distance,$ndrones2,$ndrones,$mode,$controller,$min_dist_min,$max_radius,$min_obstacle,$fn" >> data_raw2_$hash.csv
 done;
 
 echo "=========================="
-sort data_raw.csv > data_sorted.csv
-sort data_raw2.csv > data_sorted2.csv
+sort data_raw_$hash.csv > data_sorted_$hash.csv
+sort data_raw2_$hash.csv > data_sorted2_$hash.csv
 echo "=========================="
 
 #cat data_sorted.csv

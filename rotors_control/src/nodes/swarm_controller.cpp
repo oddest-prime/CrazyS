@@ -332,6 +332,11 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
     odometry_gt_.position[2] = pose_msg->pose.position.z;
     odometry_ = odometry_gt_;
 
+    EigenOdometry target_swarm;
+    target_swarm.position[0] = target_swarm_.position_W[0];
+    target_swarm.position[1] = target_swarm_.position_W[1];
+    target_swarm.position[2] = target_swarm_.position_W[2];
+
     // gaussian random number generator
     std::normal_distribution<float> dist(0.0, position_noise_);
     rand_cnt_++;
@@ -453,6 +458,10 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
        tempMetrics << dist_center_gt << ",";
 
        tempMetrics << obstacle_dist_min_gt << ",";
+
+       float dist_target_gt = norm(odometry_gt_ - target_swarm);
+       tempMetrics << dist_target_gt << ",";
+       ROS_INFO("SwarmController %d swarm dist_target_gt=%f", droneNumber_, dist_target_gt);
 
        //float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_gt_)); // calculate length of vector
        tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";
@@ -639,11 +648,6 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
   {
       ROS_INFO_ONCE("SwarmController starting swarm mode (SWARM_GRADIENT)");
 
-      EigenOdometry target_swarm;
-      target_swarm.position[0] = target_swarm_.position_W[0];
-      target_swarm.position[1] = target_swarm_.position_W[1];
-      target_swarm.position[2] = target_swarm_.position_W[2];
-
       EigenOdometry cohesion_sum;
       EigenOdometry separation_sum;
       EigenOdometry target_sum;
@@ -724,11 +728,6 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
   else if(enable_swarm_ & SWARM_GRADIENT_ENUM)
   {
       ROS_INFO_ONCE("SwarmController starting swarm mode (SWARM_GRADIENT_ENUM)");
-
-      EigenOdometry target_swarm;
-      target_swarm.position[0] = target_swarm_.position_W[0];
-      target_swarm.position[1] = target_swarm_.position_W[1];
-      target_swarm.position[2] = target_swarm_.position_W[2];
 
       EigenOdometry cohesion_sum;
       EigenOdometry separation_sum;

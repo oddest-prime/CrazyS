@@ -11,6 +11,7 @@ hash="2296efc"
 hash="33b8bb4"
 hash="9eb77c0"
 hash="1a4baf1"
+hash="ba79316"
 
 rm -f data*.csv
 

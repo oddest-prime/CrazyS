@@ -678,7 +678,18 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       }
       ROS_INFO_ONCE("SwarmController %d obs x=%f y=%f z=%f", droneNumber_, obstacle_sum.position[0], obstacle_sum.position[1], obstacle_sum.position[2]);
 
-      EigenOdometry gradient_sum = (cohesion_sum + separation_sum + target_sum + obstacle_sum) * gradient_scale_factor_;
+      float target_distance_current = norm(neighbourhood_center - target_swarm);
+      float scale_cur = (float)gradient_scale_factor_ * (float)0.3333 * (float)max(
+                              (float)1,
+                              (float)min(
+                                  (float)3,
+                                  (float)(1.5 * ((float)target_distance_current + 0.5))
+                              )
+                          );
+      ROS_INFO("SwarmController %d target_distance_current=%f gradient_scale_factor_=%f scale_cur=%f", droneNumber_, target_distance_current, gradient_scale_factor_, scale_cur);
+
+      // EigenOdometry gradient_sum = (cohesion_sum + separation_sum + target_sum + obstacle_sum) * gradient_scale_factor_; // static gain
+      EigenOdometry gradient_sum = (cohesion_sum + separation_sum + target_sum + obstacle_sum) * scale_cur; // dynamic gain
       float gradient_abs = norm(gradient_sum); // length of vector
       ROS_INFO_ONCE("SwarmController %d sum x=%f y=%f z=%f l=%f", droneNumber_, gradient_sum.position[0], gradient_sum.position[1], gradient_sum.position[2], gradient_abs);
       //float dist_limit = eps_move_ * n_move_max_;

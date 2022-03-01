@@ -461,7 +461,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
 
        float dist_target_gt = norm(odometry_gt_ - target_swarm);
        tempMetrics << dist_target_gt << ",";
-       ROS_INFO("SwarmController %d swarm dist_target_gt=%f", droneNumber_, dist_target_gt);
+       ROS_INFO_ONCE("SwarmController %d swarm dist_target_gt=%f", droneNumber_, dist_target_gt);
 
        //float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_gt_)); // calculate length of vector
        tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";

@@ -12,6 +12,23 @@ all-metrics: $(allMetricsPng)
 all-state: $(allStatePng)
 all-trace: TraceXY.png TraceXZ.png TraceYZ.png
 
+CombinedMetrics.csv: metrics.py
+	./metrics.py
+
+CombinedMetrics.png: CombinedMetrics.csv
+	echo " \
+		set datafile separator ',' \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		set ylabel \"Drone $< [m]\" \n\
+		set yrange [0:3] \n\
+		set output \"$@\" \n\
+		plot     \"$<\" using (column(1)):(column(2)) with lines title 'dist min', \
+				 \"$<\" using (column(1)):(column(3)) with lines title 'swarm radius', \
+				 \"$<\" using (column(1)):(column(4)) with lines title 'dist obstacle min'" \
+	 | gnuplot
+
 Distance%.png: Distance%.csv
 	echo " \
 		set datafile separator ',' \n\

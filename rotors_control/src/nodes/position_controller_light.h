@@ -44,8 +44,6 @@
 #include "rotors_control/position_controller.h"
 #include "rotors_control/crazyflie_complementary_filter.h"
 
-#define N_DRONES_MAX  20          /* maximum number of drones */
-
 #define SWARM_DISABLED            0
 #define SWARM_DECLARATIVE_SIMPLE  1
 #define SWARM_REYNOLDS            2
@@ -141,7 +139,6 @@ namespace rotors_control {
             ros::Subscriber enable_sub_;
             ros::Subscriber imu_sub_;
             ros::Subscriber imu_ideal_sub_;
-            ros::Subscriber odom_sub_[N_DRONES_MAX];
 
             //publisher
             ros::Publisher motor_velocity_reference_pub_;

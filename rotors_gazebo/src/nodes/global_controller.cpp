@@ -37,7 +37,7 @@
 #include <std_msgs/Int32.h>
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
 
-#define N_DRONES_MAX  20          /* maximum number of drones */
+#define N_DRONES_MAX  30          /* maximum number of drones */
 
 #define SWARM_DISABLED            0
 #define SWARM_DECLARATIVE_SIMPLE  1
@@ -229,28 +229,7 @@ int main(int argc, char** argv) {
   ros::NodeHandle pnh("~");
   ros::NodeHandle nh;
 
-  ros::NodeHandle nhq[N_DRONES_MAX] = { // NodeHandles for each drone (separate namespace)
-    ros::NodeHandle("/crazyflie2_0"),
-    ros::NodeHandle("/crazyflie2_1"),
-    ros::NodeHandle("/crazyflie2_2"),
-    ros::NodeHandle("/crazyflie2_3"),
-    ros::NodeHandle("/crazyflie2_4"),
-    ros::NodeHandle("/crazyflie2_5"),
-    ros::NodeHandle("/crazyflie2_6"),
-    ros::NodeHandle("/crazyflie2_7"),
-    ros::NodeHandle("/crazyflie2_8"),
-    ros::NodeHandle("/crazyflie2_9"),
-    ros::NodeHandle("/crazyflie2_10"),
-    ros::NodeHandle("/crazyflie2_11"),
-    ros::NodeHandle("/crazyflie2_12"),
-    ros::NodeHandle("/crazyflie2_13"),
-    ros::NodeHandle("/crazyflie2_14"),
-    ros::NodeHandle("/crazyflie2_15"),
-    ros::NodeHandle("/crazyflie2_16"),
-    ros::NodeHandle("/crazyflie2_17"),
-    ros::NodeHandle("/crazyflie2_18"),
-    ros::NodeHandle("/crazyflie2_19")
-  };
+  ros::NodeHandle nhq[N_DRONES_MAX];
   nhp = nhq;
 
   if (pnh.getParam("droneCount", droneCount))
@@ -349,6 +328,8 @@ int main(int argc, char** argv) {
 
   for (size_t i = 0; i < droneCount; i++)
   {
+    nhq[i] = ros::NodeHandle(std::string("/crazyflie2_") + std::to_string(i));
+
     ROS_INFO("global_controller: Setup publisher %s.", nhq[i].getNamespace().c_str());
     trajectory_pub[i] = nhq[i].advertise<trajectory_msgs::MultiDOFJointTrajectory>(
           mav_msgs::default_topics::COMMAND_TRAJECTORY, 10);
@@ -400,7 +381,7 @@ int main(int argc, char** argv) {
 
       desired_position(0) = ((float)(i%modulus)) * spacingX + offsetX +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); // * 0.5;
       desired_position(1) = floor((float)(i/modulus)) * spacingY + offsetY +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); // * 0.5;
-      desired_position(2) = 1.4 + ((float)(i%2)) * spacingZ + offsetZ +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); //* 0.2;
+      desired_position(2) = 2 + ((float)(i%2)) * spacingZ + offsetZ +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); //* 0.2;
       desired_yaw = 0; // not rotated
   //    desired_yaw = ((float)(i%2)) * (3.141592 / 4); // 45 degrees rotated
   //    desired_yaw = ((float)(i%2)) * (3.141592 / 2); // 90 degrees rotated
@@ -431,7 +412,7 @@ int main(int argc, char** argv) {
     trajectory_msg.header.stamp = ros::Time::now();
     desired_position(0) = 0;
     desired_position(1) = 0;
-    desired_position(2) = 1.5;
+    desired_position(2) = 2;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
     for (size_t i = 0; i < droneCount; i++) // send target point to swarm
     {
@@ -458,7 +439,7 @@ int main(int argc, char** argv) {
     trajectory_msg.header.stamp = ros::Time::now();
     desired_position(0) = 0;
     desired_position(1) = 5.0;
-    desired_position(2) = 1.5;
+    desired_position(2) = 2;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
     for (size_t i = 0; i < droneCount; i++) // send target point to swarm
     {
@@ -473,7 +454,7 @@ int main(int argc, char** argv) {
     trajectory_msg.header.stamp = ros::Time::now();
     desired_position(0) = 5.0;
     desired_position(1) = 0;
-    desired_position(2) = 1.5;
+    desired_position(2) = 2;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
     for (size_t i = 0; i < droneCount; i++) // send target point to swarm
     {

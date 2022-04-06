@@ -56,13 +56,13 @@
    respawn="false" output="screen">
  </node>
 
- <node name="spawn_marker_green_$(arg namespace)" pkg="gazebo_ros" type="spawn_model"
-  args="-file $(find rotors_gazebo)/models/marker/model_green.sdf
+ <node name="spawn_marker_blue_$(arg namespace)" pkg="gazebo_ros" type="spawn_model"
+  args="-file $(find rotors_gazebo)/models/marker/model_blue.sdf
         -sdf
         -x $(arg x)
         -y $(arg y)
         -z $(arg z)
-        -model marker_green_$(arg namespace)"
+        -model marker_blue_$(arg namespace)"
   respawn="false" output="screen">
  </node>
 

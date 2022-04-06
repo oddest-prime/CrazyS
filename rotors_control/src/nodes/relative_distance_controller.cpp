@@ -435,11 +435,11 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 }
                 if(separation_sum_positive < separation_sum_negative)
                 {
-                    ROS_INFO("RelativeDistanceController %d exploration positive better (%f < %f)", droneNumber_, separation_sum_positive, separation_sum_negative);
+                    ROS_INFO_ONCE("RelativeDistanceController %d exploration positive better (%f < %f)", droneNumber_, separation_sum_positive, separation_sum_negative);
                 }
                 else
                 {
-                    ROS_INFO("RelativeDistanceController %d exploration negative better (%f > %f)", droneNumber_, separation_sum_positive, separation_sum_negative);
+                    ROS_INFO_ONCE("RelativeDistanceController %d exploration negative better (%f > %f)", droneNumber_, separation_sum_positive, separation_sum_negative);
                     direction = direction * -1; // invert exploration vector
                 }
             }
@@ -448,7 +448,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             set_point.pose.position.x = odometry_gt_.position[0] + direction[0];
             set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
             set_point.pose.position.z = odometry_gt_.position[2] + direction[2];
-            ROS_INFO("RelativeDistanceController %d explore:%d direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
+            ROS_INFO_ONCE("RelativeDistanceController %d explore:%d direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
         }
         else // possible to do exploitation
         {
@@ -531,23 +531,23 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
     // move gazebo markers
     geometry_msgs::Point pr2_position_red;
-    geometry_msgs::Point pr2_position_green;
+    geometry_msgs::Point pr2_position_blue;
     pr2_position_red.x = set_point.pose.position.x;
     pr2_position_red.y = set_point.pose.position.y;
     pr2_position_red.z = set_point.pose.position.z;
     if(enable_swarm_ == SWARM_DISABLED) // hovering at fixed position, use both markers
     {
-        pr2_position_green = pr2_position_red;
+        pr2_position_blue = pr2_position_red;
     }
     else if(exploration_info == 0) // exploitation phase, use blue marker
     {
-        pr2_position_green = pr2_position_red;
+        pr2_position_blue = pr2_position_red;
         pr2_position_red.z -= 1000;
     }
-    else // exploration phase, use green marker
+    else // exploration phase, use blue marker
     {
-        pr2_position_green = pr2_position_red;
-        pr2_position_green.z -= 1000;
+        pr2_position_blue = pr2_position_red;
+        pr2_position_blue.z -= 1000;
     }
 
     geometry_msgs::Quaternion pr2_orientation;
@@ -565,12 +565,12 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     srv.request.model_state = pr2_modelstate;
     if(!gazebo_client_.call(srv))
         ROS_ERROR("Failed to move red marker! Error msg:%s",srv.response.status_message.c_str());
-    pr2_pose.position = pr2_position_green;
-    pr2_modelstate.model_name = (std::string) "marker_green_crazyflie2_" + std::to_string(droneNumber_);
+    pr2_pose.position = pr2_position_blue;
+    pr2_modelstate.model_name = (std::string) "marker_blue_crazyflie2_" + std::to_string(droneNumber_);
     pr2_modelstate.pose = pr2_pose;
     srv.request.model_state = pr2_modelstate;
     if(!gazebo_client_.call(srv))
-        ROS_ERROR("Failed to move green marker! Error msg:%s",srv.response.status_message.c_str());
+        ROS_ERROR("Failed to move blue marker! Error msg:%s",srv.response.status_message.c_str());
 }
 
 void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiArray& distances_msg) {

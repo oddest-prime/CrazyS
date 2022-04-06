@@ -34,6 +34,7 @@
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/MultiArrayDimension.h>
+#include <gazebo_msgs/ModelStates.h>
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
 #include <ros/time.h>
@@ -42,13 +43,14 @@
 #include "rotors_control/Eigen.h"
 
 #define N_DRONES_MAX  20          /* maximum number of drones */
+#define N_BEACONS_MAX  5          /* maximum number of beacons */
 
 namespace rotors_control {
     using namespace Eigen;
 
     class DroneStateWithTime {
      public:
-      void SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, bool dataStoring_active);
+      void SetId(int droneNumber, int droneCount, int beaconCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt);
       void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
       void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
       void FileSaveData(void);
@@ -59,6 +61,7 @@ namespace rotors_control {
 
       int droneNumber_;
       int droneCount_;
+      int beaconCount_;
 
       bool dataStoring_active_;
       int enable_swarm_ = 0;
@@ -67,10 +70,16 @@ namespace rotors_control {
       ros::Publisher* distances_pub_;
       ros::Publisher* positions_pub_;
       ros::Publisher* elevation_pub_;
+      ros::Publisher* beacons_pub_;
+
+      Vector3f* beacon_gt_; // ground-truth
 
       float distances_[N_DRONES_MAX]; // with simulated sensor noise
       float distances_gt_[N_DRONES_MAX]; // ground-truth
       EigenOdometry odometry_gt_; // ground-truth
+
+      float beacon_distances_[N_BEACONS_MAX]; // with simulated sensor noise
+      float beacon_distances_gt_[N_BEACONS_MAX]; // ground-truth
 
       // Lists for data saving
       std::vector<std::string> listDistance_;
@@ -86,8 +95,12 @@ namespace rotors_control {
             void InitializeParams();
             void Publish();
 
+            // beacon positions
+            Vector3f beacon_gt_[N_BEACONS_MAX]; // ground-truth
+
         private:
             int droneCount_;
+            int beaconCount_;
             int neighbourhood_cnt_;
 
             EigenOdometry odometry_; // with simulated sensor noise
@@ -101,16 +114,20 @@ namespace rotors_control {
             ros::Timer timer_saveData;
 
             void CallbackSaveData(const ros::TimerEvent& event);
+            void ModelstateCallback(const gazebo_msgs::ModelStatesConstPtr& modelstates_msg);
 
             //subscribers
             ros::Subscriber odometry_sub_[N_DRONES_MAX];
             ros::Subscriber enable_sub_[N_DRONES_MAX];
+            ros::Subscriber modelstate_sub_;
 
             //publisher
             ros::Publisher distances_pub_;
             ros::Publisher positions_pub_;
             ros::Publisher elevation_pub_;
+            ros::Publisher beacons_pub_;
 
+            // drone states
             DroneStateWithTime dronestate[N_DRONES_MAX];
     };
 }

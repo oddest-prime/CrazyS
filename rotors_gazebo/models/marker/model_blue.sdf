@@ -7,12 +7,12 @@
             <pose>0 0 0 0 0 0</pose>
             <geometry>
               <sphere>
-                <radius>0.08</radius>
+                <radius>0.04</radius>
               </sphere>
             </geometry>
             <material>
               <script>
-                <name>Gazebo/GreenTransparentOverlay</name>
+                <name>Gazebo/BlueTransparentOverlay</name>
                 <uri>__default__</uri>
               </script>
             </material>

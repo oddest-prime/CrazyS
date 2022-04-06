@@ -401,7 +401,7 @@ int main(int argc, char** argv) {
     for (size_t i = 0; i < droneCount; i++) // enable swarm mode
     {
       enable_msg.data = swarm_mode;
-  //    enable_msg.data = SWARM_REYNOLDS;
+//    enable_msg.data = SWARM_REYNOLDS;
       ROS_INFO("global_controller: Publishing enable on namespace %s: %d.", nhq[i].getNamespace().c_str(), enable_msg.data);
       enable_pub[i].publish(enable_msg);
     }

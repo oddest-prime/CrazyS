@@ -56,6 +56,9 @@ DistanceMeasurementSim::DistanceMeasurementSim() {
     distances_pub_ = nh.advertise<std_msgs::Float32MultiArray>("drone_distances", 1);
     positions_pub_ = nh.advertise<std_msgs::Float32MultiArray>("drone_positions", 1);
     elevation_pub_ = nh.advertise<std_msgs::Float32MultiArray>("drone_elevation", 1);
+    beacons_pub_ = nh.advertise<std_msgs::Float32MultiArray>("beacon_distances", 1);
+
+    modelstate_sub_ = nh.subscribe("/gazebo/model_states", 1, &DistanceMeasurementSim::ModelstateCallback, this);
 
     InitializeParams();
 
@@ -104,14 +107,22 @@ void DistanceMeasurementSim::InitializeParams() {
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
     int droneCount;
+    int beaconCount;
     double dataStoringTime;
 
-     if (pnh.getParam("droneCount", droneCount)){
+    if (pnh.getParam("droneCount", droneCount)){
         ROS_INFO("Got param 'droneCount': %d", droneCount);
         droneCount_ = droneCount;
-     }
-     else
+    }
+    else
         ROS_ERROR("Failed to get param 'droneCount'");
+    if (pnh.getParam("beaconCount", beaconCount)){
+       ROS_INFO("Got param 'beaconCount': %d", beaconCount);
+       beaconCount_ = beaconCount;
+    }
+    else
+       ROS_ERROR("Failed to get param 'beaconCount'");
+
 
     bool dataStoring_active;
     if (pnh.getParam("csvFilesStoring", dataStoringActive)){
@@ -135,10 +146,29 @@ void DistanceMeasurementSim::InitializeParams() {
     }
 
     for (size_t i = 0; i < droneCount_; i++)
-      dronestate[i].SetId((int)i, droneCount_, distance_noise_, dronestate, &distances_pub_, &positions_pub_, &elevation_pub_, dataStoring_active);
+      dronestate[i].SetId((int)i, droneCount_, beaconCount_, distance_noise_, dronestate, &distances_pub_, &positions_pub_, &elevation_pub_, &beacons_pub_, dataStoring_active, beacon_gt_);
 
     ros::NodeHandle nh;
     timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &DistanceMeasurementSim::CallbackSaveData, this, false, true);
+}
+
+void DistanceMeasurementSim::ModelstateCallback(const gazebo_msgs::ModelStatesConstPtr& modelstates_msg)
+{
+    ROS_INFO_ONCE("DistanceMeasurementSim got first ModelstateCallback.");
+
+    int b = 0;
+    for (size_t i = 0; i < modelstates_msg->name.size(); i++) // iterate over models
+    {
+        if(modelstates_msg->name[i] == "marker_green_beacon_0") // todo adjust to parse all beacons!
+        {
+            // save beacon positions
+            beacon_gt_[b][0] = modelstates_msg->pose[i].position.x;
+            beacon_gt_[b][1] = modelstates_msg->pose[i].position.y;
+            beacon_gt_[b][2] = modelstates_msg->pose[i].position.z;
+            ROS_INFO_ONCE("model %d: %s (%d) at location %s", (int)i, modelstates_msg->name[i].c_str(), b, VectorToString(beacon_gt_[b]).c_str());
+            b ++;
+        }
+    }
 }
 
 void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg) {
@@ -178,6 +208,7 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     }
     swarm_center_gt /= droneCount_;
 
+    // calculate distance to other drones
     float dist_min_gt = FLT_MAX;
     for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
     {
@@ -195,9 +226,23 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
       ROS_INFO_ONCE("DroneStateWithTime: distance_gt=%f distance=%f (droneNumber:%d, i:%d)", distances_gt_[i], distances_[i], droneNumber_, (int)i);
     }
 
+    // calculate distance to beacons
+    for (size_t i = 0; i < beaconCount_; i++) // iterate over beacons
+    {
+        ROS_INFO_ONCE("DroneStateWithTime beacon %d at location %s", (int)i, VectorToString(beacon_gt_[i]).c_str());
+        beacon_distances_gt_[i] = sqrt(
+          pow(odometry_gt_.position[0] - beacon_gt_[i][0], 2) +
+          pow(odometry_gt_.position[1] - beacon_gt_[i][1], 2) +
+          pow(odometry_gt_.position[2] - beacon_gt_[i][2], 2));
+        float rand_value = std::max(-5*distance_noise_, std::min((float)dist(generator_), 5*distance_noise_));
+        beacon_distances_[i] = beacon_distances_gt_[i] + rand_value;
+        ROS_INFO_ONCE("DroneStateWithTime %d beacon %d at location %s distance %f", droneNumber_, (int)i, VectorToString(beacon_gt_[i]).c_str(), beacon_distances_gt_[i]);
+    }
+
     Vector3f vector_to_center_gt = {(float)(swarm_center_gt[0] - odometry_gt_.position[0]), (float)(swarm_center_gt[1] - odometry_gt_.position[1]), (float)(swarm_center_gt[2] - odometry_gt_.position[2])};
 
-    if(dataStoring_active_) // save data for log files
+    // save data for log files
+    if(dataStoring_active_)
     {
         ROS_INFO_ONCE("DroneStateWithTime (%d) swarm_center_gt:     %s", droneNumber_, VectorToString(swarm_center_gt).c_str());
         ROS_INFO_ONCE("DroneStateWithTime (%d) vector_to_center_gt: %s", droneNumber_, VectorToString(vector_to_center_gt).c_str());
@@ -247,9 +292,9 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     std::vector<float> posi(droneCount_*droneCount_, 0);
     for (size_t i = 0; i < droneCount_; i++)
     {
-      posi[i*droneCount_ + 0] = dronestate_[i].odometry_gt_.position[0];
-      posi[i*droneCount_ + 1] = dronestate_[i].odometry_gt_.position[1];
-      posi[i*droneCount_ + 2] = dronestate_[i].odometry_gt_.position[2];
+      posi[i*3 + 0] = dronestate_[i].odometry_gt_.position[0];
+      posi[i*3 + 1] = dronestate_[i].odometry_gt_.position[1];
+      posi[i*3 + 2] = dronestate_[i].odometry_gt_.position[2];
     }
     pos.data = posi;
     positions_pub_->publish(pos);
@@ -266,6 +311,24 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         elev[i] = dronestate_[i].odometry_gt_.position[2];
     el.data = elev;
     elevation_pub_->publish(el);
+
+    // publish distances to beacons message
+    std_msgs::Float32MultiArray be;
+    be.layout.dim.push_back(std_msgs::MultiArrayDimension());
+    be.layout.dim.push_back(std_msgs::MultiArrayDimension());
+    be.layout.dim[0].label = "from_drone";
+    be.layout.dim[1].label = "to_beacon";
+    be.layout.dim[0].size = droneCount_;
+    be.layout.dim[1].size = beaconCount_;
+    be.layout.dim[0].stride = droneCount_*beaconCount_;
+    be.layout.dim[1].stride = beaconCount_;
+    be.layout.data_offset = 0;
+    std::vector<float> bec(droneCount_*beaconCount_, 0);
+    for (size_t i = 0; i < droneCount_; i++)
+      for (size_t j = 0; j < beaconCount_; j++)
+        bec[i*beaconCount_ + j] = dronestate_[i].beacon_distances_gt_[j];
+    be.data = bec;
+    beacons_pub_->publish(be);
 
     if(dataStoring_active_) // save data for log files
     {
@@ -334,10 +397,11 @@ void DroneStateWithTime::FileSaveData(void){
       // dataStoring_active_ = false;
 }
 
-void DroneStateWithTime::SetId(int droneNumber, int droneCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, bool dataStoring_active)
+void DroneStateWithTime::SetId(int droneNumber, int droneCount, int beaconCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt)
 {
     droneNumber_ = droneNumber;
     droneCount_ = droneCount;
+    beaconCount_ = beaconCount;
     distance_noise_ = position_noise;
     dataStoring_active_ = dataStoring_active;
 
@@ -345,6 +409,9 @@ void DroneStateWithTime::SetId(int droneNumber, int droneCount, float position_n
     distances_pub_ = distances_pub;
     positions_pub_ = positions_pub;
     elevation_pub_ = elevation_pub;
+    beacons_pub_ = beacons_pub;
+
+    beacon_gt_ = beacon_gt;
 }
 
 }

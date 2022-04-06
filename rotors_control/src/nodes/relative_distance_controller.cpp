@@ -84,6 +84,7 @@ RelativeDistanceController::RelativeDistanceController() {
     enable_sub_ = nh.subscribe("enable", 1, &RelativeDistanceController::EnableCallback, this);
     distances_sub_ = nh.subscribe("/drone_distances", 1, &RelativeDistanceController::DistancesCallback, this);
     positions_sub_ = nh.subscribe("/drone_positions", 1, &RelativeDistanceController::PositionsCallback, this);
+    beacons_sub_ = nh.subscribe("/beacon_distances", 1, &RelativeDistanceController::BeaconsCallback, this);
 
     // To publish the set-point
     setpoint_pub_ = nh.advertise<geometry_msgs::PoseStamped>("set_point", 1);
@@ -106,18 +107,21 @@ void RelativeDistanceController::InitializeParams() {
     GetRosParameter(pnh, "dist/sticking_bonus", (float)1, &sticking_bonus_);
     GetRosParameter(pnh, "dist/spc_cohesion_weight", (float)1.0, &spc_cohesion_weight_);
     GetRosParameter(pnh, "dist/spc_separation_weight", (float)1.0, &spc_separation_weight_);
+    GetRosParameter(pnh, "dist/spc_target_weight", (float)1.0, &spc_target_weight_);
 
     ROS_INFO_ONCE("[RelativeDistanceController] GetRosParameter values:");
     ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
     ROS_INFO_ONCE("  dist/eps_move=%f", eps_move_);
     ROS_INFO_ONCE("  dist/n_move_max=%d", n_move_max_);
-    ROS_INFO_ONCE("  dist/sticking_bonus=%d", sticking_bonus_);
+    ROS_INFO_ONCE("  dist/sticking_bonus=%f", sticking_bonus_);
     ROS_INFO_ONCE("  dist/spc_cohesion_weight=%f", spc_cohesion_weight_);
     ROS_INFO_ONCE("  dist/spc_separation_weight=%f", spc_separation_weight_);
+    ROS_INFO_ONCE("  dist/spc_target_weight=%f", spc_target_weight_);
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
     int droneCount;
+    int beaconCount;
     int droneNumber;
     double dataStoringTime;
 
@@ -127,6 +131,12 @@ void RelativeDistanceController::InitializeParams() {
     }
     else
        ROS_ERROR("Failed to get param 'droneCount'");
+    if (pnh.getParam("beaconCount", beaconCount)){
+       ROS_INFO("Got param 'beaconCount': %d", beaconCount);
+       beaconCount_ = beaconCount;
+    }
+    else
+       ROS_ERROR("Failed to get param 'beaconCount'");
 
     if (pnh.getParam("droneNumber", droneNumber)){
         ROS_INFO("Got param 'droneNumber': %d", droneNumber);
@@ -247,6 +257,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             unit_vectors_age_[index_dot_product] = 0;
             for (size_t i = 0; i < droneCount_; i++)
                 distances_differences_[index_dot_product][i] = (distances_[droneNumber_][i] - distances_history1_[i]) / movement_norm;
+            for (size_t i = 0; i < beaconCount_; i++)
+                beacons_differences_[index_dot_product][i] = (beacons_[droneNumber_][i] - beacons_history1_[i]) / movement_norm;
 
             ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_0 (age:%d): %s", droneNumber_, unit_vectors_age_[0], VectorToString(unit_vectors_[0]).c_str());
             ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_1 (age:%d): %s", droneNumber_, unit_vectors_age_[1], VectorToString(unit_vectors_[1]).c_str());
@@ -298,6 +310,11 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         {
             distances_history2_[i] = distances_history1_[i];
             distances_history1_[i] = distances_[droneNumber_][i];
+        }
+        for (size_t i = 0; i < beaconCount_; i++)
+        {
+            beacons_history2_[i] = beacons_history1_[i];
+            beacons_history1_[i] = beacons_[droneNumber_][i];
         }
         odometry_gt_history2_ = odometry_gt_history1_;
         odometry_gt_history1_ = odometry_gt_;
@@ -418,7 +435,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
                 for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
                 {
-                    float dist_positive = distances_[droneNumber_][i] +
+                   float dist_positive = distances_[droneNumber_][i] +
                               distances_differences_[0][i] * potential_movement_transformed_positive[0] +
                               distances_differences_[1][i] * potential_movement_transformed_positive[1] +
                               distances_differences_[2][i] * potential_movement_transformed_positive[2];
@@ -498,10 +515,19 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                             separation_sum += 1.0/(dist*dist);
                         }
 
+                        float dist_beacon0 = beacons_[droneNumber_][0] +
+                                     beacons_differences_[0][0] * potential_movement_transformed[0] +
+                                     beacons_differences_[1][0] * potential_movement_transformed[1] +
+                                     beacons_differences_[2][0] * potential_movement_transformed[2];
+
+                        float target_sum = dist_beacon0*dist_beacon0;
+
                         // coehesion term
                         total_sum = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
                         // separation term
                         total_sum += spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
+                        // target-seeking term
+                        total_sum += spc_target_weight_ * target_sum;
 
                         if(xi == 0 && yi == 0 && zi == 0) // bonus for cost if not moving
                             total_sum /= sticking_bonus_;
@@ -582,6 +608,19 @@ void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiA
         {
             distances_[i][j] = distances_msg.data[i*droneCount_ + j];
             ROS_INFO_ONCE("DistancesCallback drone#%d -> drone#%d: distance=%f.", (int)i, (int)j, distances_[i][j]);
+        }
+    }
+}
+
+void RelativeDistanceController::BeaconsCallback(const std_msgs::Float32MultiArray& distances_msg) {
+    ROS_INFO_ONCE("BeaconsCallback got beacons message.");
+
+    for (size_t i = 0; i < droneCount_; i++)
+    {
+        for (size_t j = 0; j < beaconCount_; j++)
+        {
+            beacons_[i][j] = distances_msg.data[i*beaconCount_ + j];
+            ROS_INFO_ONCE("BeaconsCallback drone#%d -> beacon#%d: distance=%f.", (int)i, (int)j, beacons_[i][j]);
         }
     }
 }

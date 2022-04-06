@@ -123,7 +123,6 @@ void DistanceMeasurementSim::InitializeParams() {
     else
        ROS_ERROR("Failed to get param 'beaconCount'");
 
-
     bool dataStoring_active;
     if (pnh.getParam("csvFilesStoring", dataStoringActive)){
         ROS_INFO("Got param 'csvFilesStoring': %s", dataStoringActive.c_str());

@@ -9,6 +9,8 @@ docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyfl
 docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 mpc1 mpc1_params2b "run4" &
 wait
 
+echo -e "\n`date` - done.\n"; exit 0; # --------------- END EXECUTION
+
 docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 mpc1 mpc1_params2b "run5" &
 docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 mpc1 mpc1_params2b "run6" &
 sleep 150 # delay compilation by 150 seconds in second two docker containers

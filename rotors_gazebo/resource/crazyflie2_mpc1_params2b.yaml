@@ -18,6 +18,7 @@ dist: {
   spc_cohesion_weight: 20.0,
   spc_separation_weight: 40.0,
   spc_target_weight: 150.0,
+  spc_height_weight: 5000.0,
   }
 gradient: {
   scale_factor: 0.005

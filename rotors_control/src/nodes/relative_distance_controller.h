@@ -72,6 +72,7 @@ namespace rotors_control {
             float spc_cohesion_weight_;
             float spc_separation_weight_;
             float spc_target_weight_;
+            float spc_height_weight_;
             float eps_move_;
             float neighbourhood_distance_;
 

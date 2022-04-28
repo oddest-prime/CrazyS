@@ -108,6 +108,7 @@ void RelativeDistanceController::InitializeParams() {
     GetRosParameter(pnh, "dist/spc_cohesion_weight", (float)1.0, &spc_cohesion_weight_);
     GetRosParameter(pnh, "dist/spc_separation_weight", (float)1.0, &spc_separation_weight_);
     GetRosParameter(pnh, "dist/spc_target_weight", (float)1.0, &spc_target_weight_);
+    GetRosParameter(pnh, "dist/spc_height_weight", (float)1.0, &spc_height_weight_);
 
     ROS_INFO_ONCE("[RelativeDistanceController] GetRosParameter values:");
     ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
@@ -117,6 +118,7 @@ void RelativeDistanceController::InitializeParams() {
     ROS_INFO_ONCE("  dist/spc_cohesion_weight=%f", spc_cohesion_weight_);
     ROS_INFO_ONCE("  dist/spc_separation_weight=%f", spc_separation_weight_);
     ROS_INFO_ONCE("  dist/spc_target_weight=%f", spc_target_weight_);
+    ROS_INFO_ONCE("  dist/spc_height_weight=%f", spc_height_weight_);
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
@@ -323,7 +325,6 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         random_direction_[1] = 0;
         random_direction_[2] = 0;
     }
-
 
     int exploration_info = 0;
 
@@ -728,12 +729,24 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
                         float target_sum = dist_beacon0*dist_beacon0;
 
+                        float intended_height = 2;
+                        float height_diff = intended_height - (odometry_gt_.position[2] + (float)zi * eps_move_);
+                        float height_sum = height_diff*height_diff;
+
                         // coehesion term
-                        total_sum = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
+                        if(neighbourhood_cnt != 0)
+                            total_sum = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
                         // separation term
-                        total_sum += spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
+                        if(neighbourhood_cnt != 0)
+                            total_sum += spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
                         // target-seeking term
                         total_sum += spc_target_weight_ * target_sum;
+                        // height fixing term
+                        total_sum += spc_height_weight_ * height_sum;
+
+                        if(xi == 0-n_move_max_ && yi == 0-n_move_max_ && zi == 0-n_move_max_)
+                            ROS_INFO_ONCE("---------------------- droneNumber_ = %d (neighbourhood_cnt = %d) ----------------------", droneNumber_, neighbourhood_cnt);
+                        ROS_INFO_ONCE("xi=%2d yi=%2d zi=%2d | target_sum=%f height_sum=%f total_sum=%f", xi, yi , zi, target_sum, height_sum, total_sum);
 
                         if(xi == 0 && yi == 0 && zi == 0) // bonus for cost if not moving
                             total_sum /= sticking_bonus_;

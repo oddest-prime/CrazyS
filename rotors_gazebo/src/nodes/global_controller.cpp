@@ -30,6 +30,7 @@
 #include <mav_msgs/conversions.h>
 #include <mav_msgs/default_topics.h>
 #include <mav_msgs/eigen_mav_msgs.h>
+#include <gazebo_msgs/SetModelState.h>
 #include <ros/ros.h>
 #include <std_srvs/Empty.h>
 #include <sensor_msgs/Imu.h>
@@ -198,6 +199,31 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
   }
 }
 
+void move_marker_beacon(ros::ServiceClient* gazebo_client, int index, float x, float y, float z)
+{
+  // move gazebo markers
+  geometry_msgs::Point pr2_position_green;
+  pr2_position_green.x = x;
+  pr2_position_green.y = y;
+  //pr2_position_green.z = z;
+  pr2_position_green.z = 0.2; // fix z to simulate ground-based vehicle.
+  geometry_msgs::Quaternion pr2_orientation;
+  geometry_msgs::Pose pr2_pose;
+  gazebo_msgs::ModelState pr2_modelstate;
+  gazebo_msgs::SetModelState srv;
+  pr2_orientation.x = 0.0;
+  pr2_orientation.y = 0.0;
+  pr2_orientation.z = 0.0;
+  pr2_orientation.w = 1.0;
+  pr2_pose.position = pr2_position_green;
+  pr2_pose.orientation = pr2_orientation;
+  pr2_modelstate.model_name = (std::string) "marker_green_beacon_" + std::to_string(index);
+  pr2_modelstate.pose = pr2_pose;
+  srv.request.model_state = pr2_modelstate;
+  if(!gazebo_client->call(srv))
+      ROS_ERROR("Failed to move green marker! Error msg:%s",srv.response.status_message.c_str());
+}
+
 void callback(const sensor_msgs::ImuPtr& msg) {
   sim_running = true;
 }
@@ -338,6 +364,9 @@ int main(int argc, char** argv) {
 
   //waypoints.push_back(WaypointWithTime(t, x, y, z, yaw * DEG_2_RAD));
 
+  // To publish marker positions for gazebo visual
+  ros::ServiceClient gazebo_client_ = nh.serviceClient<gazebo_msgs::SetModelState>("/gazebo/set_model_state");
+
   auto keyboard_sub_ = nh.subscribe("/key", 1, &keyboard_callback);
 
   for (size_t i = 0; i < droneCount; i++)
@@ -388,6 +417,7 @@ int main(int argc, char** argv) {
     if(droneCount == 4 || droneCount == 5)
       modulus = 2;
 
+    move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
     ROS_INFO("global_controller (timed): Go to starting position (hovering).");
     for (size_t i = 0; i < droneCount; i++) // go to starting position (hovering)
     {
@@ -427,6 +457,7 @@ int main(int argc, char** argv) {
     desired_position(0) = 0;
     desired_position(1) = 0;
     desired_position(2) = 2;
+    move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
     for (size_t i = 0; i < droneCount; i++) // send target point to swarm
     {
@@ -454,6 +485,7 @@ int main(int argc, char** argv) {
     desired_position(0) = 0;
     desired_position(1) = 5.0;
     desired_position(2) = 2;
+    move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
     for (size_t i = 0; i < droneCount; i++) // send target point to swarm
     {
@@ -469,6 +501,7 @@ int main(int argc, char** argv) {
     desired_position(0) = 5.0;
     desired_position(1) = 0;
     desired_position(2) = 2;
+    move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
     for (size_t i = 0; i < droneCount; i++) // send target point to swarm
     {

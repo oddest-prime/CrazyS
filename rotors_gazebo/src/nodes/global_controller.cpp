@@ -48,7 +48,8 @@
 #define SWARM_GRADIENT_ENUM       32
 #define SWARM_PHASE_ESTABLISHED   64
 #define SWARM_LANDING             32768
-#define SWARM_DECLARATIVE_DISTANCES   1
+#define SWARM_DECLARATIVE_DISTANCES           1
+#define SWARM_DECLARATIVE_DISTANCES_GROUND    2
 
 
 #define OPERATION_MODE_NONE         0
@@ -282,31 +283,44 @@ int main(int argc, char** argv) {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_DECLARATIVE_SIMPLE");
     swarm_mode = SWARM_DECLARATIVE_SIMPLE;
   }
-  if(swarmMode == "reynolds")
+  else if(swarmMode == "reynolds")
   {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_REYNOLDS");
     swarm_mode = SWARM_REYNOLDS;
   }
-  if(swarmMode == "reylimited")
+  else if(swarmMode == "reylimited")
   {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_REYNOLDS_LIMITED");
     swarm_mode = SWARM_REYNOLDS_LIMITED;
   }
-  if(swarmMode == "reyvelocity")
+  else if(swarmMode == "reyvelocity")
   {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_REYNOLDS_VELOCITY");
     swarm_mode = SWARM_REYNOLDS_VELOCITY;
   }
-  if(swarmMode == "gradient")
+  else if(swarmMode == "gradient")
   {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_GRADIENT");
     swarm_mode = SWARM_GRADIENT;
   }
-  if(swarmMode == "gradenum")
+  else if(swarmMode == "gradenum")
   {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_GRADIENT_ENUM");
     swarm_mode = SWARM_GRADIENT_ENUM;
   }
+  else if(swarmMode == "dist")
+  {
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_DECLARATIVE_DISTANCES");
+    swarm_mode = SWARM_DECLARATIVE_DISTANCES;
+  }
+  else if(swarmMode == "distgnd")
+  {
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_DECLARATIVE_DISTANCES_GROUND");
+    swarm_mode = SWARM_DECLARATIVE_DISTANCES_GROUND;
+  }
+  else
+    ROS_FATAL("global_controller: 'swarmMode' not recognized (%s)", swarmMode);
+
 
   std::string operationMode;
   if (pnh.getParam("operationMode", operationMode))

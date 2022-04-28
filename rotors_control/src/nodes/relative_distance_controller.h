@@ -45,9 +45,10 @@
 #define N_BEACONS_MAX  5          /* maximum number of beacons */
 #define N_VECTORS_MAX  3          /* number of saved unit vectors */
 
-#define SWARM_DISABLED                0
-#define SWARM_DECLARATIVE_DISTANCES   1
-#define SWARM_LANDING                 32768
+#define SWARM_DISABLED                        0
+#define SWARM_DECLARATIVE_DISTANCES           1
+#define SWARM_DECLARATIVE_DISTANCES_GROUND    2
+#define SWARM_LANDING                         32768
 
 namespace rotors_control {
     using namespace Eigen;

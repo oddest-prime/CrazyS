@@ -548,6 +548,212 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_*1.5; // TODO: proper scaling
         }
     }
+    else if(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES_GROUND)
+    {
+        ROS_INFO_ONCE("RelativeDistanceController starting swarm mode (SWARM_DECLARATIVE_DISTANCES_GROUND)");
+
+        if(!transform_ok_) // need to do exploration
+        {
+            if(random_direction_.norm() <= 0.02) // need new random value, if value was cleared
+            {
+                std::normal_distribution<float> dist(0.0, 1); // gaussian random number generator
+                random_direction_[0] = dist(generator_);
+                random_direction_[1] = dist(generator_);
+                random_direction_[2] = dist(generator_);
+            }
+            exploration_info = 80;
+            Vector3f direction = {1, 1, 1};
+            if(unit_vectors_[0].norm() <= 0.02 || unit_vectors_age_[0] < 0) // all unit vectors empty, since they are populated sequentially
+            {
+                direction = random_direction_; // go to random direction
+                exploration_info = 10;
+            }
+            else if(unit_vectors_[1].norm() <= 0.02 || unit_vectors_age_[1] < 0) // only vector 0 is not empty
+            {
+                Vector3f tmp = unit_vectors_[0] + random_direction_;
+                direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                exploration_info = 11;
+            }
+            else if(unit_vectors_[2].norm() <= 0.02 || unit_vectors_age_[2] < 0) // vector 0 and 1 are not empty
+            {
+                if(abs(unit_vectors_[0].dot(unit_vectors_[1])) > 0.99) // dot-procut: same direction = 1; orthogonal = 0
+                { // vectors go into the same direction, need some orthogonal move
+                    Vector3f tmp = unit_vectors_[1] + random_direction_;
+                    direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 12;
+                }
+                else
+                { // vectors go into different directions, use them to calculate orthogonal move
+                    direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 13;
+                }
+            }
+            else // vector 0, 1 and 2 are not empty
+            {
+                if(abs(unit_vectors_[0].dot(unit_vectors_[1])) < 0.5) // dot-procut: same direction = 1; orthogonal = 0
+                { // vectors 0 and 1 are good enough, use to calculate orthogonal move
+                    direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 41;
+                }
+                else if(abs(unit_vectors_[1].dot(unit_vectors_[2])) < 0.5) // dot-procut: same direction = 1; orthogonal = 0
+                { // vectors 1 and 2 are good enough, use to calculate orthogonal move
+                    direction = unit_vectors_[1].cross(unit_vectors_[2]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 42;
+                }
+                else if(abs(unit_vectors_[2].dot(unit_vectors_[0])) < 0.5) // dot-procut: same direction = 1; orthogonal = 0
+                { // vectors 2 and 0 are good enough, use to calculate orthogonal move
+                    direction = unit_vectors_[2].cross(unit_vectors_[0]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 43;
+                }
+                else if(abs(unit_vectors_[0].dot(unit_vectors_[1])) < 0.9) // dot-procut: same direction = 1; orthogonal = 0
+                { // vectors 0 and 1 are good enough, use to calculate orthogonal move
+                    direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 51;
+                }
+                else if(abs(unit_vectors_[1].dot(unit_vectors_[2])) < 0.9) // dot-procut: same direction = 1; orthogonal = 0
+                { // vectors 1 and 2 are good enough, use to calculate orthogonal move
+                    direction = unit_vectors_[1].cross(unit_vectors_[2]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 52;
+                }
+                else if(abs(unit_vectors_[2].dot(unit_vectors_[0])) < 0.9) // dot-procut: same direction = 1; orthogonal = 0
+                { // vectors 2 and 0 are good enough, use to calculate orthogonal move
+                    direction = unit_vectors_[2].cross(unit_vectors_[0]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    exploration_info = 53;
+                }
+                else
+                {
+                    ROS_INFO("RelativeDistanceController %d unit_vectors_[0].dot(unit_vectors_[1]):%f", droneNumber_, unit_vectors_[0].dot(unit_vectors_[1]));
+                    ROS_INFO("RelativeDistanceController %d unit_vectors_[1].dot(unit_vectors_[2]):%f", droneNumber_, unit_vectors_[1].dot(unit_vectors_[2]));
+                    ROS_INFO("RelativeDistanceController %d unit_vectors_[2].dot(unit_vectors_[0]):%f", droneNumber_, unit_vectors_[2].dot(unit_vectors_[0]));
+                    exploration_info = 91;
+                }
+            }
+
+            direction = direction / direction.norm(); // calculate unit vector of length 1
+
+            if(transform_available_) // check if opposite direction might be more useful (less collision probability)
+            {
+                Vector3f potential_movement_transformed_positive = transform_vectors_ * (direction * eps_move_*2);
+                Vector3f potential_movement_transformed_negative = transform_vectors_ * ((direction * -1) * eps_move_*2);
+
+                float separation_sum_positive = 0;
+                float separation_sum_negative = 0;
+
+                for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+                {
+                   float dist_positive = distances_[droneNumber_][i] +
+                              distances_differences_[0][i] * potential_movement_transformed_positive[0] +
+                              distances_differences_[1][i] * potential_movement_transformed_positive[1] +
+                              distances_differences_[2][i] * potential_movement_transformed_positive[2];
+                   float dist_negative = distances_[droneNumber_][i] +
+                              distances_differences_[0][i] * potential_movement_transformed_negative[0] +
+                              distances_differences_[1][i] * potential_movement_transformed_negative[1] +
+                              distances_differences_[2][i] * potential_movement_transformed_negative[2];
+
+                    if(i == droneNumber_) // skip for own quadcopter
+                        continue;
+
+                    separation_sum_positive += 1.0/(dist_positive*dist_positive);
+                    separation_sum_negative += 1.0/(dist_negative*dist_negative);
+                }
+                if(separation_sum_positive < separation_sum_negative)
+                {
+                    ROS_INFO_ONCE("RelativeDistanceController %d exploration positive better (%f < %f)", droneNumber_, separation_sum_positive, separation_sum_negative);
+                }
+                else
+                {
+                    ROS_INFO_ONCE("RelativeDistanceController %d exploration negative better (%f > %f)", droneNumber_, separation_sum_positive, separation_sum_negative);
+                    direction = direction * -1; // invert exploration vector
+                }
+            }
+
+            direction = direction * 0.5; // length 0.5 for exploration vector
+            set_point.pose.position.x = odometry_gt_.position[0] + direction[0];
+            set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
+            set_point.pose.position.z = odometry_gt_.position[2] + direction[2];
+            ROS_INFO_ONCE("RelativeDistanceController %d explore:%d direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
+        }
+        else // possible to do exploitation
+        {
+            int min_xi = 0;
+            int min_yi = 0;
+            int min_zi = 0;
+
+            // calculate neighbourhood independently from potential position
+            int neighbourhood_cnt = 0;
+            bool neighbourhood_bool[N_DRONES_MAX];
+            for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+            {
+                if(distances_[droneNumber_][i] < neighbourhood_distance_ && i != droneNumber_)
+                {
+                    neighbourhood_cnt ++;
+                    neighbourhood_bool[i] = true;
+                }
+                else
+                    neighbourhood_bool[i] = false;
+            }
+
+            float min_sum = FLT_MAX;
+            for(int xi = 0-n_move_max_; xi <= n_move_max_; xi ++) // iterate over all possible next actions in x-, y- and z-dimension
+            {
+                for(int yi = 0-n_move_max_; yi <= n_move_max_; yi ++)
+                {
+                    for(int zi = 0-n_move_max_; zi <= n_move_max_; zi ++)
+                    {
+                        Vector3f potential_movement = {(float)xi * eps_move_, (float)yi * eps_move_, (float)zi * eps_move_};
+                        Vector3f potential_movement_transformed = transform_vectors_ * potential_movement;
+
+                        float cohesion_sum = 0;
+                        float separation_sum = 0;
+                        float total_sum = 0;
+
+                        for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+                        {
+                            float dist = distances_[droneNumber_][i] +
+                                         distances_differences_[0][i] * potential_movement_transformed[0] +
+                                         distances_differences_[1][i] * potential_movement_transformed[1] +
+                                         distances_differences_[2][i] * potential_movement_transformed[2];
+
+                            if(i == droneNumber_) // skip for own quadcopter
+                              continue;
+
+                            cohesion_sum += dist*dist;
+                            separation_sum += 1.0/(dist*dist);
+                        }
+
+                        float dist_beacon0 = beacons_[droneNumber_][0] +
+                                     beacons_differences_[0][0] * potential_movement_transformed[0] +
+                                     beacons_differences_[1][0] * potential_movement_transformed[1] +
+                                     beacons_differences_[2][0] * potential_movement_transformed[2];
+
+                        float target_sum = dist_beacon0*dist_beacon0;
+
+                        // coehesion term
+                        total_sum = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
+                        // separation term
+                        total_sum += spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
+                        // target-seeking term
+                        total_sum += spc_target_weight_ * target_sum;
+
+                        if(xi == 0 && yi == 0 && zi == 0) // bonus for cost if not moving
+                            total_sum /= sticking_bonus_;
+
+                        if(total_sum < min_sum)
+                        {
+                            min_sum = total_sum;
+                            min_xi = xi;
+                            min_yi = yi;
+                            min_zi = zi;
+                        }
+                    }
+                }
+            }
+            ROS_INFO_ONCE("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
+            set_point.pose.position.x = odometry_gt_.position[0] + (float)min_xi * eps_move_;
+            set_point.pose.position.y = odometry_gt_.position[1] + (float)min_yi * eps_move_;
+            set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_*1.5; // TODO: proper scaling
+        }
+    }
 
     if(enable_swarm_ != SWARM_DISABLED || set_point.pose.position.z > 0.01) // do not enable drone until proper target point received
     {

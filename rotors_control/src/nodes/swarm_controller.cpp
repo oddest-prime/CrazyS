@@ -94,6 +94,8 @@ void SwarmController::KeyboardCallback(const std_msgs::Int32Ptr& msg) {
     FileSaveData();
   if(msg->data == 'l') // save when landing
     FileSaveData();
+  if(msg->data == 'q') // save when quitting without landing
+    FileSaveData();
 }
 
 //The callback saves data into csv files
@@ -784,6 +786,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       {
           float cost_cohesion_sum = 0;
           float cost_separation_sum = 0;
+          float cost_target_sum = 0;
           float cost_total_sum = 0;
           EigenOdometry potential_pos = odometry_ - gradient_sum * ((float)dist_i * (float)eps_move_);
           EigenOdometry potential_center = potential_pos;
@@ -809,9 +812,10 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
           if(target_swarm.position[2] != 0) // target point is available (z != 0)
           {
               EigenOdometry target_distance = potential_center - target_swarm;
-              cost_total_sum += mpc_target_weight_*(target_distance.position[0]*target_distance.position[0] +
+              cost_target_sum = mpc_target_weight_*(target_distance.position[0]*target_distance.position[0] +
                                                     target_distance.position[1]*target_distance.position[1] +
                                                     target_distance.position[2]*target_distance.position[2]);
+              cost_total_sum += cost_target_sum;
               ROS_INFO_ONCE("SwarmController %d pot. center  x=%f y=%f z=%f (div %f)", droneNumber_, potential_center.position[0], potential_center.position[1], potential_center.position[2], ((float)neighbourhood_cnt + 1));
               ROS_INFO_ONCE("SwarmController %d swarm target x=%f y=%f z=%f", droneNumber_, target_swarm.position[0], target_swarm.position[1], target_swarm.position[2]);
           }
@@ -825,7 +829,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
             ROS_INFO_ONCE("SwarmController %d obs %d cost=%f dist=%f", droneNumber_, i, tmp, obstacle_dist);
           }
 
-          ROS_INFO_ONCE("SwarmController %d i=%d coh=%f sep=%f total=%f", droneNumber_, dist_i, cost_cohesion_sum, cost_separation_sum, cost_total_sum);
+          ROS_INFO_ONCE("SwarmController %d i=%d coh=%f sep=%f targ=%f total=%f", droneNumber_, dist_i, cost_cohesion_sum, cost_separation_sum, cost_target_sum, cost_total_sum);
 
           if(cost_total_sum < min_sum)
           {

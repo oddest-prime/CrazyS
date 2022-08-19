@@ -162,9 +162,9 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
       ROS_INFO("global_controller: Enable swarm mode.");
 
       trajectory_msg.header.stamp = ros::Time::now();
-      desired_position(0) = 0.5;
-      desired_position(1) = 0.5;
-      desired_position(2) = 1.0;
+      desired_position(0) = 0.0; // x
+      desired_position(1) = 1.5; // y
+      desired_position(2) = 1.7; // z
       mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
       for (size_t i = 0; i < droneCount; i++) // send target point to swarm
       {
@@ -176,18 +176,36 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
         enable_pub[i].publish(enable_msg);
       }
     }
-    if(msg->data == '1' || msg->data == '2' || msg->data == '3') // go to positions
+    if(msg->data == '1' || msg->data == '2' || msg->data == '3' || msg->data == '4' || msg->data == '5') // go to positions
     {
       ROS_INFO("global_controller: Go to position.");
 
       trajectory_msg.header.stamp = ros::Time::now();
-      desired_position(0) = 0.5;
-      desired_position(1) = 0.5;
+      // defaults
+      desired_position(0) = 0.0; // x
+      desired_position(1) = 2.5; // y
+      desired_position(2) = 2.5; // z
+
       if(msg->data == '1')
-        desired_position(1) = 2;
+      {
+        desired_position(0) = 0.0; // x
+        desired_position(1) = 2.5; // y
+      }
+      if(msg->data == '2')
+      {
+        desired_position(0) = 0.0; // x
+        desired_position(1) = 10.5; // y
+      }
       if(msg->data == '3')
-        desired_position(1) = -1;
-      desired_position(2) = 1.0;
+      {
+        desired_position(0) = 2.5; // x
+        desired_position(1) = 10.5; // y
+      }
+      if(msg->data == '4')
+      {
+        desired_position(0) = -2.5; // x
+        desired_position(1) = 6.5; // y
+      }
       mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
       for (size_t i = 0; i < droneCount; i++) // send target point to swarm
       {

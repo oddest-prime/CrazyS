@@ -163,8 +163,8 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
 
       trajectory_msg.header.stamp = ros::Time::now();
       desired_position(0) = 0.0; // x
-      desired_position(1) = 1.5; // y
-      desired_position(2) = 1.7; // z
+      desired_position(1) = 2.5; // y
+      desired_position(2) = 2.5; // z
       mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
       for (size_t i = 0; i < droneCount; i++) // send target point to swarm
       {
@@ -199,7 +199,7 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
       if(msg->data == '3')
       {
         desired_position(0) = 2.5; // x
-        desired_position(1) = 10.5; // y
+        desired_position(1) = 6.5; // y
       }
       if(msg->data == '4')
       {

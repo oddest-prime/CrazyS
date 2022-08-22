@@ -406,6 +406,14 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       obstacle_position[10].position[0] = 2.5;
       obstacle_position[10].position[1] = 2.5;
     }
+    else if(obstacleScenario_ == 4)
+    {
+      obstacle_count = 2;
+      obstacle_position[0].position[0] = 0.0;
+      obstacle_position[0].position[1] = 4.3;
+      obstacle_position[1].position[0] = 0.0;
+      obstacle_position[1].position[1] = 7.3;
+    }
     for(int i = 0; i < obstacle_count; i++) // iterate over all obstacles
         obstacle_position[i].position[2] = odometry_gt_.position[2]; // todo, remove workaround for infinite z obstacles
 
@@ -822,11 +830,11 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
 
           for(int i = 0; i < obstacle_count; i++) // iterate over all obstacles
           {
-            obstacle_position[i].position[2] = potential_center.position[2]; // todo, remove fix for infinite z obstacles
+            obstacle_position[i].position[2] = potential_pos.position[2]; // todo, remove fix for infinite z obstacles
             float obstacle_dist = norm(potential_pos - obstacle_position[i]);
             float tmp = mpc_obstacle_weight_ * (1.0/pow(max(EPS0, obstacle_dist - obstacle_radius_ - drone_radius_), 2));
             cost_total_sum += mpc_obstacle_weight_ * (1.0/pow(max(EPS0, obstacle_dist - obstacle_radius_ - drone_radius_), 2));
-            ROS_INFO_ONCE("SwarmController %d obs %d cost=%f dist=%f", droneNumber_, i, tmp, obstacle_dist);
+            ROS_INFO("SwarmController %d obs %d cost=%f dist=%f (%f/%f)", droneNumber_, i, tmp, obstacle_dist, obstacle_position[i].position[0], obstacle_position[i].position[1]);
           }
 
           ROS_INFO_ONCE("SwarmController %d i=%d coh=%f sep=%f targ=%f total=%f", droneNumber_, dist_i, cost_cohesion_sum, cost_separation_sum, cost_target_sum, cost_total_sum);

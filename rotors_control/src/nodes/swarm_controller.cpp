@@ -475,6 +475,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
 
        //float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_gt_)); // calculate length of vector
        tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";
+       tempState << target_swarm.position[0] << "," << target_swarm.position[1] << "," << target_swarm.position[2] << ",";
        // tempState << odometry_gt_.velocity[0] << "," << odometry_gt_.velocity[1] << "," << odometry_gt_.velocity[2] << ",";
        // tempState << abs_state_velocity << ",";
     }

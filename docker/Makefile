@@ -122,10 +122,11 @@ TraceXY.png: State0.csv Makefile
   		set grid \n\
   		set xlabel \"Position y [m]\" \n\
   		set ylabel \"Position x [m]\" \n\
-			set yrange [-1:2] \n\
-			set xrange [-2.5:3.5] \n\
+			set xrange [-1.0:14.0] \n\
+			set yrange [-4.5:4.5] \n\
   		set output \"$@\" \n\
-  		plot  \"State0.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 0', \
+  		plot  \"State0.csv\" using 8:((column(3)>1) ? column(7) : NaN) with lines title 'TARGET', \
+						\"State0.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 0', \
 						\"State1.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 1', \
 						\"State2.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 2', \
 						\"State3.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 3', \
@@ -144,10 +145,11 @@ TraceXZ.png: State0.csv Makefile
 		set grid \n\
 		set xlabel \"Position x [m]\" \n\
 		set ylabel \"Position z [m]\" \n\
-			set xrange [-2.5:3.5] \n\
-			set yrange [-0.5:2.5] \n\
+			set xrange [-4.5:4.5] \n\
+			set yrange [-0.5:5.0] \n\
 		set output \"$@\" \n\
-		plot    \"State0.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 0', \
+		plot    \"State0.csv\" using 7:((column(3)>1) ? column(9) : NaN) with lines title 'TARGET', \
+					  \"State0.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 0', \
 						\"State1.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 1', \
 						\"State2.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 2', \
 						\"State3.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 3', \
@@ -167,10 +169,11 @@ TraceYZ.png: State0.csv Makefile
  		set grid \n\
  		set xlabel \"Position y [m]\" \n\
  		set ylabel \"Position z [m]\" \n\
-			set xrange [-2.5:3.5] \n\
-			set yrange [-0.5:2.5] \n\
+			set xrange [-1.0:14.0] \n\
+			set yrange [-0.5:5.0] \n\
  		set output \"$@\" \n\
- 		plot    \"State0.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 0', \
+ 		plot    \"State0.csv\" using 8:((column(3)>1) ? column(9) : NaN) with lines title 'TARGET', \
+					  \"State0.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 0', \
 						\"State1.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 1', \
 						\"State2.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 2', \
 						\"State3.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 3', \

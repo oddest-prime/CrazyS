@@ -414,6 +414,20 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       obstacle_position[1].position[0] = 0.0;
       obstacle_position[1].position[1] = 7.3;
     }
+    else if(obstacleScenario_ == 5)
+    {
+      obstacle_count = 1;
+      obstacle_position[0].position[0] = 0.0;
+      obstacle_position[0].position[1] = 6.25;
+    }
+    else if(obstacleScenario_ == 6)
+    {
+      obstacle_count = 2;
+      obstacle_position[0].position[0] = -1.15; // ;-0.85;
+      obstacle_position[0].position[1] = 6.25;
+      obstacle_position[1].position[0] = 1.15;
+      obstacle_position[1].position[1] = 6.25;
+    }
     for(int i = 0; i < obstacle_count; i++) // iterate over all obstacles
         obstacle_position[i].position[2] = odometry_gt_.position[2]; // todo, remove workaround for infinite z obstacles
 
@@ -835,7 +849,7 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
             float obstacle_dist = norm(potential_pos - obstacle_position[i]);
             float tmp = mpc_obstacle_weight_ * (1.0/pow(max(EPS0, obstacle_dist - obstacle_radius_ - drone_radius_), 2));
             cost_total_sum += mpc_obstacle_weight_ * (1.0/pow(max(EPS0, obstacle_dist - obstacle_radius_ - drone_radius_), 2));
-            ROS_INFO("SwarmController %d obs %d cost=%f dist=%f (%f/%f)", droneNumber_, i, tmp, obstacle_dist, obstacle_position[i].position[0], obstacle_position[i].position[1]);
+            ROS_INFO_ONCE("SwarmController %d obs %d cost=%f dist=%f (%f/%f)", droneNumber_, i, tmp, obstacle_dist, obstacle_position[i].position[0], obstacle_position[i].position[1]);
           }
 
           ROS_INFO_ONCE("SwarmController %d i=%d coh=%f sep=%f targ=%f total=%f", droneNumber_, dist_i, cost_cohesion_sum, cost_separation_sum, cost_target_sum, cost_total_sum);
@@ -859,6 +873,8 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       set_point.pose.position.x = odometry_.position[0] - gradient_sum.position[0] * ((float)min_dist_i * (float)eps_move_);
       set_point.pose.position.y = odometry_.position[1] - gradient_sum.position[1] * ((float)min_dist_i * (float)eps_move_);
       set_point.pose.position.z = odometry_.position[2] - gradient_sum.position[2] * ((float)min_dist_i * (float)eps_move_);
+
+      tempState << set_point.pose.position.x << "," << set_point.pose.position.y << "," << set_point.pose.position.z << ",";
   }
   // ################################################################################
   else if(enable_swarm_ & SWARM_REYNOLDS || enable_swarm_ & SWARM_REYNOLDS_LIMITED || enable_swarm_ & SWARM_REYNOLDS_VELOCITY)

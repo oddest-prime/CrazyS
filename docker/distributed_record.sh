@@ -3,6 +3,8 @@
 dpart=`date +%Y-%m-%d_%H-%M-%S`
 fpart=`echo "${dpart}_${1}"`
 
+ssh andreas@rpi1 "killall ffmpeg -s USR1"
+ssh andreas@rpi2 "killall ffmpeg -s USR1"
 ssh andreas@rpi1 "rm -f ./out.mjpeg.mkv"
 ssh andreas@rpi2 "rm -f ./out.mjpeg.mkv"
 
@@ -28,5 +30,3 @@ ssh andreas@rpi1 "rm -f ./out.mjpeg.mkv"
 
 scp andreas@rpi2:./out.mjpeg.mkv /home/andreas/SWARM/telesto_logs/videos/recording_${fpart}_rpi2cam.mkv
 ssh andreas@rpi2 "rm -f ./out.mjpeg.mkv"
-
-

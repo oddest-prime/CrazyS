@@ -177,6 +177,7 @@ namespace rotors_control {
             ros::Subscriber cmd_multi_dof_joint_trajectory_spline_sub_;
             ros::Subscriber pose_sub_;
             ros::Subscriber enable_sub_;
+            ros::Subscriber logsave_sub_;
             ros::Subscriber imu_sub_;
             ros::Subscriber imu_ideal_sub_;
             ros::Subscriber keyboard_sub_;
@@ -195,6 +196,7 @@ namespace rotors_control {
 
             void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
             void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
+            void SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg);
             void MellingerOdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
             void PoseCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg);
             void KeyboardCallback(const std_msgs::Int32Ptr& msg);

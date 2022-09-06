@@ -66,6 +66,7 @@ SwarmController::SwarmController() {
     pose_sub_ = nh.subscribe("lps_pose", 1, &SwarmController::PoseCallback, this);
     enable_sub_ = nh.subscribe("enable", 1, &SwarmController::EnableCallback, this);
     keyboard_sub_ = nh.subscribe("/key", 1, &SwarmController::KeyboardCallback, this);
+    logsave_sub_ = nh.subscribe("logsave", 1, &SwarmController::SaveLogCallback, this);
 
     ros::NodeHandle nhq[N_DRONES_MAX];
     for (size_t i = 0; i < droneCount_; i++)
@@ -101,6 +102,11 @@ void SwarmController::KeyboardCallback(const std_msgs::Int32Ptr& msg) {
 //The callback saves data into csv files
 void SwarmController::CallbackSaveData(const ros::TimerEvent& event){
   ROS_INFO("SwarmController CallbackSavaData. droneNumber: %d", droneNumber_);
+  FileSaveData();
+}
+
+void SwarmController::SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg) {
+  ROS_INFO("SwarmController SaveLogCallback. droneNumber: %d", droneNumber_);
   FileSaveData();
 }
 

@@ -82,6 +82,7 @@ void publish_command(float cmd_x, float cmd_y, float cmd_z, float cmd_enable) {
 
 ros::Publisher trajectory_pub[N_DRONES_MAX];
 ros::Publisher enable_pub[N_DRONES_MAX];
+ros::Publisher logsave_pub[N_DRONES_MAX];
 ros::NodeHandle* nhp;
 
 int droneCount;
@@ -380,7 +381,7 @@ int main(int argc, char** argv) {
     swarm_mode = SWARM_DECLARATIVE_DISTANCES_GROUND;
   }
   else
-    ROS_FATAL("global_controller: 'swarmMode' not recognized (%s)", swarmMode);
+    ROS_FATAL("global_controller: 'swarmMode' not recognized (%s)", swarmMode.c_str());
 
 
   std::string operationMode;
@@ -412,6 +413,7 @@ int main(int argc, char** argv) {
     trajectory_pub[i] = nhq[i].advertise<trajectory_msgs::MultiDOFJointTrajectory>(
           mav_msgs::default_topics::COMMAND_TRAJECTORY, 10);
     enable_pub[i] = nhq[i].advertise<std_msgs::Int32>("enable", 10);
+    logsave_pub[i] = nhq[i].advertise<std_msgs::Int32>("logsave", 10);
   }
 
   if(operation_mode == OPERATION_MODE_TIMED)
@@ -439,6 +441,7 @@ int main(int argc, char** argv) {
     ros::Time::sleepUntil(ros::Time(5.0));
     trajectory_msgs::MultiDOFJointTrajectory trajectory_msg;
     std_msgs::Int32 enable_msg;
+    std_msgs::Int32 logsave_msg;
 
     // Default desired position and yaw.
     Eigen::Vector3d desired_position(0.3, 0.5, 1.0);
@@ -519,6 +522,7 @@ int main(int argc, char** argv) {
     double path_sleep_afterwards = 0;
     while(1)
     {
+      desired_position(2) = 2.5;
       if(pathScenario == 0)
       {
         path_sleep_afterwards = 30.0;
@@ -604,6 +608,17 @@ int main(int argc, char** argv) {
       ros::Duration(path_sleep_afterwards).sleep();
       ros::spinOnce();
     }
+
+    ROS_INFO("global_controller: Save log files.");
+    for (size_t i = 0; i < droneCount; i++) // enable swarm mode
+    {
+      logsave_msg.data = 1;
+      ROS_INFO("global_controller: Publishing logsave on namespace %s: %d.", nhq[i].getNamespace().c_str(), logsave_msg.data);
+      logsave_pub[i].publish(logsave_msg);
+    }
+
+    ros::Duration(3.0).sleep();
+    ros::spinOnce();
 
     //  ros::spin();
     ROS_INFO("global_controller: End simulation.");

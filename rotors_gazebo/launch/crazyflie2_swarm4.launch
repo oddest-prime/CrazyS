@@ -11,8 +11,8 @@
   <arg name="gui" default="false"/>
   <arg name="swarm_mode" default="mpc1"/>
   <arg name="swarm_params" default="swarm_params"/>
-  <arg name="csvFilesStoring" default="distance"/> <!-- possible values: "true", "false", "distance" -->
-  <arg name="csvFilesStoringTime" default="85.0"/> <!-- seconds -->
+  <arg name="csvFilesStoring" default="true"/> <!-- possible values: "true", "false", "distance" -->
+  <arg name="csvFilesStoringTime" default="999.0"/> <!-- seconds -->
   <arg name="user_account" default="giuseppe"/>
   <!-- The following line causes gzmsg and gzerr messages to be printed to the console
       (even when Gazebo is started through roslaunch) -->
@@ -39,6 +39,8 @@
     <param name="offsetX" value="-0.5"/>
     <param name="offsetY" value="-0.5"/>
     <param name="swarmMode" value="$(arg swarm_mode)"/>
+    <param name="obstacleScenario" value="0"/>
+    <param name="pathScenario" value="2"/>
   </node>
 
   <group ns="$(arg mav_name)_0">

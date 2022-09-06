@@ -85,6 +85,8 @@ ros::Publisher enable_pub[N_DRONES_MAX];
 ros::NodeHandle* nhp;
 
 int droneCount;
+int obstacleScenario;
+int pathScenario;
 float spacingX;
 float spacingY;
 float spacingZ;
@@ -276,6 +278,22 @@ int main(int argc, char** argv) {
   ros::NodeHandle nhq[N_DRONES_MAX];
   nhp = nhq;
 
+  if (pnh.getParam("obstacleScenario", obstacleScenario))
+    ROS_INFO("global_controller: Got param 'obstacleScenario': %d", obstacleScenario);
+  else
+  {
+    obstacleScenario = 0;
+    ROS_INFO("global_controller: Failed to get param 'obstacleScenario', using default: %d", obstacleScenario);
+  }
+
+  if (pnh.getParam("pathScenario", pathScenario))
+    ROS_INFO("global_controller: Got param 'pathScenario': %d", pathScenario);
+  else
+  {
+    pathScenario = 0;
+    ROS_INFO("global_controller: Failed to get param 'pathScenario', using default: %d", pathScenario);
+  }
+
   if (pnh.getParam("droneCount", droneCount))
     ROS_INFO("global_controller: Got param 'droneCount': %d", droneCount);
   else
@@ -426,15 +444,13 @@ int main(int argc, char** argv) {
     Eigen::Vector3d desired_position(0.3, 0.5, 1.0);
     double desired_yaw = 0.0;
 
-    int modulus = 5;
-    if(droneCount < 10)
-      modulus = 4;
-    if(droneCount == 16)
-        modulus = 4;
+    int modulus = 6;
     if(droneCount == 9)
       modulus = 3;
     if(droneCount == 4 || droneCount == 5)
       modulus = 2;
+    if(droneCount == 2)
+      modulus = 1;
 
     move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
     ROS_INFO("global_controller (timed): Go to starting position (hovering).");
@@ -499,38 +515,96 @@ int main(int argc, char** argv) {
     ros::Duration(10.0).sleep();
     ros::spinOnce();
 
-
-    trajectory_msg.header.stamp = ros::Time::now();
-    desired_position(0) = 0;
-    desired_position(1) = 5.0;
-    desired_position(2) = 2;
-    move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
-    mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
-    for (size_t i = 0; i < droneCount; i++) // send target point to swarm
+    int path_cnt = 0;
+    double path_sleep_afterwards = 0;
+    while(1)
     {
-      ROS_INFO("global_controller: Publishing swarm target on namespace %s: [%f, %f, %f].",
-      nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
-      trajectory_pub[i].publish(trajectory_msg);
+      if(pathScenario == 0)
+      {
+        path_sleep_afterwards = 30.0;
+        if(path_cnt == 0)
+        {
+          desired_position(0) = 0;
+          desired_position(1) = 5.0;
+        }
+        else if(path_cnt == 1)
+        {
+          desired_position(0) = 5.0;
+          desired_position(1) = 0;
+        }
+        else
+          break;
+      }
+      else if(pathScenario == 1)
+      {
+        path_sleep_afterwards = 10.0;
+        if(path_cnt == 0)
+        {
+          desired_position(0) = 0;
+          desired_position(1) = 2.5;
+        }
+        else if(path_cnt == 1)
+        {
+          desired_position(0) = 0;
+          desired_position(1) = 10.5;
+        }
+        else if(path_cnt == 2)
+        {
+          desired_position(0) = 0;
+          desired_position(1) = 2.5;
+        }
+        else
+          break;
+      }
+      else if(pathScenario == 2)
+      {
+        path_sleep_afterwards = 10.0;
+        if(path_cnt == 0)
+        {
+          desired_position(0) = 0;
+          desired_position(1) = 2.5;
+        }
+        else if(path_cnt == 1)
+        {
+          desired_position(0) = 0;
+          desired_position(1) = 10.5;
+        }
+        else if(path_cnt == 2)
+        {
+          desired_position(0) = 2.5;
+          desired_position(1) = 6.5;
+        }
+        else if(path_cnt == 3)
+        {
+          desired_position(0) = -2.5;
+          desired_position(1) = 6.5;
+        }
+        else if(path_cnt == 4)
+        {
+          desired_position(0) = 0;
+          desired_position(1) = 2.5;
+        }
+        else
+          break;
+      }
+      else
+        break;
+
+      path_cnt ++;
+      trajectory_msg.header.stamp = ros::Time::now();
+      move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
+      mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
+      for (size_t i = 0; i < droneCount; i++) // send target point to swarm
+      {
+        ROS_INFO("global_controller: Publishing swarm target on namespace %s: [%f, %f, %f].",
+        nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
+        trajectory_pub[i].publish(trajectory_msg);
+      }
+
+      ros::Duration(path_sleep_afterwards).sleep();
+      ros::spinOnce();
     }
 
-    ros::Duration(30.0).sleep();
-    ros::spinOnce();
-
-    trajectory_msg.header.stamp = ros::Time::now();
-    desired_position(0) = 5.0;
-    desired_position(1) = 0;
-    desired_position(2) = 2;
-    move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
-    mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
-    for (size_t i = 0; i < droneCount; i++) // send target point to swarm
-    {
-      ROS_INFO("global_controller: Publishing swarm target on namespace %s: [%f, %f, %f].",
-      nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
-      trajectory_pub[i].publish(trajectory_msg);
-    }
-
-    ros::Duration(30.0).sleep();
-    ros::spinOnce();
     //  ros::spin();
     ROS_INFO("global_controller: End simulation.");
     ros::shutdown(); // end simulation

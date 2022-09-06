@@ -41,6 +41,8 @@
     <param name="offsetZ" value="0.0"/>
     <param name="randNoise" value="0.0"/>
     <param name="swarmMode" value="$(arg swarm_mode)"/>
+    <param name="obstacleScenario" value="0"/>
+    <param name="pathScenario" value="2"/>
   </node>
 
   <node name="keyboard_pub" pkg="keyboard_pub" type="keyboard_pub_node" output="screen">

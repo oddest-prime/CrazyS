@@ -2,6 +2,13 @@
 
 cd ~/SWARM/crazys
 
+#                                                                                                                         hash                         launch mode params        extra
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 mpc1 mpc1_params1 "a" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm2 mpc1 mpc1_params2b "b" &
+wait
+echo -e "\n`date` - done.\n"; exit 0; # --------------- END EXECUTION
+
+
 #                                                                                                                         hash                         launch mode   params        extra
 docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist1 distgnd mpc1_params2b "cones1" &
 docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 distgnd mpc1_params2b "cones1" &

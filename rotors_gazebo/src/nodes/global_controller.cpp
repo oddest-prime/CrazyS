@@ -109,9 +109,8 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
 
     if(msg->data == 'h') // hovering
     {
-      int modulus = 5;
-      if(droneCount < 10)
-        modulus = 4;
+//      int modulus = 4;
+      int modulus = 6;
       if(droneCount == 9)
         modulus = 3;
       if(droneCount == 4 || droneCount == 5)
@@ -164,7 +163,7 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
       trajectory_msg.header.stamp = ros::Time::now();
       desired_position(0) = 0.0; // x
       desired_position(1) = 2.5; // y
-      desired_position(2) = 2.5; // z
+      desired_position(2) = 3.5; // z (2.5 for scenarios with obstacles)
       mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
       for (size_t i = 0; i < droneCount; i++) // send target point to swarm
       {
@@ -184,7 +183,7 @@ void keyboard_callback(const std_msgs::Int32Ptr& msg) {
       // defaults
       desired_position(0) = 0.0; // x
       desired_position(1) = 2.5; // y
-      desired_position(2) = 2.5; // z
+      desired_position(2) = 3.5; // z (2.5 for scenarios with obstacles)
 
       if(msg->data == '1')
       {
@@ -430,6 +429,8 @@ int main(int argc, char** argv) {
     int modulus = 5;
     if(droneCount < 10)
       modulus = 4;
+    if(droneCount == 16)
+        modulus = 4;
     if(droneCount == 9)
       modulus = 3;
     if(droneCount == 4 || droneCount == 5)

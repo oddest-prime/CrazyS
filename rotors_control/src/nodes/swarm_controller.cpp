@@ -507,6 +507,10 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
         {
             neighbourhood_bool[i] = false;
         }
+        else if(dronestate[i].odometry_.position[2] < 0.25) // exclude drones on the floor (below 25cm)
+        {
+          neighbourhood_bool[i] = false;
+        }
         else if(dist < neighbourhood_distance_) // neighbourhood based on distance parameter
         {
             neighbourhood_cnt ++;

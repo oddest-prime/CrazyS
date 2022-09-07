@@ -448,6 +448,8 @@ int main(int argc, char** argv) {
     double desired_yaw = 0.0;
 
     int modulus = 6;
+    if(droneCount == 15)
+      modulus = 5;
     if(droneCount == 9)
       modulus = 3;
     if(droneCount == 4 || droneCount == 5)

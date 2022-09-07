@@ -523,7 +523,7 @@ int main(int argc, char** argv) {
     while(1)
     {
       desired_position(2) = 2.5;
-      if(pathScenario == 0)
+      if(pathScenario == 0) // old triangle
       {
         path_sleep_afterwards = 30.0;
         if(path_cnt == 0)
@@ -539,7 +539,7 @@ int main(int argc, char** argv) {
         else
           break;
       }
-      else if(pathScenario == 1)
+      else if(pathScenario == 1) // forward and backward only
       {
         path_sleep_afterwards = 10.0;
         if(path_cnt == 0)
@@ -560,7 +560,7 @@ int main(int argc, char** argv) {
         else
           break;
       }
-      else if(pathScenario == 2)
+      else if(pathScenario == 2) // new double triangle
       {
         path_sleep_afterwards = 10.0;
         if(path_cnt == 0)

@@ -6,8 +6,8 @@
       <collision name="collision">
         <geometry>
           <cylinder>
-            <radius>0.15</radius>
-            <length>5</length>
+            <radius>0.25</radius>
+            <length>7</length>
           </cylinder>
         </geometry>
       </collision>
@@ -15,8 +15,8 @@
         <cast_shadows>false</cast_shadows>
         <geometry>
           <cylinder>
-            <radius>0.15</radius>
-            <length>5</length>
+            <radius>0.25</radius>
+            <length>7</length>
           </cylinder>
         </geometry>
         <material>

@@ -1,12 +1,12 @@
 <?xml version="1.0" ?>
-<sdf version="1.4">
-  <model name="scale_plane">
+<sdf version="1.5">
+  <model name="scale_plane10">
     <static>true</static>
     <link name="link">
       <collision name="collision">
         <geometry>
           <box>
-            <size>10 10 .001</size>
+            <size>20 20 .001</size>
           </box>
         </geometry>
       </collision>
@@ -14,13 +14,13 @@
         <cast_shadows>false</cast_shadows>
         <geometry>
           <box>
-            <size>10 10 .001</size>
+            <size>20 20 .001</size>
           </box>
         </geometry>
         <material>
           <script>
-            <uri>model://scale_plane/materials/scripts</uri>
-            <uri>model://scale_plane/materials/textures</uri>
+            <uri>model://scale_plane10/materials/scripts</uri>
+            <uri>model://scale_plane10/materials/textures</uri>
             <name>vrc/scale</name>
           </script>
         </material>

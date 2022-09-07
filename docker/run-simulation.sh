@@ -11,6 +11,8 @@ hash="uu"
 mode="ll"
 mode="mm"
 params="pp"
+obstacleScenario="os"
+pathScenario="ps"
 extra="ee"
 if [ $# -ge 3 ]
 then
@@ -18,10 +20,12 @@ then
   launch="$2"
   mode="$3"
   params="$4"
-  extra="$5"
+  obstacleScenario="$5"
+  pathScenario="$6"
+  extra="$7"
 fi;
 date_hash="`date +%Y-%m-%d_%H-%M-%S`_${hash}"
-date_hash_mode="${date_hash}_${launch}_${mode}_${params}_${extra}"
+date_hash_mode="${date_hash}_${launch}_${mode}_${params}_obs${obstacleScenario}_path${pathScenario}_${extra}"
 # launch_file="crazyflie2_swarm15.launch"  # big swarm with 15 quadcopters
 launch_file="crazyflie2_${launch}.launch"  # big swarm with 15 quadcopters
 
@@ -29,6 +33,8 @@ echo "========================================================="
 echo "git hash: ${hash}"
 echo "swarm mode: ${mode}"
 echo "swarm params: ${params}"
+echo "obstacle scenario: ${obstacleScenario}"
+echo "path scenario: ${pathScenario}"
 echo "extra filename: ${extra}"
 echo "date, hash and mode: ${date_hash_mode}"
 echo "launch file: ${launch_file}"
@@ -40,6 +46,8 @@ echo "=========================================================" >> /tmp/video.i
 echo "git hash: ${hash}"                                         >> /tmp/video.info
 echo "swarm mode: ${mode}"                                       >> /tmp/video.info
 echo "swarm params: ${params}"                                   >> /tmp/video.info
+echo "obstacle scenario: ${obstacleScenario}"                    >> /tmp/video.info
+echo "path scenario: ${pathScenario}"                            >> /tmp/video.info
 echo "date, hash and mode: ${date_hash_mode}"                    >> /tmp/video.info
 echo "launch file: ${launch_file}"                               >> /tmp/video.info
 echo "=========================================================" >> /tmp/video.info
@@ -63,7 +71,7 @@ mkdir -p /tmp/log_output
 # roslaunch rotors_gazebo crazyflie2_swarm4.launch gui:=false swarm_mode:=${mode} & # small swarm with 4 quadcopters
 # roslaunch rotors_gazebo crazyflie2_swarm15.launch gui:=false swarm_mode:=${mode} swarm_params:=${params} & # big swarm with 15 quadcopters
 
-roslaunch rotors_gazebo ${launch_file} gui:=false swarm_mode:=${mode} swarm_params:=${params} &
+roslaunch rotors_gazebo ${launch_file} gui:=false swarm_mode:=${mode} swarm_params:=${params} obstacleScenario:=${obstacleScenario} pathScenario:=${pathScenario} &
 
 sleep 1
 iter=1

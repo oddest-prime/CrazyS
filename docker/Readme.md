@@ -28,7 +28,10 @@
 	roslaunch rotors_gazebo crazyflie2_dist5.launch
 
 ### Start with hardware
-  roslaunch crazyflie_demo swarm2.launch
+	roslaunch crazyflie_demo swarm2.launch
+	roslaunch crazyflie_demo swarm4.launch
+  ...
+	roslaunch crazyflie_demo teleop_xbox360.launch
 
 /dev/bus/usb
 

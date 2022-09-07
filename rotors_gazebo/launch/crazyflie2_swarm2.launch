@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="mav_name" default="crazyflie2"/>
-  <arg name="world_name" default="basic"/>
   <arg name="enable_logging" default="false" />
   <arg name="enable_ground_truth" default="true" />
   <arg name="enable_state_estimator" default="false" />
@@ -9,7 +8,9 @@
   <arg name="paused" value="true"/>
   <arg name="debug" default="false"/>
   <arg name="gui" default="false"/>
-  <arg name="swarm_mode" default="mpc1"/>
+  <arg name="obstacleScenario" default="0"/>
+  <arg name="pathScenario" default="2"/>
+  <arg name="swarm_mode" default="gradenum"/>
   <arg name="swarm_params" default="swarm_params"/>
   <arg name="csvFilesStoring" default="true"/> <!-- possible values: "true", "false", "distance" -->
   <arg name="csvFilesStoringTime" default="999.0"/> <!-- seconds -->
@@ -23,7 +24,7 @@
   <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find rotors_gazebo)/models"/>
   <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find rotors_gazebo)/models"/>
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find rotors_gazebo)/worlds/$(arg world_name)_crazyflie.world" />
+    <arg name="world_name" value="$(find rotors_gazebo)/worlds/basic_crazyflie_obstacle$(arg obstacleScenario).world" />
     <arg name="debug" value="$(arg debug)" />
     <arg name="paused" value="$(arg paused)"/>
     <arg name="use_sim_time" value="true"/>
@@ -41,8 +42,8 @@
     <param name="offsetZ" value="0.0"/>
     <param name="randNoise" value="0.0"/>
     <param name="swarmMode" value="$(arg swarm_mode)"/>
-    <param name="obstacleScenario" value="0"/>
-    <param name="pathScenario" value="2"/>
+    <param name="obstacleScenario" value="$(arg obstacleScenario)"/>
+    <param name="pathScenario" value="$(arg pathScenario)"/>
   </node>
 
   <node name="keyboard_pub" pkg="keyboard_pub" type="keyboard_pub_node" output="screen">
@@ -79,7 +80,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="2"/>
       <param name="droneNumber" value="0"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="$(arg obstacleScenario)"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
@@ -123,7 +124,7 @@
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
       <param name="droneCount" value="2"/>
       <param name="droneNumber" value="1"/>
-      <param name="obstacleScenario" value="0"/>
+      <param name="obstacleScenario" value="$(arg obstacleScenario)"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>

@@ -29,7 +29,7 @@ CombinedMetrics.png: CombinedMetrics.csv
 				 \"$<\" using (column(1)):(column(4)) with lines title 'dist obstacle min'" \
 	 | gnuplot
 
-Distance%.png: Distance%.csv
+Distance%.png: Distance%.csv Makefile
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -39,7 +39,7 @@ Distance%.png: Distance%.csv
 		set ylabel \"Drone $< [m]\" \n\
 		set yrange [0:3] \n\
 		set output \"$@\" \n\
-		plot     \"$<\" using (column(1)+column(2)/1000000000):(column(3)/32768) with lines title 'enable/established', \
+		plot     \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established', \
 						 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'dist to 0', \
 						 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'dist to 1', \
 				   	 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'dist to 2', \
@@ -54,29 +54,34 @@ Distance%.png: Distance%.csv
 				   	 \"$<\" using (column(1)+column(2)/1000000000):15 with lines title 'dist to 11', \
 				   	 \"$<\" using (column(1)+column(2)/1000000000):16 with lines title 'dist to 12', \
 				   	 \"$<\" using (column(1)+column(2)/1000000000):17 with lines title 'dist to 13', \
-				   	 \"$<\" using (column(1)+column(2)/1000000000):18 with lines title 'dist to 14'" \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):18 with lines title 'dist to 14', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):19 with lines title 'dist to 15', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):20 with lines title 'dist to 16', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):21 with lines title 'dist to 17', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):22 with lines title 'dist to 18', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):23 with lines title 'dist to 19'" \
 	 | gnuplot
 
-Metrics%.png: Metrics%.csv
+Metrics%.png: Metrics%.csv Makefile
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
-	  stats \"$<\" using ((column(3)>64) ? column(4) : NaN) \n\
+	  stats \"$<\" using ((column(3)>1) ? column(4) : NaN) \n\
 		print sprintf(\"metric: MEAN of dist min %f\", STATS_mean) \n\
 		print sprintf(\"metric: MEDIAN of dist min %f\", STATS_median) \n\
 		print sprintf(\"metric: MIN of dist min %f\", STATS_min) \n\
 		print sprintf(\"metric: MAX of dist min %f\", STATS_max) \n\
-		stats \"$<\" using ((column(3)>64) ? column(5) : NaN) \n\
+		stats \"$<\" using ((column(3)>1) ? column(5) : NaN) \n\
 		print sprintf(\"metric: MEAN of swarm radius %f\", STATS_mean) \n\
 		print sprintf(\"metric: MEDIAN of swarm radius %f\", STATS_median) \n\
 		print sprintf(\"metric: MIN of swarm radius %f\", STATS_min) \n\
 		print sprintf(\"metric: MAX of swarm radius %f\", STATS_max) \n\
-		stats \"$<\" using ((column(3)>64) ? column(6) : NaN) \n\
+		stats \"$<\" using ((column(3)>1) ? column(6) : NaN) \n\
 		print sprintf(\"metric: MEAN of dist obstacle min %f\", STATS_mean) \n\
 		print sprintf(\"metric: MEDIAN of dist obstacle min %f\", STATS_median) \n\
 		print sprintf(\"metric: MIN of dist obstacle min %f\", STATS_min) \n\
 		print sprintf(\"metric: MAX of dist obstacle min %f\", STATS_max) \n\
-		stats \"$<\" using ((column(3)>64) ? column(8) : NaN) \n\
+		stats \"$<\" using ((column(3)>1) ? column(8) : NaN) \n\
 		print sprintf(\"metric: MEAN of neighbours count %f\", STATS_mean) \n\
 		print sprintf(\"metric: MEDIAN of neighbours count %f\", STATS_median) \n\
 		print sprintf(\"metric: MIN of neighbours count %f\", STATS_min) \n\
@@ -85,18 +90,23 @@ Metrics%.png: Metrics%.csv
 		set term pngcairo size 1024,768 \n\
 		set grid \n\
 		set xlabel \"Time [s]\" \n\
-		set ylabel \"Drone $< [m]\" \n\
-		set yrange [0:3] \n\
+		set ylabel \"Distance [m]\" \n\
+		set y2label \"Count\" \n\
+		set yrange [0:5] \n\
+		set y2range [0:20] \n\
+		set xtics nomirror \n\
+		set y2tics nomirror \n\
 		set output \"$@\" \n\
-		plot     \"$<\" using (column(1)+column(2)/1000000000):(column(3)/32768) with lines title 'enable/established', \
-						 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'dist min', \
-						 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'swarm radius', \
+		plot     \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2, \
+						 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'dist to oth drone min', \
+						 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'dist to center', \
 						 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'dist obstacle min', \
-						 \"$<\" using (column(1)+column(2)/1000000000):7 with lines title 'drone count', \
-						 \"$<\" using (column(1)+column(2)/1000000000):8 with lines title 'neighbours count'" \
+						 \"$<\" using (column(1)+column(2)/1000000000):7 with lines title 'dist to target', \
+						 \"$<\" using (column(1)+column(2)/1000000000):8 with lines title 'drone count' axes x1y2, \
+						 \"$<\" using (column(1)+column(2)/1000000000):9 with lines title 'neighbours count' axes x1y2" \
 	 | gnuplot
 
-State%.png: State%.csv
+State%.png: State%.csv Makefile
 	echo " \
  		set datafile separator ',' \n\
 	  \n\
@@ -104,11 +114,12 @@ State%.png: State%.csv
  		set grid \n\
  		set xlabel \"Time [s]\" \n\
  		set ylabel \"Position $< [m]\" \n\
-		set y2label \"Velocity $< [m/s]\" \n\
+		set y2label \"Count\" \n\
+		set y2range [0:20] \n\
 		set xtics nomirror \n\
 		set y2tics nomirror \n\
  		set output \"$@\" \n\
- 		plot    \"$<\" using (column(1)+column(2)/1000000000):(column(3)/32768) with lines title 'enable/established', \
+		plot    \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2, \
 						\"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'pos_x', \
 						\"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'pos_y', \
 						\"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'pos_z'" \

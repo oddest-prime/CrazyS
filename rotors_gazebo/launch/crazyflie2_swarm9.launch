@@ -10,7 +10,7 @@
   <arg name="gui" default="false"/>
   <arg name="obstacleScenario" default="0"/>
   <arg name="pathScenario" default="2"/>
-  <arg name="droneCount" default="4"/>
+  <arg name="droneCount" default="9"/>
   <arg name="swarm_mode" default="gradenum"/>
   <arg name="swarm_params" default="swarm_params"/>
   <arg name="csvFilesStoring" default="true"/> <!-- possible values: "true", "false", "distance" -->

@@ -591,6 +591,27 @@ int main(int argc, char** argv) {
         else
           break;
       }
+      else if(pathScenario == 3) // forward and backward only, but slower
+      {
+        path_sleep_afterwards = 40.0;
+        if(path_cnt == 0)
+        {
+          desired_position(0) = 0;
+          desired_position(1) = 2.5;
+        }
+        else if(path_cnt == 1)
+        {
+          desired_position(0) = 0;
+          desired_position(1) = 10.5;
+        }
+        else if(path_cnt == 2)
+        {
+          desired_position(0) = 0;
+          desired_position(1) = 2.5;
+        }
+        else
+          break;
+      }
       else
         break;
 

@@ -1,4 +1,6 @@
 # Swarm controller parameters, working properly on crazyflie hardware
+# (used in experiments in Inf-HS, Aug-Sept 2022)
+
 swarm: {
   position_noise: 0.0, # no sensor sensor noise
   neighbourhood_distance: 999.0, # global neighbourhood

@@ -14,6 +14,7 @@
       <uri>model://cylinder_obstacle</uri>
     </include>
 
+<!--
     <include>
       <name>construction_cone0</name>
       <pose>-4.8 13.0 0 0 0 0</pose>
@@ -34,6 +35,7 @@
       <pose>4.8 13.0 0 0 0 0</pose>
       <uri>model://construction_cone</uri>
     </include>
+-->
 <!--
     <include><name>loco0</name><pose>0.00	0.00	0.23 0 0 0</pose><uri>model://marker</uri></include>
     <include><name>loco1</name><pose>-4.78	13.01	3.98 0 0 0</pose><uri>model://marker</uri></include>
@@ -57,14 +59,14 @@
       <collision name="collision">
         <geometry>
           <box>
-            <size>0.1 0.1 0.1</size>
+            <size>0.001 0.001 0.001</size>
           </box>
         </geometry>
       </collision>
       <visual name="visual">
         <geometry>
           <box>
-            <size>0.1 0.1 0.1</size>
+            <size>0.001 0.001 0.001</size>
           </box>
         </geometry>
       </visual>
@@ -102,14 +104,14 @@
       <collision name="collision">
         <geometry>
           <box>
-            <size>0.1 0.1 0.1</size>
+            <size>0.001 0.001 0.001</size>
           </box>
         </geometry>
       </collision>
       <visual name="visual">
         <geometry>
           <box>
-            <size>0.1 0.1 0.1</size>
+            <size>0.001 0.001 0.001</size>
           </box>
         </geometry>
       </visual>
@@ -147,14 +149,14 @@
       <collision name="collision">
         <geometry>
           <box>
-            <size>0.1 0.1 0.1</size>
+            <size>0.001 0.001 0.001</size>
           </box>
         </geometry>
       </collision>
       <visual name="visual">
         <geometry>
           <box>
-            <size>0.1 0.1 0.1</size>
+            <size>0.001 0.001 0.001</size>
           </box>
         </geometry>
       </visual>
@@ -192,14 +194,14 @@
       <collision name="collision">
         <geometry>
           <box>
-            <size>0.1 0.1 0.1</size>
+            <size>0.001 0.001 0.001</size>
           </box>
         </geometry>
       </collision>
       <visual name="visual">
         <geometry>
           <box>
-            <size>0.1 0.1 0.1</size>
+            <size>0.001 0.001 0.001</size>
           </box>
         </geometry>
       </visual>

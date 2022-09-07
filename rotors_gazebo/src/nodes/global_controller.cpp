@@ -493,8 +493,8 @@ int main(int argc, char** argv) {
 
     trajectory_msg.header.stamp = ros::Time::now();
     desired_position(0) = 0;
-    desired_position(1) = 0;
-    desired_position(2) = 2;
+    desired_position(1) = 2.5;
+    desired_position(2) = 2.5;
     move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
     for (size_t i = 0; i < droneCount; i++) // send target point to swarm
@@ -541,7 +541,7 @@ int main(int argc, char** argv) {
       }
       else if(pathScenario == 1) // forward and backward only
       {
-        path_sleep_afterwards = 10.0;
+        path_sleep_afterwards = 20.0;
         if(path_cnt == 0)
         {
           desired_position(0) = 0;
@@ -562,7 +562,7 @@ int main(int argc, char** argv) {
       }
       else if(pathScenario == 2) // new double triangle
       {
-        path_sleep_afterwards = 10.0;
+        path_sleep_afterwards = 15.0;
         if(path_cnt == 0)
         {
           desired_position(0) = 0;

@@ -434,6 +434,36 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
       obstacle_position[1].position[0] = 1.15;
       obstacle_position[1].position[1] = 6.25;
     }
+    else if(obstacleScenario_ == 7)
+    {
+      obstacle_count = 13;
+      obstacle_position[0].position[0] = -2.5;
+      obstacle_position[0].position[1] = 5.0;
+      obstacle_position[1].position[0] = -2.5;
+      obstacle_position[1].position[1] = 7.5;
+      obstacle_position[2].position[0] = -2.0;
+      obstacle_position[2].position[1] = 9.0;
+      obstacle_position[3].position[0] = -1.5;
+      obstacle_position[3].position[1] = 6.25;
+      obstacle_position[4].position[0] = -1.0;
+      obstacle_position[4].position[1] = 4.75;
+      obstacle_position[5].position[0] = -0.75;
+      obstacle_position[5].position[1] = 8.0;
+      obstacle_position[6].position[0] = 0.0;
+      obstacle_position[6].position[1] = 6.5;
+      obstacle_position[7].position[0] = 0.75;
+      obstacle_position[7].position[1] = 5.0;
+      obstacle_position[8].position[0] = 1.0;
+      obstacle_position[8].position[1] = 7.5;
+      obstacle_position[9].position[0] = 1.5;
+      obstacle_position[9].position[1] = 8.75;
+      obstacle_position[10].position[0] = 2.0;
+      obstacle_position[10].position[1] = 6.0;
+      obstacle_position[11].position[0] = 2.5;
+      obstacle_position[11].position[1] = 4.25;
+      obstacle_position[12].position[0] = 2.75;
+      obstacle_position[12].position[1] = 8.0;
+    }
     for(int i = 0; i < obstacle_count; i++) // iterate over all obstacles
         obstacle_position[i].position[2] = odometry_gt_.position[2]; // todo, remove workaround for infinite z obstacles
 

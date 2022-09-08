@@ -6,27 +6,43 @@ allMetricsPng := $(subst csv,png,$(allMetricsCsv))
 
 allStateCsv := $(shell ls State*.csv | grep -v Merged)
 allStatePng := $(subst csv,png,$(allStateCsv))
+allNoisePng := $(subst State,Noise,$(allStatePng))
 
 all-distance: $(allDistancePng)
 all-metrics: $(allMetricsPng)
 all-state: $(allStatePng)
-all-trace: TraceXY.png TraceXZ.png TraceYZ.png
+all-noise: $(allNoisePng)
+all-trace: TraceXY.pdf TraceXZ.pdf TraceYZ.pdf
+
+0obstacles_17drones_alternative_logs_%.pdf: %.pdf
+	mv $< $@
+
+# plot of cleaned trajectory
+plot_start_val := $(shell grep plot_start_val crazyflie2_*.yaml | cut -d ":" -f 2)
+plot_end_val := $(shell grep plot_end_val crazyflie2_*.yaml | cut -d ":" -f 2)
+# noise of localization while drones still resting on ground
+noise_start_val := $(shell grep noise_start_val crazyflie2_*.yaml | cut -d ":" -f 2)
+noise_end_val := $(shell grep noise_end_val crazyflie2_*.yaml | cut -d ":" -f 2)
 
 CombinedMetrics.csv: metrics.py
 	./metrics.py
 
-CombinedMetrics.png: CombinedMetrics.csv
+CombinedMetrics.pdf: CombinedMetrics.csv Makefile
 	echo " \
 		set datafile separator ',' \n\
-		set term pngcairo size 1024,768 \n\
+		set term pdf font \"Times,15\" size 10cm, 7cm \n\
 		set grid \n\
 		set xlabel \"Time [s]\" \n\
 		set ylabel \"Drone $< [m]\" \n\
+  		unset xlabel \n\
+  		unset ylabel \n\
 		set yrange [0:3] \n\
+		set xrange [0:($(plot_end_val)-$(plot_start_val))] \n\
 		set output \"$@\" \n\
-		plot     \"$<\" using (column(1)):(column(2)) with lines title 'dist min', \
-				 \"$<\" using (column(1)):(column(3)) with lines title 'swarm radius', \
-				 \"$<\" using (column(1)):(column(4)) with lines title 'dist obstacle min'" \
+  		plot \"$<\" using (column(1)-$(plot_start_val)):(column(1)>$(plot_start_val) ? (column(1)<$(plot_end_val) ? column(2) : NaN) : NaN) with lines title 'dist min', \
+			 \"$<\" using (column(1)-$(plot_start_val)):(column(1)>$(plot_start_val) ? (column(1)<$(plot_end_val) ? column(3) : NaN) : NaN) with lines title 'swarm radius', \
+			 \"$<\" using (column(1)-$(plot_start_val)):(column(1)>$(plot_start_val) ? (column(1)<$(plot_end_val) ? column(4) : NaN) : NaN) with lines title 'dist obstacle min', \
+			 \"$<\" using (column(1)-$(plot_start_val)):(column(1)>$(plot_start_val) ? (column(1)<$(plot_end_val) ? 0.2 : NaN) : NaN) with lines dashtype 2 title '20cm'" \
 	 | gnuplot
 
 Distance%.png: Distance%.csv Makefile
@@ -66,7 +82,7 @@ Metrics%.png: Metrics%.csv Makefile
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
-	  stats \"$<\" using ((column(3)>1) ? column(4) : NaN) \n\
+	    stats \"$<\" using ((column(3)>1) ? column(4) : NaN) \n\
 		print sprintf(\"metric: MEAN of dist min %f\", STATS_mean) \n\
 		print sprintf(\"metric: MEDIAN of dist min %f\", STATS_median) \n\
 		print sprintf(\"metric: MIN of dist min %f\", STATS_min) \n\
@@ -119,81 +135,206 @@ State%.png: State%.csv Makefile
 		set xtics nomirror \n\
 		set y2tics nomirror \n\
  		set output \"$@\" \n\
+		set output \"$@\" \n\
 		plot    \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2, \
 						\"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'pos_x', \
 						\"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'pos_y', \
 						\"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'pos_z'" \
  	 | gnuplot
 
-TraceXY.png: State0.csv Makefile
+Noise%.png: State%.csv Makefile
+	echo " \
+ 		set datafile separator ',' \n\
+	  \n\
+ 		set term pngcairo size 1024,768 \n\
+ 		set grid \n\
+ 		set xlabel \"Time [s]\" \n\
+ 		set ylabel \"Position before start $< [m]\" \n\
+		set xrange [0:($(noise_end_val)-$(noise_start_val))] \n\
+ 		set output \"$@\" \n\
+	    stats \"$<\" using ((column(1)+column(2)/1000000000)-$(noise_start_val)):((column(1)+column(2)/1000000000)>$(noise_start_val) ? ((column(1)+column(2)/1000000000)<$(noise_end_val) ? column(4) : NaN) : NaN) name 'statsX' output \n\
+	    stats \"$<\" using ((column(1)+column(2)/1000000000)-$(noise_start_val)):((column(1)+column(2)/1000000000)>$(noise_start_val) ? ((column(1)+column(2)/1000000000)<$(noise_end_val) ? column(5) : NaN) : NaN) name 'statsY' output \n\
+	    stats \"$<\" using ((column(1)+column(2)/1000000000)-$(noise_start_val)):((column(1)+column(2)/1000000000)>$(noise_start_val) ? ((column(1)+column(2)/1000000000)<$(noise_end_val) ? column(6) : NaN) : NaN) name 'statsZ' output \n\
+  		plot \"$<\" using ((column(1)+column(2)/1000000000)-$(noise_start_val)):((column(1)+column(2)/1000000000)>$(noise_start_val) ? ((column(1)+column(2)/1000000000)<$(noise_end_val) ? column(4) : NaN) : NaN) with lines title 'pos_x', \
+  		     \"$<\" using ((column(1)+column(2)/1000000000)-$(noise_start_val)):((column(1)+column(2)/1000000000)>$(noise_start_val) ? ((column(1)+column(2)/1000000000)<$(noise_end_val) ? column(5) : NaN) : NaN) with lines title 'pos_y', \
+             \"$<\" using ((column(1)+column(2)/1000000000)-$(noise_start_val)):((column(1)+column(2)/1000000000)>$(noise_start_val) ? ((column(1)+column(2)/1000000000)<$(noise_end_val) ? column(6) : NaN) : NaN) with lines title 'pos_z', \
+             \"$<\" using ((column(1)+column(2)/1000000000)-$(noise_start_val)):((column(1)+column(2)/1000000000)>$(noise_start_val) ? ((column(1)+column(2)/1000000000)<$(noise_end_val) ? statsX_mean_y : NaN) : NaN) with lines title 'mean_x', \
+             \"$<\" using ((column(1)+column(2)/1000000000)-$(noise_start_val)):((column(1)+column(2)/1000000000)>$(noise_start_val) ? ((column(1)+column(2)/1000000000)<$(noise_end_val) ? statsY_mean_y : NaN) : NaN) with lines title 'mean_y', \
+             \"$<\" using ((column(1)+column(2)/1000000000)-$(noise_start_val)):((column(1)+column(2)/1000000000)>$(noise_start_val) ? ((column(1)+column(2)/1000000000)<$(noise_end_val) ? statsZ_mean_y : NaN) : NaN) with lines title 'mean_z', \
+             \"$<\" using ((column(1)+column(2)/1000000000)-$(noise_start_val)):((column(1)+column(2)/1000000000)>$(noise_start_val) ? ((column(1)+column(2)/1000000000)<$(noise_end_val) ? statsX_mean_y+statsX_stddev_y : NaN) : NaN) with lines title 'mean_x+stddev_x', \
+             \"$<\" using ((column(1)+column(2)/1000000000)-$(noise_start_val)):((column(1)+column(2)/1000000000)>$(noise_start_val) ? ((column(1)+column(2)/1000000000)<$(noise_end_val) ? statsY_mean_y+statsY_stddev_y : NaN) : NaN) with lines title 'mean_y+stddev_y', \
+             \"$<\" using ((column(1)+column(2)/1000000000)-$(noise_start_val)):((column(1)+column(2)/1000000000)>$(noise_start_val) ? ((column(1)+column(2)/1000000000)<$(noise_end_val) ? statsZ_mean_y+statsZ_stddev_y : NaN) : NaN) with lines title 'mean_z+stddev_z'" \
+ 	 | gnuplot
+
+TraceXY.pdf: State0.csv Makefile crazyflie2_*.yaml
 	echo " \
   		set datafile separator ',' \n\
   		 \n\
-  		set term pngcairo size 1024,768 \n\
-  		set grid \n\
+		set term pdf font \"Times,15\" size 10cm, 7cm \n\
+		set grid \n\
+		v0 = 0 \n v1 = 0 \n v2 = 0 \n v3 = 0 \n v4 = 0 \n\
+		v5 = 0 \n v6 = 0 \n v7 = 0 \n v8 = 0 \n v9 = 0 \n\
+		v10 = 0 \n v11 = 0 \n v12 = 0 \n v13 = 0 \n v14 = 0 \n\
+		v15 = 0 \n v16 = 0 \n v17 = 0 \n v18 = 0 \n v19 = 0 \n\
+		set key off \n\
+        set xtics 2 \n\
+        set ytics 2 \n\
   		set xlabel \"Position y [m]\" \n\
   		set ylabel \"Position x [m]\" \n\
-			set xrange [-1.0:14.0] \n\
-			set yrange [-4.5:4.5] \n\
+  		unset xlabel \n\
+  		unset ylabel \n\
+		set xrange [-1.0:14.0] \n\
+		set yrange [-4.5:4.5] \n\
   		set output \"$@\" \n\
-  		plot  \"State0.csv\" using 8:((column(3)>1) ? column(7) : NaN) with lines title 'TARGET', \
-						\"State0.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 0', \
-						\"State1.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 1', \
-						\"State2.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 2', \
-						\"State3.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 3', \
-						\"State4.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 4', \
-						\"State5.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 5', \
-						\"State6.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 6', \
-						\"State7.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 7', \
-						\"State8.csv\" using 5:((column(3)>1) ? column(4) : NaN) with lines title 'drone 8'" \
+  		plot  		    \"State0.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 0', \
+						\"State1.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 1', \
+						\"State2.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 2', \
+						\"State3.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 3', \
+						\"State4.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 4', \
+						\"State5.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 5', \
+						\"State6.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 6', \
+						\"State7.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 7', \
+						\"State8.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 8', \
+						\"State9.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 9', \
+						\"State10.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 10', \
+						\"State11.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 11', \
+						\"State13.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 13', \
+						\"State14.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 14', \
+						\"State15.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 15', \
+						\"State16.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 16', \
+						\"State0.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v0=v0+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 0', \
+						\"State1.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v1=v1+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 1', \
+						\"State2.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v2=v2+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 2', \
+						\"State3.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v3=v3+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 3', \
+						\"State4.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v4=v4+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 4', \
+						\"State5.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v5=v5+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 5', \
+						\"State6.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v6=v6+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 6', \
+						\"State7.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v7=v7+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 7', \
+						\"State8.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v8=v8+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 8', \
+						\"State9.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v9=v9+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 9', \
+						\"State10.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v10=v10+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 10', \
+						\"State11.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v11=v11+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 11', \
+						\"State13.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v13=v13+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 13', \
+						\"State14.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v14=v14+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 14', \
+						\"State15.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v15=v15+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 15', \
+						\"State16.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v16=v16+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 16', \
+						\"State0.csv\" using 8:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(7) : NaN) : NaN) with lines linecolor rgb \"light-red\" linewidth 1 title 'TARGET'" \
   	 | gnuplot
 
-TraceXZ.png: State0.csv Makefile
+
+
+TraceXZ.pdf: State0.csv Makefile crazyflie2_*.yaml
 	echo " \
-		set datafile separator ',' \n\
-		 \n\
-		set term pngcairo size 1024,768 \n\
+  		set datafile separator ',' \n\
+  		 \n\
+		set term pdf font \"Times,15\" size 10cm, 7cm \n\
 		set grid \n\
-		set xlabel \"Position x [m]\" \n\
-		set ylabel \"Position z [m]\" \n\
-			set xrange [-4.5:4.5] \n\
-			set yrange [-0.5:5.0] \n\
-		set output \"$@\" \n\
-		plot    \"State0.csv\" using 7:((column(3)>1) ? column(9) : NaN) with lines title 'TARGET', \
-					  \"State0.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 0', \
-						\"State1.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 1', \
-						\"State2.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 2', \
-						\"State3.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 3', \
-						\"State4.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 4', \
-						\"State5.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 5', \
-						\"State6.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 6', \
-						\"State7.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 7', \
-						\"State8.csv\" using 4:((column(3)>1) ? column(6) : NaN) with lines title 'drone 8'" \
-	 | gnuplot
+		v0 = 0 \n v1 = 0 \n v2 = 0 \n v3 = 0 \n v4 = 0 \n\
+		v5 = 0 \n v6 = 0 \n v7 = 0 \n v8 = 0 \n v9 = 0 \n\
+		v10 = 0 \n v11 = 0 \n v12 = 0 \n v13 = 0 \n v14 = 0 \n\
+		v15 = 0 \n v16 = 0 \n v17 = 0 \n v18 = 0 \n v19 = 0 \n\
+		set key off \n\
+        set xtics 2 \n\
+        set ytics 2 \n\
+  		set xlabel \"Position x [m]\" \n\
+  		set ylabel \"Position z [m]\" \n\
+  		unset xlabel \n\
+  		unset ylabel \n\
+		set xrange [-4.5:4.5] \n\
+		set yrange [-0.5:8.0] \n\
+  		set output \"$@\" \n\
+	    plot  		    \"State0.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 0', \
+						\"State1.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 1', \
+						\"State2.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 2', \
+						\"State3.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 3', \
+						\"State4.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 4', \
+						\"State5.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 5', \
+						\"State6.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 6', \
+						\"State7.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 7', \
+						\"State8.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 8', \
+						\"State9.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 9', \
+						\"State10.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 10', \
+						\"State11.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 11', \
+						\"State13.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 13', \
+						\"State14.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 14', \
+						\"State15.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 15', \
+						\"State16.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 16', \
+						\"State0.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v0=v0+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 0', \
+						\"State1.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v1=v1+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 1', \
+						\"State2.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v2=v2+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 2', \
+						\"State3.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v3=v3+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 3', \
+						\"State4.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v4=v4+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 4', \
+						\"State5.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v5=v5+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 5', \
+						\"State6.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v6=v6+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 6', \
+						\"State7.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v7=v7+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 7', \
+						\"State8.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v8=v8+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 8', \
+						\"State9.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v9=v9+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 9', \
+						\"State10.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v10=v10+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 10', \
+						\"State11.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v11=v11+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 11', \
+						\"State13.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v13=v13+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 13', \
+						\"State14.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v14=v14+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 14', \
+						\"State15.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v15=v15+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 15', \
+						\"State16.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v16=v16+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 16', \
+						\"State0.csv\" using 7:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(9) : NaN) : NaN) with lines linecolor rgb \"light-red\" linewidth 1 title 'TARGET'" \
+  	 | gnuplot
 
 
-TraceYZ.png: State0.csv Makefile
+TraceYZ.pdf: State0.csv Makefile crazyflie2_*.yaml
 	echo " \
- 		set datafile separator ',' \n\
- 		 \n\
- 		set term pngcairo size 1024,768 \n\
- 		set grid \n\
- 		set xlabel \"Position y [m]\" \n\
- 		set ylabel \"Position z [m]\" \n\
-			set xrange [-1.0:14.0] \n\
-			set yrange [-0.5:5.0] \n\
- 		set output \"$@\" \n\
- 		plot    \"State0.csv\" using 8:((column(3)>1) ? column(9) : NaN) with lines title 'TARGET', \
-					  \"State0.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 0', \
-						\"State1.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 1', \
-						\"State2.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 2', \
-						\"State3.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 3', \
-						\"State4.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 4', \
-						\"State5.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 5', \
-						\"State6.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 6', \
-						\"State7.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 7', \
-						\"State8.csv\" using 5:((column(3)>1) ? column(6) : NaN) with lines title 'drone 8'" \
- 	 | gnuplot
+  		set datafile separator ',' \n\
+  		 \n\
+		set term pdf font \"Times,15\" size 10cm, 7cm \n\
+		set grid \n\
+		v0 = 0 \n v1 = 0 \n v2 = 0 \n v3 = 0 \n v4 = 0 \n\
+		v5 = 0 \n v6 = 0 \n v7 = 0 \n v8 = 0 \n v9 = 0 \n\
+		v10 = 0 \n v11 = 0 \n v12 = 0 \n v13 = 0 \n v14 = 0 \n\
+		v15 = 0 \n v16 = 0 \n v17 = 0 \n v18 = 0 \n v19 = 0 \n\
+		set key off \n\
+        set xtics 2 \n\
+        set ytics 2 \n\
+  		set xlabel \"Position y [m]\" \n\
+  		set ylabel \"Position z [m]\" \n\
+  		unset xlabel \n\
+  		unset ylabel \n\
+		set xrange [-1.0:14.0] \n\
+		set yrange [-0.5:8.0] \n\
+  		set output \"$@\" \n\
+  		plot  		    \"State0.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 0', \
+						\"State1.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 1', \
+						\"State2.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 2', \
+						\"State3.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 3', \
+						\"State4.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 4', \
+						\"State5.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 5', \
+						\"State6.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 6', \
+						\"State7.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 7', \
+						\"State8.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 8', \
+						\"State9.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 9', \
+						\"State10.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 10', \
+						\"State11.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 11', \
+						\"State13.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 13', \
+						\"State14.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 14', \
+						\"State15.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 15', \
+						\"State16.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 16', \
+						\"State0.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v0=v0+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 0', \
+						\"State1.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v1=v1+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 1', \
+						\"State2.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v2=v2+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 2', \
+						\"State3.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v3=v3+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 3', \
+						\"State4.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v4=v4+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 4', \
+						\"State5.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v5=v5+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 5', \
+						\"State6.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v6=v6+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 6', \
+						\"State7.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v7=v7+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 7', \
+						\"State8.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v8=v8+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 8', \
+						\"State9.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v9=v9+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 9', \
+						\"State10.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v10=v10+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 10', \
+						\"State11.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v11=v11+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 11', \
+						\"State13.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v13=v13+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 13', \
+						\"State14.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v14=v14+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 14', \
+						\"State15.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v15=v15+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 15', \
+						\"State16.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v16=v16+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 16', \
+						\"State0.csv\" using 8:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(9) : NaN) : NaN) with lines linecolor rgb \"light-red\" linewidth 1 title 'TARGET'" \
+  	 | gnuplot
+
+
 
 CleanedMetrics%.csv: Metrics%.csv
 	grep ",65," $< > $@
@@ -323,211 +464,9 @@ rm-csv:
 
 clean:
 	rm -f *.png
+	rm -f *.pdf
 
 clean-all: clean rm-csv
-
-
-
-
-all-step: DronePosition.png DronePositionTrajectory.png DroneAttitude.png XeYe.png DeltaCommands.png OmegaCommand.png RCommand.png PQCommands.png AttiudeCommands.png PropellersVelocity.png XYcontroller.png Attiudecontroller.png
-
-DronePosition.png: DronePosition0.csv
-	echo " \
-		set datafile separator ',' \n\
-		 \n\
-		set term pngcairo size 1024,768 \n\
-		set grid \n\
-		set xlabel \"Time [s]\" \n\
- 		set ylabel \"Position $< [m] (given by ground-truth odometry)\" \n\
-		set y2label \"Velocity $< [m/s] (given by ground-truth odometry)\" \n\
-		set xtics nomirror \n\
-		set y2tics nomirror \n\
-		set output \"$@\" \n\
-		plot     \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):1 with lines title 'X-Pos', \
-						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):2 with lines title 'Y-Pos', \
-						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):3 with lines title 'Z-Pos', \
- 						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):4 with lines title 'X-Velocity' axis x2y2, \
-						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):5 with lines title 'Y-Velocity' axis x2y2, \
- 						 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):6 with lines title 'Z-Velocity' axis x2y2" \
-	 | gnuplot
-#	 set xrange [20:25] \n\
-#	 set x2range [20:25] \n\
-#	 set yrange [7.8:8.6] \n\
-
-
-DronePositionTrajectory.png: DronePosition0.csv Trajectory0.csv
-	echo " \
-		set datafile separator ',' \n\
-		 \n\
-		set term pngcairo size 1024,768 \n\
-		set grid \n\
-		set xlabel \"Time [s]\" \n\
-		 \n\
-		set output \"$@\" \n\
-		set ylabel \"DronePosition (given by ground-truth odometry) and Trajectory (set-point commands)\" \n\
-		plot     \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):1 with lines title 'X-Pos', \
-			 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):2 with lines title 'Y-Pos', \
-			 \"DronePosition0.csv\" using (column(7)+column(8)/1000000000):3 with lines title 'Z-Pos', \
-			 \"Trajectory0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'X-command', \
-		 	 \"Trajectory0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'Y-command', \
-		 	 \"Trajectory0.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'Z-command'" \
-	 | gnuplot
-
-DroneAttitude.png: DroneAttitude0.csv
-	echo " \
-		set datafile separator ',' \n\
-		 \n\
-		set term pngcairo size 1024,768 \n\
-		set grid \n\
-		set xlabel \"Time [s]\" \n\
-		 \n\
-		set output \"$@\" \n\
-		set ylabel \"Drone attitude (given by ground-truth odometry (?))\" \n\
-		plot     \"DroneAttitude0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'roll', \
-			 \"DroneAttitude0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'pitch', \
-			 \"DroneAttitude0.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'yaw'" \
-	 | gnuplot
-
-XeYe.png: XeYe0.csv
-	echo " \
-		set datafile separator ',' \n\
-		 \n\
-		set term pngcairo size 1024,768 \n\
-		set grid \n\
-		set xlabel \"Time [s]\" \n\
-		 \n\
-		set output \"$@\" \n\
-		set ylabel \"Drone position and velocity errors (of XYController)\" \n\
-		plot     \"XeYe0.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'X-error', \
-			 \"XeYe0.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'Y-error', \
-			 \"XeYe0.csv\" using (column(5)+column(6)/1000000000):3 with lines title 'X-velocity-error', \
-			 \"XeYe0.csv\" using (column(5)+column(6)/1000000000):4 with lines title 'Y-velocity-error'" \
-	 | gnuplot
-
-DeltaCommands.png: DeltaCommands0.csv
-	echo " \
-		set datafile separator ',' \n\
-		 \n\
-		set term pngcairo size 1024,768 \n\
-		set grid \n\
-		set xlabel \"Time [s]\" \n\
-		 \n\
-		set output \"$@\" \n\
-		set ylabel \"Delta Commands (of RateController)\" \n\
-		plot     \"DeltaCommands0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'delta-phi', \
-			 \"DeltaCommands0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'delta-theta', \
-			 \"DeltaCommands0.csv\" using (column(4)+column(5)/1000000000):3 with lines title 'delta-psi'" \
-	 | gnuplot
-
-OmegaCommand.png: OmegaCommand0.csv
-	echo " \
-		set datafile separator ',' \n\
-		 \n\
-		set term pngcairo size 1024,768 \n\
-		set grid \n\
-		set xlabel \"Time [s]\" \n\
-		 \n\
-		set output \"$@\" \n\
-		set ylabel \"Omega Command (of HoveringController)\" \n\
-		plot     \"OmegaCommand0.csv\" using (column(2)+column(3)/1000000000):1 with lines title 'omega-command'" \
-	 | gnuplot
-
-RCommand.png: RCommand0.csv
-	echo " \
-		set datafile separator ',' \n\
-		 \n\
-		set term pngcairo size 1024,768 \n\
-		set grid \n\
-		set xlabel \"Time [s]\" \n\
-		 \n\
-		set output \"$@\" \n\
-		set ylabel \"R Command (of YawMpcController)\" \n\
-		plot     \"RCommand0.csv\" using (column(2)+column(3)/1000000000):1 with lines title 'r-command'" \
-	 | gnuplot
-
-PQCommands.png: PQCommands0.csv
-	echo " \
-		set datafile separator ',' \n\
-		 \n\
-		set term pngcairo size 1024,768 \n\
-		set grid \n\
-		set xlabel \"Time [s]\" \n\
-		 \n\
-		set output \"$@\" \n\
-		set ylabel \"PQ Commands (of AttitudeController)\" \n\
-		plot     \"PQCommands0.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'p-command', \
-	 		\"PQCommands0.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'q-command'" \
-	 | gnuplot
-
-AttiudeCommands.png: PQCommands0.csv DroneAttitude0.csv DronePosition0.csv
-	echo " \
-		set datafile separator ',' \n\
-		 \n\
-		set term pngcairo size 1024,768 \n\
-		set grid \n\
-		set xlabel \"Time [s]\" \n\
-		 \n\
-		set output \"$@\" \n\
-		set ylabel \"Attitude and Commands\" \n\
-		plot     \"PQCommands0.csv\" using (column(5)+column(6)/1000000000):3 with lines title 'phi-command', \
-			 \"PQCommands0.csv\" using (column(5)+column(6)/1000000000):4 with lines title 'theta-command', \
-			 \"DroneAttitude0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'pitch', \
-			 \"DroneAttitude0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'roll', \
-			 \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'X-Pos', \
-			 \"DronePosition0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'Y-Pos'" \
-	 | gnuplot
-
-PropellersVelocity.png: PropellersVelocity0.csv
-	echo " \
-		set datafile separator ',' \n\
-		 \n\
-		set term pngcairo size 1024,768 \n\
-		set grid \n\
-		set xlabel \"Time [s]\" \n\
-		 \n\
-		set output \"$@\" \n\
-		set ylabel \"Propellers velocity\" \n\
-		plot     \"PropellersVelocity0.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'A', \
-			 \"PropellersVelocity0.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'B', \
-			 \"PropellersVelocity0.csv\" using (column(5)+column(6)/1000000000):3 with lines title 'C', \
-			 \"PropellersVelocity0.csv\" using (column(5)+column(6)/1000000000):4 with lines title 'D'" \
-	 | gnuplot
-
-XYcontroller.png: XeYe0.csv CommandAttitude0.csv
-	echo " \
-		set datafile separator ',' \n\
-		 \n\
-		set term pngcairo size 1024,768 \n\
-		set grid \n\
-		set xlabel \"Time [s]\" \n\
-		 \n\
-		set output \"$@\" \n\
-		set ylabel \"XYcontroller\" \n\
-		plot     \"XeYe0.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'error-x', \
-			 \"XeYe0.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'error-y', \
-			 \"XeYe0.csv\" using (column(5)+column(6)/1000000000):3 with lines title 'error-Vx', \
-			 \"XeYe0.csv\" using (column(5)+column(6)/1000000000):4 with lines title 'error-Vy', \
-			 \"CommandAttitude0.csv\" using (column(3)+column(4)/1000000000):1 with lines title 'theta-command', \
-			 \"CommandAttitude0.csv\" using (column(3)+column(4)/1000000000):2 with lines title 'phi-command'" \
-	 | gnuplot
-
-Attiudecontroller.png: CommandAttitude0.csv DroneAttitude0.csv PQCommands0.csv
-	echo " \
-		set datafile separator ',' \n\
-		 \n\
-		set term pngcairo size 1024,768 \n\
-		set grid \n\
-		set xlabel \"Time [s]\" \n\
-		 \n\
-		set output \"$@\" \n\
-		set ylabel \"Attiudecontroller\" \n\
-		plot     \"CommandAttitude0.csv\" using (column(3)+column(4)/1000000000):1 with lines title 'theta-command', \
-		   	 \"CommandAttitude0.csv\" using (column(3)+column(4)/1000000000):2 with lines title 'phi-command', \
-			 \"DroneAttitude0.csv\" using (column(4)+column(5)/1000000000):2 with lines title 'pitch (theta)', \
-			 \"DroneAttitude0.csv\" using (column(4)+column(5)/1000000000):1 with lines title 'roll (phi)', \
-		 	 \"PQCommands0.csv\" using (column(5)+column(6)/1000000000):2 with lines title 'q-command (theta-command)', \
-			 \"PQCommands0.csv\" using (column(5)+column(6)/1000000000):1 with lines title 'p-command (phi-command)'" \
-	 | gnuplot
 
 Distance.png: Distance0.csv Distance1.csv Distance2.csv Distance3.csv
 	echo " \

@@ -6,6 +6,7 @@ import numpy as np
 import argparse
 import pathlib
 import os
+import statistics
 
 SWARM_DISABLED=            0
 SWARM_DECLARATIVE_SIMPLE=  1
@@ -22,7 +23,7 @@ MAX_dist_center=0
 MIN_obstacle_dist_min=99999
 MAX_dist_target=0
 
-points_per_second = 200 # number of datapoints per second, for plotting
+points_per_second = 100 # number of datapoints per second, for plotting
 
 ARRAY_time = []
 ARRAY_dist_min = []
@@ -106,8 +107,11 @@ def aggregate_write_out(dirname = ".", filename_prefix = "", filename_suffix = "
     writer = csv.writer(f)
     index = 0
     while index < len(ARRAY_time):
-        if ARRAY_time[index] > 0.1:
-            writer.writerow([ARRAY_time[index], ARRAY_dist_min[index], ARRAY_dist_center[index], ARRAY_obstacle_dist_min[index], ARRAY_dist_target[index]])
+        if ARRAY_time[index] > 8:
+#            writer.writerow([ARRAY_time[index], min([ARRAY_dist_min[index-1], ARRAY_dist_min[index]]), max([ARRAY_dist_center[index-1], ARRAY_dist_center[index]]), min(ARRAY_obstacle_dist_min[index-1], ARRAY_obstacle_dist_min[index]), ARRAY_dist_target[index]])
+#            writer.writerow([ARRAY_time[index], ARRAY_dist_min[index], ARRAY_dist_center[index], ARRAY_obstacle_dist_min[index], ARRAY_dist_target[index]])
+            writer.writerow([ARRAY_time[index], statistics.median([ARRAY_dist_min[index-2], ARRAY_dist_min[index-1], ARRAY_dist_min[index]]), statistics.median([ARRAY_dist_center[index-4], ARRAY_dist_center[index-3], ARRAY_dist_center[index-2], ARRAY_dist_center[index-1], ARRAY_dist_center[index]]), statistics.median([ARRAY_obstacle_dist_min[index-2], ARRAY_obstacle_dist_min[index-1], ARRAY_obstacle_dist_min[index]]), ARRAY_dist_target[index]])
+
         index = index + 1
     f.close()
 

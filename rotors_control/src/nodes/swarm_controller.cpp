@@ -524,9 +524,10 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
        ROS_INFO_ONCE("SwarmController %d swarm dist_target_gt=%f", droneNumber_, dist_target_gt);
 
        //float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_gt_)); // calculate length of vector
-       tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";
-       tempState << target_swarm.position[0] << "," << target_swarm.position[1] << "," << target_swarm.position[2] << ",";
-       // tempState << odometry_gt_.velocity[0] << "," << odometry_gt_.velocity[1] << "," << odometry_gt_.velocity[2] << ",";
+       tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ","; // log ground truth position
+       //tempState << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ","; // log position with sensor noise
+       tempState << target_swarm.position[0] << "," << target_swarm.position[1] << "," << target_swarm.position[2] << ","; // log swarm target
+       // tempState << odometry_gt_.velocity[0] << "," << odometry_gt_.velocity[1] << "," << odometry_gt_.velocity[2] << ","; // log velocity
        // tempState << abs_state_velocity << ",";
     }
 
@@ -1105,7 +1106,7 @@ void DroneStateWithTime::PoseCallback(const geometry_msgs::PoseStampedConstPtr& 
     // gaussian random number generator
     std::normal_distribution<float> dist(0.0, position_noise_);
     rand_cnt_++;
-    if(rand_cnt_ > 10) // reduce frequency of noise
+    if(rand_cnt_ > 25) // reduce frequency of noise
     {
       rand_cnt_ = 0;
       rand_x_ = max(-5*position_noise_, min((float)dist(generator), 5*position_noise_));

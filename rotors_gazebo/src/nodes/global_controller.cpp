@@ -494,6 +494,7 @@ int main(int argc, char** argv) {
     ros::spinOnce();
 
     trajectory_msg.header.stamp = ros::Time::now();
+    // starting position
     desired_position(0) = 0;
     desired_position(1) = 2.5;
     desired_position(2) = 2.5;
@@ -547,14 +548,9 @@ int main(int argc, char** argv) {
         if(path_cnt == 0)
         {
           desired_position(0) = 0;
-          desired_position(1) = 2.5;
-        }
-        else if(path_cnt == 1)
-        {
-          desired_position(0) = 0;
           desired_position(1) = 10.5;
         }
-        else if(path_cnt == 2)
+        else if(path_cnt == 1)
         {
           desired_position(0) = 0;
           desired_position(1) = 2.5;
@@ -568,24 +564,19 @@ int main(int argc, char** argv) {
         if(path_cnt == 0)
         {
           desired_position(0) = 0;
-          desired_position(1) = 2.5;
-        }
-        else if(path_cnt == 1)
-        {
-          desired_position(0) = 0;
           desired_position(1) = 10.5;
         }
-        else if(path_cnt == 2)
+        else if(path_cnt == 1)
         {
           desired_position(0) = 2.5;
           desired_position(1) = 6.5;
         }
-        else if(path_cnt == 3)
+        else if(path_cnt == 2)
         {
           desired_position(0) = -2.5;
           desired_position(1) = 6.5;
         }
-        else if(path_cnt == 4)
+        else if(path_cnt == 3)
         {
           desired_position(0) = 0;
           desired_position(1) = 2.5;
@@ -595,18 +586,13 @@ int main(int argc, char** argv) {
       }
       else if(pathScenario == 3) // forward and backward only, but slower
       {
-        path_sleep_afterwards = 40.0;
-        if(path_cnt == 0)
-        {
-          desired_position(0) = 0;
-          desired_position(1) = 2.5;
-        }
-        else if(path_cnt == 1)
+        path_sleep_afterwards = 50.0;
+        else if(path_cnt == 0)
         {
           desired_position(0) = 0;
           desired_position(1) = 10.5;
         }
-        else if(path_cnt == 2)
+        else if(path_cnt == 1)
         {
           desired_position(0) = 0;
           desired_position(1) = 2.5;

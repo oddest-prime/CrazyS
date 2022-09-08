@@ -2,6 +2,10 @@
 
 cd ~/SWARM/crazys
 
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 gradenum spc_local_A 5 1 "debug"
+echo -e "\n`date` - done.\n"; exit 0; # --------------- END EXECUTION
+
+
 docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm30 gradenum spc_local_A 5 1 "test" &
 docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradenum spc_local_A 5 1 "test" &
 sleep 150 # delay compilation by 150 seconds in second two docker containers

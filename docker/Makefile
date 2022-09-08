@@ -42,7 +42,8 @@ CombinedMetrics.pdf: CombinedMetrics.csv Makefile
   		plot \"$<\" using (column(1)-$(plot_start_val)):(column(1)>$(plot_start_val) ? (column(1)<$(plot_end_val) ? column(2) : NaN) : NaN) with lines title 'dist min', \
 			 \"$<\" using (column(1)-$(plot_start_val)):(column(1)>$(plot_start_val) ? (column(1)<$(plot_end_val) ? column(3) : NaN) : NaN) with lines title 'swarm radius', \
 			 \"$<\" using (column(1)-$(plot_start_val)):(column(1)>$(plot_start_val) ? (column(1)<$(plot_end_val) ? column(4) : NaN) : NaN) with lines title 'dist obstacle min', \
-			 \"$<\" using (column(1)-$(plot_start_val)):(column(1)>$(plot_start_val) ? (column(1)<$(plot_end_val) ? 0.2 : NaN) : NaN) with lines dashtype 2 title '20cm'" \
+ 			0.2 with lines linewidth 2 lt rgb 'light-red' dashtype 2 title 'dist_{thr} (20cm)', \
+			0.3 with lines linewidth 2 lt rgb 'coral' dashtype 2 title 'clear_{thr} (30cm)'" \
 	 | gnuplot
 
 Distance%.png: Distance%.csv Makefile
@@ -199,6 +200,7 @@ TraceXY.pdf: State0.csv Makefile crazyflie2_*.yaml
 						\"State10.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 10', \
 						\"State11.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 11', \
 						\"State13.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 13', \
+						\"State12.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 12', \
 						\"State14.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 14', \
 						\"State15.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 15', \
 						\"State16.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 16', \
@@ -214,6 +216,7 @@ TraceXY.pdf: State0.csv Makefile crazyflie2_*.yaml
 						\"State9.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v9=v9+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 9', \
 						\"State10.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v10=v10+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 10', \
 						\"State11.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v11=v11+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 11', \
+						\"State12.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v12=v12+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 12', \
 						\"State13.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v13=v13+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 13', \
 						\"State14.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v14=v14+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 14', \
 						\"State15.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v15=v15+1) <= 1 ? column(4) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 15', \
@@ -255,6 +258,7 @@ TraceXZ.pdf: State0.csv Makefile crazyflie2_*.yaml
 						\"State9.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 9', \
 						\"State10.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 10', \
 						\"State11.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 11', \
+						\"State12.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 12', \
 						\"State13.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 13', \
 						\"State14.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 14', \
 						\"State15.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 15', \
@@ -271,6 +275,7 @@ TraceXZ.pdf: State0.csv Makefile crazyflie2_*.yaml
 						\"State9.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v9=v9+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 9', \
 						\"State10.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v10=v10+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 10', \
 						\"State11.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v11=v11+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 11', \
+						\"State12.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v12=v12+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 13', \
 						\"State13.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v13=v13+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 13', \
 						\"State14.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v14=v14+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 14', \
 						\"State15.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v15=v15+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 15', \
@@ -311,6 +316,7 @@ TraceYZ.pdf: State0.csv Makefile crazyflie2_*.yaml
 						\"State9.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 9', \
 						\"State10.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 10', \
 						\"State11.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 11', \
+						\"State12.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 12', \
 						\"State13.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 13', \
 						\"State14.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 14', \
 						\"State15.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linecolor rgb \"web-blue\" linewidth 1 title 'drone 15', \
@@ -328,6 +334,7 @@ TraceYZ.pdf: State0.csv Makefile crazyflie2_*.yaml
 						\"State10.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v10=v10+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 10', \
 						\"State11.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v11=v11+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 11', \
 						\"State13.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v13=v13+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 13', \
+						\"State12.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v12=v12+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 12', \
 						\"State14.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v14=v14+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 14', \
 						\"State15.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v15=v15+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 15', \
 						\"State16.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_end_val)) ? ((v16=v16+1) <= 1 ? column(6) : NaN) : NaN) with points linecolor rgb \"dark-blue\" pointtype 2 title 'drone 16', \

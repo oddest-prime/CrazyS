@@ -13,7 +13,7 @@
   <arg name="droneCount" default="9"/>
   <arg name="swarm_mode" default="gradenum"/>
   <arg name="swarm_params" default="swarm_params"/>
-  <arg name="csvFilesStoring" default="true"/> <!-- possible values: "true", "false", "distance" -->
+  <arg name="csvFilesStoring" default="distance"/> <!-- possible values: "yes", "no", "distance" -->
   <arg name="csvFilesStoringTime" default="999.0"/> <!-- seconds -->
   <!-- The following line causes gzmsg and gzerr messages to be printed to the console
       (even when Gazebo is started through roslaunch) -->

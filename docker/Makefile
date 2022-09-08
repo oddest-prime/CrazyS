@@ -83,22 +83,22 @@ Metrics%.png: Metrics%.csv Makefile
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
-	    stats \"$<\" using ((column(3)>1) ? column(4) : NaN) \n\
+	    stats \"$<\" using ((column(3)>64) ? column(4) : NaN) \n\
 		print sprintf(\"metric: MEAN of dist min %f\", STATS_mean) \n\
 		print sprintf(\"metric: MEDIAN of dist min %f\", STATS_median) \n\
 		print sprintf(\"metric: MIN of dist min %f\", STATS_min) \n\
 		print sprintf(\"metric: MAX of dist min %f\", STATS_max) \n\
-		stats \"$<\" using ((column(3)>1) ? column(5) : NaN) \n\
+		stats \"$<\" using ((column(3)>64) ? column(5) : NaN) \n\
 		print sprintf(\"metric: MEAN of swarm radius %f\", STATS_mean) \n\
 		print sprintf(\"metric: MEDIAN of swarm radius %f\", STATS_median) \n\
 		print sprintf(\"metric: MIN of swarm radius %f\", STATS_min) \n\
 		print sprintf(\"metric: MAX of swarm radius %f\", STATS_max) \n\
-		stats \"$<\" using ((column(3)>1) ? column(6) : NaN) \n\
+		stats \"$<\" using ((column(3)>64) ? column(6) : NaN) \n\
 		print sprintf(\"metric: MEAN of dist obstacle min %f\", STATS_mean) \n\
 		print sprintf(\"metric: MEDIAN of dist obstacle min %f\", STATS_median) \n\
 		print sprintf(\"metric: MIN of dist obstacle min %f\", STATS_min) \n\
 		print sprintf(\"metric: MAX of dist obstacle min %f\", STATS_max) \n\
-		stats \"$<\" using ((column(3)>1) ? column(8) : NaN) \n\
+		stats \"$<\" using ((column(3)>64) ? column(8) : NaN) \n\
 		print sprintf(\"metric: MEAN of neighbours count %f\", STATS_mean) \n\
 		print sprintf(\"metric: MEDIAN of neighbours count %f\", STATS_median) \n\
 		print sprintf(\"metric: MIN of neighbours count %f\", STATS_min) \n\

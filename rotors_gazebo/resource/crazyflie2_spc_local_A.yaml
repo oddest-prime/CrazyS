@@ -7,14 +7,14 @@ swarm: {
   }
 mpc1: {
   eps_move: 0.05,
-  n_move_max: 5,
+  n_move_max: 4,
   mpc_cohesion_weight: 20.0,
   mpc_separation_weight: 12.0,
   mpc_target_weight: 150.0,
   mpc_obstacle_weight: 18.0
   }
 gradient: {
-  scale_factor: 0.005
+  scale_factor: 0.004
   }
 inner: {
   controller: 1 # 1 -> PID (A), 2 -> explicit (B)

@@ -14,7 +14,7 @@ mpc1: {
   mpc_obstacle_weight: 18.0
   }
 gradient: {
-  scale_factor: 0.003
+  scale_factor: 0.0025
   }
 inner: {
   controller: 1 # 1 -> PID (A), 2 -> explicit (B)

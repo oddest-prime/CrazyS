@@ -6,7 +6,7 @@ swarm: {
   obstacle_radius: 0.25 # 25 cm
   }
 mpc1: {
-  eps_move: 0.05,
+  eps_move: 0.045,
   n_move_max: 3,
   mpc_cohesion_weight: 20.0,
   mpc_separation_weight: 12.0,

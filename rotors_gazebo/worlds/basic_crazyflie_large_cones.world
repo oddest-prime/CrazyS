@@ -3,7 +3,7 @@
 <sdf version="1.4">
   <world name="default">
     <include>
-      <uri>model://scale_plane</uri>
+      <uri>model://scale_plane30</uri>
     </include>
     <include>
       <uri>model://sun</uri>

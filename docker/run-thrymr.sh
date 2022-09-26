@@ -2,52 +2,14 @@
 
 cd ~/SWARM/crazys
 
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm30 gradenum spc_local_B 7 3 "test30" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm30 gradenum spc_local_B 0 2 "test30" &
+
+#                                                                                                                         hash                         launch mode   params        obs path extra
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_params2b 0 2 "eel" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_params2b 0 2 "eel" &
 sleep 150 # delay compilation by 150 seconds in second two docker containers
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm30 gradenum spc_local_B 5 1 "test30" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm30 gradenum spc_local_B 6 1 "test30" &
-echo -e "\n`date` - done.\n"; exit 0; # --------------- END EXECUTION
-
-
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm30 gradenum spc_local_A 5 1 "test" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradenum spc_local_A 5 1 "test" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_params2b 0 2 "eel" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist1 dist mpc1_params2b 0 2 "eel" &
 sleep 150 # delay compilation by 150 seconds in second two docker containers
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradenum spc_local_A 5 1 "test" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 gradenum spc_local_A 5 1 "test" &
-wait
-
-#                                                                                                                         hash                         launch mode params obstacleScenario pathScenario extra
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm30 gradenum spc_local_B 5 1 "test" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradenum spc_local_B 5 1 "test" &
-sleep 150 # delay compilation by 150 seconds in second two docker containers
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradenum spc_local_B 5 1 "test" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 gradenum spc_local_B 5 1 "test" &
-wait
-
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm30 gradenum spc_global_A 5 1 "test" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradenum spc_global_A 5 1 "test" &
-sleep 150 # delay compilation by 150 seconds in second two docker containers
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradenum spc_global_A 5 1 "test" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 gradenum spc_global_A 5 1 "test" &
-wait
-
-#                                                                                                                         hash                         launch mode params obstacleScenario pathScenario extra
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm30 gradenum spc_global_B 5 1 "test" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm15 gradenum spc_global_B 5 1 "test" &
-sleep 150 # delay compilation by 150 seconds in second two docker containers
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm9 gradenum spc_global_B 5 1 "test" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` swarm4 gradenum spc_global_B 5 1 "test" &
-wait
-
-
-echo -e "\n`date` - done.\n"; exit 0; # --------------- END EXECUTION
-
-
-
-#                                                                                                                         hash                         launch mode   params        extra
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist1 distgnd mpc1_params2b "cones1" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 distgnd mpc1_params2b "cones1" &
 wait
 echo -e "\n`date` - done.\n"; exit 0; # --------------- END EXECUTION
 

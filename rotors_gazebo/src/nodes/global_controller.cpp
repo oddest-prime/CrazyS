@@ -500,7 +500,10 @@ int main(int argc, char** argv) {
     desired_position(1) = 2.5; // y
     desired_position(2) = 2.5; // z
     if(pathScenario == 4) // for EEL (dist and distgnd)
+    {
       desired_position(1) = 4.0; // y
+      desired_position(2) = 3.5; // z
+    }
 
     move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
@@ -611,13 +614,13 @@ int main(int argc, char** argv) {
         {
           desired_position(0) = 4.0;   // x
           desired_position(1) = 0.0; // y
-          desired_position(2) = 2.5; // z
+          desired_position(2) = 3.5; // z
         }
         else if(path_cnt == 1)
         {
           desired_position(0) = 0.0;   // x
           desired_position(1) = 0.0; // y
-          desired_position(2) = 2.5; // z
+          desired_position(2) = 3.5; // z
         }
         else
           break;

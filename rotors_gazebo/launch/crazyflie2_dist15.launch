@@ -13,7 +13,7 @@
   <arg name="pathScenario" default="2"/>
   <arg name="droneCount" default="15"/>
   <arg name="beaconCount" default="1"/>
-  <arg name="swarm_mode" default="distgnd"/>
+  <arg name="swarm_mode" default="dist"/>
   <arg name="swarm_params" default="mpc1_params2b"/>
   <arg name="csvFilesStoring" default="yes"/>
   <arg name="csvFilesStoringLowLevel" default="no"/>
@@ -46,6 +46,18 @@
     <param name="randNoise" value="0.0"/>
     <param name="swarmMode" value="$(arg swarm_mode)"/>
   </node>
+
+  <group ns="beacon_0">
+    <node name="spawn_marker_green_beacon_0" pkg="gazebo_ros" type="spawn_model"
+     args="-file $(find rotors_gazebo)/models/marker/model_green.sdf
+           -sdf
+           -x 0.0
+           -y 0.0
+           -z 0.0
+           -model marker_green_beacon_0"
+     respawn="false" output="screen">
+   </node>
+  </group>
 
   <include file="$(find rotors_gazebo)/launch/crazyflie2_distX_inner.launch" pass_all_args="true">
     <arg name="droneNumber" value="0" />
@@ -125,25 +137,11 @@
     <arg name="spawnY" value="1.5" />
   </include>
 
-
-
-  <group ns="beacon_0">
-    <node name="spawn_marker_green_beacon_0" pkg="gazebo_ros" type="spawn_model"
-     args="-file $(find rotors_gazebo)/models/marker/model_green.sdf
-           -sdf
-           -x 0.7
-           -y 0.7
-           -z 3.0
-           -model marker_green_beacon_0"
-     respawn="false" output="screen">
-   </node>
-  </group>
-
   <node name="distance_measurement_sim" pkg="rotors_control" type="distance_measurement_sim" output="screen">
     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
-    <param name="droneCount" value="5"/>
-    <param name="beaconCount" value="1"/>
+    <param name="droneCount" value="$(arg droneCount)"/>
+    <param name="beaconCount" value="$(arg beaconCount)"/>
      <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
      <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
   </node>

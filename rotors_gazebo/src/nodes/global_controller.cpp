@@ -225,8 +225,8 @@ void move_marker_beacon(ros::ServiceClient* gazebo_client, int index, float x, f
   geometry_msgs::Point pr2_position_green;
   pr2_position_green.x = x;
   pr2_position_green.y = y;
-  //pr2_position_green.z = z;
-  pr2_position_green.z = 0.2; // fix z to simulate ground-based vehicle.
+  pr2_position_green.z = z;
+  //pr2_position_green.z = 0.2; // fix z to simulate ground-based vehicle.
   geometry_msgs::Quaternion pr2_orientation;
   geometry_msgs::Pose pr2_pose;
   gazebo_msgs::ModelState pr2_modelstate;
@@ -242,6 +242,7 @@ void move_marker_beacon(ros::ServiceClient* gazebo_client, int index, float x, f
   srv.request.model_state = pr2_modelstate;
   if(!gazebo_client->call(srv))
       ROS_ERROR("Failed to move green marker! Error msg:%s",srv.response.status_message.c_str());
+  ROS_INFO("move_marker_beacon: marker %s moved to x=%f y=%f z=%f", pr2_modelstate.model_name.c_str(), pr2_position_green.x, pr2_position_green.y, pr2_position_green.z);
 }
 
 void callback(const sensor_msgs::ImuPtr& msg) {
@@ -444,7 +445,7 @@ int main(int argc, char** argv) {
     std_msgs::Int32 logsave_msg;
 
     // Default desired position and yaw.
-    Eigen::Vector3d desired_position(0.3, 0.5, 1.0);
+    Eigen::Vector3d desired_position(0.0, 0.0, -1.0);
     double desired_yaw = 0.0;
 
     int modulus = 6;
@@ -457,7 +458,7 @@ int main(int argc, char** argv) {
     if(droneCount == 2)
       modulus = 1;
 
-    move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
+    move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), -5000);
     ROS_INFO("global_controller (timed): Go to starting position (hovering).");
     for (size_t i = 0; i < droneCount; i++) // go to starting position (hovering)
     {
@@ -478,7 +479,7 @@ int main(int argc, char** argv) {
 
     }
 
-    ros::Duration(3.0).sleep();
+    ros::Duration(2.9).sleep();
     ros::spinOnce();
 
     ROS_INFO("global_controller: Enable swarm mode.");
@@ -490,14 +491,17 @@ int main(int argc, char** argv) {
       enable_pub[i].publish(enable_msg);
     }
 
-    ros::Duration(1.0).sleep();
+    ros::Duration(0.1).sleep();
     ros::spinOnce();
 
     trajectory_msg.header.stamp = ros::Time::now();
     // starting position
-    desired_position(0) = 0;
-    desired_position(1) = 2.5;
-    desired_position(2) = 2.5;
+    desired_position(0) = 0;   // x
+    desired_position(1) = 2.5; // y
+    desired_position(2) = 2.5; // z
+    if(pathScenario == 4) // for EEL (dist and distgnd)
+      desired_position(1) = 4.0; // y
+
     move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
     for (size_t i = 0; i < droneCount; i++) // send target point to swarm
@@ -600,12 +604,31 @@ int main(int argc, char** argv) {
         else
           break;
       }
+      else if(pathScenario == 4) // for EEL (dist and distgnd)
+      {
+        path_sleep_afterwards = 20.0;
+        if(path_cnt == 0)
+        {
+          desired_position(0) = 4.0;   // x
+          desired_position(1) = 0.0; // y
+          desired_position(2) = 2.5; // z
+        }
+        else if(path_cnt == 1)
+        {
+          desired_position(0) = 0.0;   // x
+          desired_position(1) = 0.0; // y
+          desired_position(2) = 2.5; // z
+        }
+        else
+          break;
+      }
       else
         break;
 
       path_cnt ++;
-      trajectory_msg.header.stamp = ros::Time::now();
+
       move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
+      trajectory_msg.header.stamp = ros::Time::now();
       mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
       for (size_t i = 0; i < droneCount; i++) // send target point to swarm
       {

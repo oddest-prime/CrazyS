@@ -12,13 +12,15 @@
     <include>
       <uri>model://construction_cone</uri>
       <name>cone_00</name>
-      <pose>0.0 5.0 0.0  0 0 0</pose>
+      <!--pose>x y z roll  pitch yaw</pose-->
+      <pose>0.0 4.0 0.0  0 0 0</pose>
       <static>true</static>
     </include>
     <include>
       <uri>model://construction_cone</uri>
       <name>cone_01</name>
-      <pose>5.0 0.0 0.0  0 0 0</pose>
+      <!--pose>x y z roll  pitch yaw</pose-->
+      <pose>4.0 0.0 0.0  0 0 0</pose>
       <static>true</static>
     </include>
 

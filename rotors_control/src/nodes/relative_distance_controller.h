@@ -25,6 +25,14 @@
 #include <stdio.h>
 #include <random>
 
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <sstream>
+#include <iterator>
+#include <limits>
+#include <random>
+
 #include <geometry_msgs/PoseStamped.h>
 #include <gazebo_msgs/SetModelState.h>
 #include <mav_msgs/eigen_mav_msgs.h>
@@ -76,6 +84,7 @@ namespace rotors_control {
             float eps_move_;
             float neighbourhood_distance_;
 
+            bool dataStoring_active_;
             int enable_swarm_ = SWARM_DISABLED;
             int history_cnt_;
             Vector3f random_direction_; // save random exploration direction
@@ -108,6 +117,7 @@ namespace rotors_control {
             std::string namespace_;
 
             ros::NodeHandle n_;
+            ros::Timer timer_saveData;
 
             ros::ServiceClient gazebo_client_;
             float visual_cnt_;
@@ -117,7 +127,11 @@ namespace rotors_control {
             void PositionsCallback(const std_msgs::Float32MultiArray& positions_msg);
             void BeaconsCallback(const std_msgs::Float32MultiArray& distances_msg);
             void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
+            void SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg);
             void MultiDofJointTrajectoryCallback(const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& msg);
+            void CallbackSaveData(const ros::TimerEvent& event);
+
+            void FileSaveData(void);
 
             //subscribers
             ros::Subscriber cmd_multi_dof_joint_trajectory_sub_;
@@ -126,9 +140,15 @@ namespace rotors_control {
             ros::Subscriber positions_sub_;
             ros::Subscriber beacons_sub_;
             ros::Subscriber enable_sub_;
+            ros::Subscriber logsave_sub_;
 
             //publisher
             ros::Publisher setpoint_pub_;
+
+            // Lists for data saving
+            std::vector<std::string> listDistance_;
+            std::vector<std::string> listEnv_;
+            std::vector<std::string> listState_;
     };
 }
 

@@ -296,7 +296,6 @@ void SwarmController::InitializeParams() {
 
     ros::NodeHandle nh;
     timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &SwarmController::CallbackSaveData, this, false, true);
-
    }
 
 }

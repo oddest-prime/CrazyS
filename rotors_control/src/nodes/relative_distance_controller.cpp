@@ -30,14 +30,6 @@
 #include <time.h>
 #include <chrono>
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <iterator>
-#include <limits>
-#include <random>
-
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -82,6 +74,7 @@ RelativeDistanceController::RelativeDistanceController() {
     cmd_multi_dof_joint_trajectory_sub_ = nh.subscribe(mav_msgs::default_topics::COMMAND_TRAJECTORY, 1, &RelativeDistanceController::MultiDofJointTrajectoryCallback, this);
     odometry_sub_ = nh.subscribe(mav_msgs::default_topics::ODOMETRY, 1, &RelativeDistanceController::OdometryCallback, this);
     enable_sub_ = nh.subscribe("enable", 1, &RelativeDistanceController::EnableCallback, this);
+    logsave_sub_ = nh.subscribe("logsave", 1, &RelativeDistanceController::SaveLogCallback, this);
     distances_sub_ = nh.subscribe("/drone_distances", 1, &RelativeDistanceController::DistancesCallback, this);
     positions_sub_ = nh.subscribe("/drone_positions", 1, &RelativeDistanceController::PositionsCallback, this);
     beacons_sub_ = nh.subscribe("/beacon_distances", 1, &RelativeDistanceController::BeaconsCallback, this);
@@ -147,14 +140,87 @@ void RelativeDistanceController::InitializeParams() {
     else
         ROS_ERROR("Failed to get param 'droneCount'");
 
+    if (pnh.getParam("csvFilesStoring", dataStoringActive)){
+        ROS_INFO("Got param 'csvFilesStoring': %s", dataStoringActive.c_str());
+
+        dataStoring_active_ = false;
+        if(dataStoringActive == "yes" || dataStoringActive == "distance")
+            dataStoring_active_ = true;
+    }
+    else {
+       ROS_ERROR("Failed to get param 'csvFilesStoring'");
+       dataStoring_active_ = true;
+    }
+
+    if (pnh.getParam("csvFilesStoringTime", dataStoringTime)){
+        ROS_INFO("Got param 'csvFilesStoringTime': %f", dataStoringTime);
+    }
+    else {
+       ROS_ERROR("Failed to get param 'csvFilesStoringTime'");
+       dataStoringTime = 9999;
+    }
+
     ros::NodeHandle nh;
-    //timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &RelativeDistanceController::CallbackSaveData, this, false, true);
+    timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &RelativeDistanceController::CallbackSaveData, this, false, true);
 }
 
 void RelativeDistanceController::EnableCallback(const std_msgs::Int32ConstPtr& enable_msg) {
     ROS_INFO("RelativeDistanceController got enable message: %d", enable_msg->data);
 
     enable_swarm_ = enable_msg->data;
+}
+
+//The callback saves data into csv files
+void RelativeDistanceController::CallbackSaveData(const ros::TimerEvent& event){
+  ROS_INFO("RelativeDistanceController CallbackSavaData. droneNumber: %d", droneNumber_);
+  FileSaveData();
+}
+
+void RelativeDistanceController::SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg) {
+  ROS_INFO("RelativeDistanceController SaveLogCallback. droneNumber: %d", droneNumber_);
+  FileSaveData();
+}
+
+void RelativeDistanceController::FileSaveData(void){
+
+      if(!dataStoring_active_){
+         return;
+      }
+
+      std::ofstream fileDistance;
+      std::ofstream fileEnv;
+      std::ofstream fileState;
+
+      ROS_INFO("RelativeDistanceController FileSaveData. droneNumber: %d", droneNumber_);
+
+      if(mkdir("/tmp/log_output/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
+          if(errno != EEXIST)
+             ROS_ERROR("Cannot create directory /tmp/log_output/");
+
+      fileDistance.open(std::string("/tmp/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileEnv.open(std::string("/tmp/log_output/Env") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileState.open(std::string("/tmp/log_output/State") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+
+      // Saving distances from every to every drone in a file
+      for (unsigned n=0; n < listDistance_.size(); ++n) {
+          fileDistance << listDistance_.at( n );
+      }
+      // Saving quality metrics in a file
+      for (unsigned n=0; n < listEnv_.size(); ++n) {
+          fileEnv << listEnv_.at( n );
+      }
+      // Saving states in a file
+      for (unsigned n=0; n < listState_.size(); ++n) {
+          fileState << listState_.at( n );
+      }
+
+      // Closing all opened files
+      fileDistance.close();
+      fileEnv.close();
+      fileState.close();
+
+      // To have a one shot storing
+      dataStoring_active_ = false;
 }
 
 void RelativeDistanceController::MultiDofJointTrajectoryCallback(const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& msg) {
@@ -177,6 +243,18 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     odometry_gt_.position[1] = odometry_msg->pose.pose.position.y;
     odometry_gt_.position[2] = odometry_msg->pose.pose.position.z;
     ROS_INFO_ONCE("RelativeDistanceController (%d) odometry: x=%f y=%f z=%f", droneNumber_, odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2]);
+
+    // for logging into files
+    std::stringstream tempDistance;
+    tempDistance.precision(24);
+    tempDistance << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
+    std::stringstream tempEnv;
+    tempEnv.precision(24);
+    tempEnv << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
+    std::stringstream tempState;
+    tempState.precision(24);
+    tempState << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
+    tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";
 
     // calculate movement vector based on current ground-truth position and history (TODO: use accelerometer data)
     Vector3f movement;
@@ -467,6 +545,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
             set_point.pose.position.z = odometry_gt_.position[2] + direction[2];
             ROS_INFO("RelativeDistanceController %d explore:%d direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
+            tempEnv << exploration_info << "," << direction[0] << "," << direction[1] << "," << direction[2] << "," << -1 << ",";
         }
         else // possible to do exploitation
         {
@@ -543,10 +622,11 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                     }
                 }
             }
-            ROS_INFO("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
             set_point.pose.position.x = odometry_gt_.position[0] + (float)min_xi * eps_move_;
             set_point.pose.position.y = odometry_gt_.position[1] + (float)min_yi * eps_move_;
             set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_*1.5; // TODO: proper scaling
+            ROS_INFO("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
+            tempEnv << exploration_info << "," << (float)min_xi * eps_move_ << "," << (float)min_yi * eps_move_ << "," << (float)min_zi * eps_move_*1.5 << "," << (float)min_sum << ",";
         }
     }
     else if(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES_GROUND)
@@ -774,6 +854,16 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     {
         setpoint_pub_.publish(set_point);
         ROS_INFO_ONCE("RelativeDistanceController %d set_point x=%f y=%f z=%f", droneNumber_, set_point.pose.position.x, set_point.pose.position.y, set_point.pose.position.z);
+    }
+
+    if(dataStoring_active_) // save data for log files
+    {
+        tempDistance << "\n";
+        listDistance_.push_back(tempDistance.str());
+        tempEnv << "\n";
+        listEnv_.push_back(tempEnv.str());
+        tempState << "\n";
+        listState_.push_back(tempState.str());
     }
 
     // move gazebo markers

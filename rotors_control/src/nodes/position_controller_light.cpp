@@ -93,10 +93,11 @@ void PositionControllerLight::FileSaveData(void){
 
       ROS_INFO("CallbackSavaData PositionControllerLight. droneNumber: %d", droneNumber_);
 
-      fileDistance.open(std::string("/tmp/log_output/PosDistance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
-      fileMetrics.open(std::string("/tmp/log_output/PosMetrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
-      fileState.open(std::string("/tmp/log_output/PosState") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      //fileDistance.open(std::string("/tmp/log_output/PosCtrlLightDistance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      //fileMetrics.open(std::string("/tmp/log_output/PosCtrlLightMetrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileState.open(std::string("/tmp/log_output/PosCtrlLightState") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
 
+      /*
       // Saving distances from every to every drone in a file
       for (unsigned n=0; n < listDistance_.size(); ++n) {
           fileDistance << listDistance_.at( n );
@@ -104,15 +105,15 @@ void PositionControllerLight::FileSaveData(void){
       // Saving quality metrics in a file
       for (unsigned n=0; n < listMetrics_.size(); ++n) {
           fileMetrics << listMetrics_.at( n );
-      }
+      }      */
       // Saving states in a file
       for (unsigned n=0; n < listState_.size(); ++n) {
           fileState << listState_.at( n );
       }
 
       // Closing all opened files
-      fileDistance.close();
-      fileMetrics.close();
+      //fileDistance.close();
+      //fileMetrics.close();
       fileState.close();
 
       // To have a one shot storing
@@ -287,16 +288,14 @@ void PositionControllerLight::OdometryCallback(const nav_msgs::OdometryConstPtr&
       std::stringstream tempState;
       tempState << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
 
-      if(dataStoring_active_) // save minimum distance to log file for current position
-      {
-         float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_)); // calculate length of vector
-         tempState << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ",";
-         tempState << odometry_.velocity[0] << "," << odometry_.velocity[1] << "," << odometry_.velocity[2] << ",";
-         tempState << abs_state_velocity << ",";
-      }
-
       if(dataStoring_active_) // save data for log files
       {
+          // current position and velocity
+          float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_)); // calculate length of vector
+          tempState << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ",";
+          tempState << odometry_.velocity[0] << "," << odometry_.velocity[1] << "," << odometry_.velocity[2] << ",";
+          tempState << abs_state_velocity << ",";
+
           tempDistance << "\n";
           listDistance_.push_back(tempDistance.str());
           tempMetrics << "\n";

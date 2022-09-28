@@ -247,16 +247,16 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         ROS_INFO_ONCE("DroneStateWithTime (%d) vector_to_center_gt: %s", droneNumber_, VectorToString(vector_to_center_gt).c_str());
         ROS_INFO_ONCE("DroneStateWithTime (%d) dist_min_gt=%f r=%f ", droneNumber_, dist_min_gt, vector_to_center_gt.norm());
 
-        tempMetrics << dist_min_gt << ",";
-        tempMetrics << vector_to_center_gt.norm() << ","; // length of vector, distance from the center
-        tempMetrics << 0 << ","; // obstacle_dist_min_gt
-        tempMetrics << droneCount_ << ",";
-        tempMetrics << droneCount_ << ","; // neighbourhood_cnt
+        tempMetrics << droneCount_ << ","; // number of drones
+        tempMetrics << beaconCount_ << ","; // number of beacons
+        tempMetrics << dist_min_gt << ","; // minimum distance to other drones
+        tempMetrics << vector_to_center_gt.norm() << ","; // length of vector, distance from the center (radius of whole flock = compactness)
+        tempMetrics << beacon_distances_gt_[0] << ","; // distance to beacon 0
 
-        //float abs_state_velocity = sqrt(SquaredScalarVelocity(&odometry_gt_)); // calculate length of vector
         tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";
-        // tempState << odometry_gt_.velocity[0] << "," << odometry_gt_.velocity[1] << "," << odometry_gt_.velocity[2] << ",";
-        // tempState << abs_state_velocity << ",";
+
+        for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+          tempDistance << distances_gt_[i] << "," << distances_[i] << ","; // distance to quadcopter i (first ground truth, then with measurement noise)
     }
 
     // publish distances message
@@ -370,9 +370,9 @@ void DroneStateWithTime::FileSaveData(void){
           if(errno != EEXIST)
              ROS_ERROR("Cannot create directory /tmp/log_output/");
 
-      fileDistance.open(std::string("/tmp/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
-      fileMetrics.open(std::string("/tmp/log_output/Metrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
-      fileState.open(std::string("/tmp/log_output/State") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileDistance.open(std::string("/tmp/log_output/DistSimDistance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileMetrics.open(std::string("/tmp/log_output/DistSimMetrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileState.open(std::string("/tmp/log_output/DistSimState") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
 
       // Saving distances from every to every drone in a file
       for (unsigned n=0; n < listDistance_.size(); ++n) {

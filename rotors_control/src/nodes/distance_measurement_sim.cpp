@@ -59,6 +59,7 @@ DistanceMeasurementSim::DistanceMeasurementSim() {
     beacons_pub_ = nh.advertise<std_msgs::Float32MultiArray>("beacon_distances", 1);
 
     modelstate_sub_ = nh.subscribe("/gazebo/model_states", 1, &DistanceMeasurementSim::ModelstateCallback, this);
+    logsave_sub_ = nh.subscribe("logsave", 1, &DistanceMeasurementSim::SaveLogCallback, this);
 
     InitializeParams();
 
@@ -255,8 +256,8 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
 
         tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";
 
-        for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
-          tempDistance << distances_gt_[i] << "," << distances_[i] << ","; // distance to quadcopter i (first ground truth, then with measurement noise)
+        //for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+        //  tempDistance << distances_gt_[i] << "," << distances_[i] << ","; // distance to quadcopter i (first ground truth, then with measurement noise)
     }
 
     // publish distances message
@@ -350,6 +351,12 @@ void DroneStateWithTime::EnableCallback(const std_msgs::Int32ConstPtr& enable_ms
 //The callback saves data into csv files
 void DistanceMeasurementSim::CallbackSaveData(const ros::TimerEvent& event){
   ROS_INFO("DistanceMeasurementSim CallbackSavaData.");
+  for (size_t i = 0; i < droneCount_; i++)
+    dronestate[i].FileSaveData();
+}
+
+void DistanceMeasurementSim::SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg){
+  ROS_INFO("DistanceMeasurementSim SaveLogCallback.");
   for (size_t i = 0; i < droneCount_; i++)
     dronestate[i].FileSaveData();
 }

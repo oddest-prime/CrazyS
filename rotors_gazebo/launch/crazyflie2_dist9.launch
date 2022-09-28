@@ -10,7 +10,7 @@
   <arg name="debug" default="false"/>
   <arg name="gui" default="true"/>
   <arg name="obstacleScenario" default="0"/>
-  <arg name="pathScenario" default="2"/>
+  <arg name="pathScenario" default="4"/>
   <arg name="droneCount" default="9"/>
   <arg name="beaconCount" default="1"/>
   <arg name="swarm_mode" default="dist"/>

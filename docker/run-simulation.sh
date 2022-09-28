@@ -99,14 +99,17 @@ cp /crazyflie_ws/src/crazys/docker/metrics.py /tmp/log_output/metrics.py
 chmod +x /tmp/log_output/metrics.py
 
 cd /tmp/log_output/
-make MetricsMerged.csv
+make DistSimMetricsMerged.csv
 make StateMerged.csv
 make MetricsMerged.png 2> Metrics.txt
 make StateMerged.png 2> States.txt
 make all-metrics
 make all-distance
 make all-state
-make CombinedMetrics.png
+make all-trace
+
+mkdir -p /tmp/plot_output/
+mv /tmp/log_output/*.png /tmp/plot_output/.
 
 echo "metrics file content:" >> /tmp/video.info
 echo "---------------------------------------------------------" >> /tmp/video.info
@@ -120,3 +123,4 @@ echo "=========================================================" >> /tmp/video.i
 cp /tmp/video.info /tmp/log_output/simulation.info
 /crazyflie_ws/src/crazys/docker/generate-video.sh "${date_hash_mode}"
 mv /tmp/log_output /crazyflie_ws/src/crazys/log_${date_hash_mode}
+mv /tmp/plot_output /crazyflie_ws/src/crazys/plot_${date_hash_mode}

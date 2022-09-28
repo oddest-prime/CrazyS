@@ -83,6 +83,7 @@ void publish_command(float cmd_x, float cmd_y, float cmd_z, float cmd_enable) {
 ros::Publisher trajectory_pub[N_DRONES_MAX];
 ros::Publisher enable_pub[N_DRONES_MAX];
 ros::Publisher logsave_pub[N_DRONES_MAX];
+ros::Publisher logsave_pub_global;
 ros::NodeHandle* nhp;
 
 int droneCount;
@@ -416,6 +417,7 @@ int main(int argc, char** argv) {
     enable_pub[i] = nhq[i].advertise<std_msgs::Int32>("enable", 10);
     logsave_pub[i] = nhq[i].advertise<std_msgs::Int32>("logsave", 10);
   }
+  logsave_pub_global = nh.advertise<std_msgs::Int32>("logsave", 10);
 
   if(operation_mode == OPERATION_MODE_TIMED)
   {
@@ -443,6 +445,7 @@ int main(int argc, char** argv) {
     trajectory_msgs::MultiDOFJointTrajectory trajectory_msg;
     std_msgs::Int32 enable_msg;
     std_msgs::Int32 logsave_msg;
+    logsave_msg.data = 1;
 
     // Default desired position and yaw.
     Eigen::Vector3d desired_position(0.0, 0.0, -1.0);
@@ -646,12 +649,14 @@ int main(int argc, char** argv) {
     }
 
     ROS_INFO("global_controller: Save log files.");
+    logsave_msg.data = 1;
     for (size_t i = 0; i < droneCount; i++) // enable swarm mode
     {
-      logsave_msg.data = 1;
       ROS_INFO("global_controller: Publishing logsave on namespace %s: %d.", nhq[i].getNamespace().c_str(), logsave_msg.data);
       logsave_pub[i].publish(logsave_msg);
     }
+    ROS_INFO("global_controller: Publishing logsave on namespace %s: %d.", nh.getNamespace().c_str(), logsave_msg.data);
+    logsave_pub_global.publish(logsave_msg);
 
     ros::Duration(3.0).sleep();
     ros::spinOnce();

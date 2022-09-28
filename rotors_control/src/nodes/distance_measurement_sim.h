@@ -113,6 +113,7 @@ namespace rotors_control {
             ros::NodeHandle n_;
             ros::Timer timer_saveData;
 
+            void SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg);
             void CallbackSaveData(const ros::TimerEvent& event);
             void ModelstateCallback(const gazebo_msgs::ModelStatesConstPtr& modelstates_msg);
 
@@ -120,6 +121,7 @@ namespace rotors_control {
             ros::Subscriber odometry_sub_[N_DRONES_MAX];
             ros::Subscriber enable_sub_[N_DRONES_MAX];
             ros::Subscriber modelstate_sub_;
+            ros::Subscriber logsave_sub_;
 
             //publisher
             ros::Publisher distances_pub_;

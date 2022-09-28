@@ -33,6 +33,7 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Int8.h>
+#include <std_msgs/Int32.h>
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
@@ -94,24 +95,7 @@ namespace rotors_control {
             sensorData_t sensors_;
             EigenOdometry odometry_;
 
-            float neighbourhood_distance_;
-            float eps_move_;
-            int n_move_max_;
-            float mpc_cohesion_weight_;
-            float mpc_separation_weight_;
-            float mpc_target_weight_;
-            float mpc_obstacle_weight_;
-            float weighted_delta_t_;
-            float reynolds_global_factor_;
-            float reynolds_velocity_factor_;
-            float reynolds_cohesion_factor_;
-            float reynolds_separation_factor_;
-            float reynolds_target_factor_;
-            float reynolds_target_accel_limit_;
-            float reynolds_accel_limit_;
-            float gradient_scale_factor_;
             int inner_controller_;
-
 
             mav_msgs::EigenTrajectoryPoint target_swarm_;
 
@@ -131,6 +115,8 @@ namespace rotors_control {
             void CallbackIMUUpdate(const ros::TimerEvent& event);
             void CallbackSaveData(const ros::TimerEvent& event);
 
+            void FileSaveData(void);
+
             //subscribers
             ros::Subscriber cmd_multi_dof_joint_trajectory_sub_;
             ros::Subscriber cmd_multi_dof_joint_trajectory_spline_sub_;
@@ -139,6 +125,7 @@ namespace rotors_control {
             ros::Subscriber enable_sub_;
             ros::Subscriber imu_sub_;
             ros::Subscriber imu_ideal_sub_;
+            ros::Subscriber logsave_sub_;
 
             //publisher
             ros::Publisher motor_velocity_reference_pub_;
@@ -159,6 +146,7 @@ namespace rotors_control {
             void IMUMellingerCallback(const sensor_msgs::ImuConstPtr& imu_msg); //When the Mellinger's controller is on
 
             void SetpointCallback(const geometry_msgs::PoseStampedConstPtr& setpoint_msg);
+            void SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg);
 
             // Lists for data saving
             std::vector<string> listDistance_;

@@ -466,7 +466,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             set_point.pose.position.x = odometry_gt_.position[0] + direction[0];
             set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
             set_point.pose.position.z = odometry_gt_.position[2] + direction[2];
-            ROS_INFO_ONCE("RelativeDistanceController %d explore:%d direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
+            ROS_INFO("RelativeDistanceController %d explore:%d direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
         }
         else // possible to do exploitation
         {
@@ -543,7 +543,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                     }
                 }
             }
-            ROS_INFO_ONCE("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
+            ROS_INFO("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
             set_point.pose.position.x = odometry_gt_.position[0] + (float)min_xi * eps_move_;
             set_point.pose.position.y = odometry_gt_.position[1] + (float)min_yi * eps_move_;
             set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_*1.5; // TODO: proper scaling
@@ -552,6 +552,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     else if(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES_GROUND)
     {
         ROS_INFO_ONCE("RelativeDistanceController starting swarm mode (SWARM_DECLARATIVE_DISTANCES_GROUND)");
+        ROS_FATAL("should not use SWARM_DECLARATIVE_DISTANCES_GROUND for now!");
+        exit(1);
 
         if(!transform_ok_) // need to do exploration
         {

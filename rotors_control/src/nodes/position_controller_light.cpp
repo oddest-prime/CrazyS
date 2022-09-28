@@ -58,6 +58,7 @@ PositionControllerLight::PositionControllerLight() {
     // Topics subscribe
     odometry_sub_ = nh.subscribe(mav_msgs::default_topics::ODOMETRY, 1, &PositionControllerLight::OdometryCallback, this);
     setpoint_sub_ = nh.subscribe("set_point", 1, &PositionControllerLight::SetpointCallback, this);
+    logsave_sub_ = nh.subscribe("logsave", 1, &PositionControllerLight::SaveLogCallback, this);
 
     // To publish the propellers angular velocities
     motor_velocity_reference_pub_ = nh.advertise<mav_msgs::Actuators>(mav_msgs::default_topics::COMMAND_ACTUATORS, 1);
@@ -68,8 +69,19 @@ PositionControllerLight::PositionControllerLight() {
 
 PositionControllerLight::~PositionControllerLight(){}
 
-//The callback saves data come from simulation into csv files
+
+//The callback saves data into csv files
 void PositionControllerLight::CallbackSaveData(const ros::TimerEvent& event){
+  ROS_INFO("PositionControllerLight CallbackSavaData. droneNumber: %d", droneNumber_);
+  FileSaveData();
+}
+
+void PositionControllerLight::SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg) {
+  ROS_INFO("PositionControllerLight SaveLogCallback. droneNumber: %d", droneNumber_);
+  FileSaveData();
+}
+
+void PositionControllerLight::FileSaveData(void){
 
       if(!dataStoring_active_){
          return;
@@ -177,32 +189,7 @@ void PositionControllerLight::InitializeParams() {
 
     position_controller_.SetControllerGains();
 
-    GetRosParameter(pnh, "swarm/neighbourhood_distance", (float)99, &neighbourhood_distance_);
-    GetRosParameter(pnh, "mpc1/eps_move", (float)0.1, &eps_move_);
-    GetRosParameter(pnh, "mpc1/n_move_max", (int)2, &n_move_max_);
-    GetRosParameter(pnh, "mpc1/mpc_cohesion_weight", (float)1.0, &mpc_cohesion_weight_);
-    GetRosParameter(pnh, "mpc1/mpc_separation_weight", (float)1.0, &mpc_separation_weight_);
-    GetRosParameter(pnh, "mpc1/mpc_target_weight", (float)1.0, &mpc_target_weight_);
-    GetRosParameter(pnh, "mpc1/mpc_obstacle_weight", (float)1.0, &mpc_obstacle_weight_);
-
-    GetRosParameter(pnh, "reynolds/weighted_delta_t", (float)0.5, &weighted_delta_t_);
-    GetRosParameter(pnh, "reynolds/global_factor", (float)0.5, &reynolds_global_factor_);
-    GetRosParameter(pnh, "reynolds/velocity_factor", (float)0.5, &reynolds_velocity_factor_);
-    GetRosParameter(pnh, "reynolds/cohesion_factor", (float)0.5, &reynolds_cohesion_factor_);
-    GetRosParameter(pnh, "reynolds/separation_factor", (float)0.5, &reynolds_separation_factor_);
-    GetRosParameter(pnh, "reynolds/target_factor", (float)0.5, &reynolds_target_factor_);
-    GetRosParameter(pnh, "reynolds/target_accel_limit", (float)0.5, &reynolds_target_accel_limit_);
-    GetRosParameter(pnh, "reynolds/accel_limit", (float)0.5, &reynolds_accel_limit_);
-
-    GetRosParameter(pnh, "gradient/scale_factor", (float)0.01, &gradient_scale_factor_);
     GetRosParameter(pnh, "inner/controller", (int)'a', &inner_controller_);
-
-    reynolds_velocity_factor_ *= reynolds_global_factor_;
-    reynolds_cohesion_factor_ *= reynolds_global_factor_;
-    reynolds_separation_factor_ *= reynolds_global_factor_;
-    reynolds_target_factor_ *= reynolds_global_factor_;
-    reynolds_target_accel_limit_ *= reynolds_global_factor_;
-    reynolds_accel_limit_ *= reynolds_global_factor_;
 
     ROS_INFO_ONCE("[PositionControllerLight] GetRosParameter values:");
     ROS_INFO_ONCE("  inner/controller=%d", inner_controller_);

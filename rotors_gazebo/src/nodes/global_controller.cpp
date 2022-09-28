@@ -501,6 +501,7 @@ int main(int argc, char** argv) {
     desired_position(2) = 2.5; // z
     if(pathScenario == 4) // for EEL (dist and distgnd)
     {
+      desired_position(0) = 0;   // x
       desired_position(1) = 4.0; // y
       desired_position(2) = 3.5; // z
     }
@@ -612,13 +613,13 @@ int main(int argc, char** argv) {
         path_sleep_afterwards = 20.0;
         if(path_cnt == 0)
         {
-          desired_position(0) = 4.0;   // x
+          desired_position(0) = 4.0; // x
           desired_position(1) = 0.0; // y
           desired_position(2) = 3.5; // z
         }
         else if(path_cnt == 1)
         {
-          desired_position(0) = 0.0;   // x
+          desired_position(0) = 0.0; // x
           desired_position(1) = 0.0; // y
           desired_position(2) = 3.5; // z
         }

@@ -29,6 +29,8 @@
 	roslaunch rotors_gazebo crazyflie2_test1.launch gui:=true swarm_params:=spc_global_B
 	roslaunch rotors_gazebo crazyflie2_dist5.launch
 
+	roslaunch rotors_gazebo crazyflie2_dist5.launch gui:=true swarm_mode:=distgnd
+
 ### Start with hardware
 	roslaunch crazyflie_demo swarm2.launch
 	roslaunch crazyflie_demo swarm4.launch

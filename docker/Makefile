@@ -35,7 +35,7 @@ Distance%.png: DistSimDistance%.csv Env%.csv Makefile
 		set y2tics nomirror \n\
 		set output \"$@\" \n\
 		set palette rgb -22,-22,2; \n\
-		set cbrange [-40:90] \n\
+		set cbrange [-46:90] \n\
 		unset colorbox \n\
 		plot     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/4) with boxes linecolor palette axes x1y2, \
 				 \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
@@ -98,7 +98,7 @@ Metrics%.png: DistSimMetrics%.csv Env%.csv Makefile
 		set y2tics nomirror \n\
 		set output \"$@\" \n\
 		set palette rgb -22,-22,2; \n\
-		set cbrange [-40:90] \n\
+		set cbrange [-46:90] \n\
 		unset colorbox \n\
 		plot     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/4) with boxes linecolor palette axes x1y2, \
 				 \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
@@ -131,7 +131,7 @@ State%.png: State%.csv Env%.csv Makefile
 		set y2tics nomirror \n\
  		set output \"$@\" \n\
 		set palette rgb -22,-22,2; \n\
-		set cbrange [-40:90] \n\
+		set cbrange [-46:90] \n\
 		unset colorbox \n\
 		plot    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/4) with boxes linecolor palette axes x1y2, \
 				\"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \

@@ -19,7 +19,7 @@ all-trace: TraceXY.png TraceXZ.png TraceYZ.png
 plot_start_val := 0
 plot_end_val := 9999999999999999999
 
-Distance%.png: DistSimDistance%.csv Makefile
+Distance%.png: DistSimDistance%.csv Env%.csv Makefile
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -34,7 +34,11 @@ Distance%.png: DistSimDistance%.csv Makefile
 		set xtics nomirror \n\
 		set y2tics nomirror \n\
 		set output \"$@\" \n\
-		plot     \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
+		set palette rgb -22,-22,2; \n\
+		set cbrange [-40:90] \n\
+		unset colorbox \n\
+		plot     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/4) with boxes linecolor palette axes x1y2, \
+				 \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
 					 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'dist to 0', \
 					 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'dist to 1', \
 				   	 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'dist to 2', \
@@ -55,10 +59,10 @@ Distance%.png: DistSimDistance%.csv Makefile
 				   	 \"$<\" using (column(1)+column(2)/1000000000):21 with lines title 'dist to 17', \
 				   	 \"$<\" using (column(1)+column(2)/1000000000):22 with lines title 'dist to 18', \
 				   	 \"$<\" using (column(1)+column(2)/1000000000):23 with lines title 'dist to 19', \
-				   	 0.2 with lines linewidth 2 lt rgb 'light-red' dashtype 2 title 'dist_{thr} (20cm)'" \
+				   	 0.28 with lines linewidth 2 lt rgb 'light-red' dashtype 2 title 'dist_{thr} (28cm)'" \
 	 | gnuplot
 
-Metrics%.png: DistSimMetrics%.csv Makefile
+Metrics%.png: DistSimMetrics%.csv Env%.csv Makefile
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -87,22 +91,33 @@ Metrics%.png: DistSimMetrics%.csv Makefile
 		set xlabel \"Time [s]\" \n\
 		set ylabel \"Distance [m]\" \n\
 		set y2label \"Count\" \n\
-		set yrange [0:6] \n\
+		set yrange [0:10] \n\
 		set y2range [0:20] \n\
 		set y2tics 0,1,20 \n\
 		set xtics nomirror \n\
 		set y2tics nomirror \n\
 		set output \"$@\" \n\
-		plot     \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
+		set palette rgb -22,-22,2; \n\
+		set cbrange [-40:90] \n\
+		unset colorbox \n\
+		plot     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/4) with boxes linecolor palette axes x1y2, \
+				 \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
+				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)/4) with lines title 'explore/exploit' axes x1y2 lc 3, \
 				 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'drone count' axes x1y2 lc 7, \
 				 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'beacon count' axes x1y2, \
 				 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'dist to drone min' lc 1 lw 2, \
 				 \"$<\" using (column(1)+column(2)/1000000000):7 with lines title 'swarm radius' lc 2 lw 2, \
 				 \"$<\" using (column(1)+column(2)/1000000000):8 with lines title 'dist to beacon', \
-		   	     0.2 with lines linewidth 2 lt rgb 'light-red' dashtype 2 title 'dist_{thr} (20cm)'" \
+				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(5)+6) with lines title 'move_x', \
+				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(6)+7) with lines title 'move_y', \
+				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(7)+8) with lines title 'move_z', \
+		   	     6 with lines linewidth 1 lc 9 dashtype 3 title '', \
+		   	     7 with lines linewidth 1 lc 10 dashtype 3 title '', \
+		   	     8 with lines linewidth 1 lc 11 dashtype 3 title '', \
+		   	     0.28 with lines linewidth 2 lt rgb 'light-red' dashtype 2 title 'dist_{thr} (28cm)'" \
 	 | gnuplot
 
-State%.png: State%.csv Makefile
+State%.png: State%.csv Env%.csv Makefile
 	echo " \
  		set datafile separator ',' \n\
 	  \n\
@@ -115,11 +130,20 @@ State%.png: State%.csv Makefile
 		set xtics nomirror \n\
 		set y2tics nomirror \n\
  		set output \"$@\" \n\
-		set output \"$@\" \n\
-		plot    \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
-						\"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'pos_x' lc 1, \
-						\"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'pos_y' lc 2, \
-						\"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'pos_z' lc 3" \
+		set palette rgb -22,-22,2; \n\
+		set cbrange [-40:90] \n\
+		unset colorbox \n\
+		plot    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/4) with boxes linecolor palette axes x1y2, \
+				\"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
+				\"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'pos_x' lc 1, \
+				\"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'pos_y' lc 2, \
+				\"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'pos_z' lc 3, \
+			    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(5)+6) with lines lc 9 title 'move_x', \
+			    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(6)+7) with lines lc 10 title 'move_y', \
+			    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(7)+8) with lines lc 11 title 'move_z', \
+	       	    6 with lines linewidth 1 lc 9 dashtype 3 title '', \
+	       	    7 with lines linewidth 1 lc 10 dashtype 3 title '', \
+	       	    8 with lines linewidth 1 lc 11 dashtype 3 title ''" \
  	 | gnuplot
 
 TraceXY.png: State0.csv Makefile
@@ -250,6 +274,9 @@ DistSimMetricsMerged.csv: $(allMetricsCsv)
 StateMerged.csv: $(allStateCsv)
 	rm -rf $@
 	cat $? > $@
+
+EnvMerged.csv:
+	touch $@
 
 rm-csv:
 	rm -f *.csv

@@ -11,8 +11,8 @@
   <arg name="gui" default="true"/>
   <arg name="obstacleScenario" default="0"/>
   <arg name="pathScenario" default="4"/>
-  <arg name="droneCount" default="1"/>
-  <arg name="beaconCount" default="3"/>
+  <arg name="droneCount" default="2"/>
+  <arg name="beaconCount" default="1"/>
   <arg name="swarm_mode" default="dist"/>
   <arg name="swarm_params" default="mpc1_params2b"/>
   <arg name="csvFilesStoring" default="yes"/> <!-- possible values: "yes", "no", "distance" -->
@@ -36,11 +36,11 @@
   <node name="global_controller" required="true" pkg="rotors_gazebo" type="global_controller" output="screen">
     <param name="droneCount" value="$(arg droneCount)"/>
     <param name="beaconCount" value="$(arg beaconCount)"/>
-    <param name="spacingX" value="1.0"/>
-    <param name="spacingY" value="1.0"/>
+    <param name="spacingX" value="2.0"/>
+    <param name="spacingY" value="2.0"/>
     <param name="spacingZ" value="0.3"/>
     <param name="offsetX" value="0.0"/>
-    <param name="offsetY" value="0.0"/>
+    <param name="offsetY" value="-1.0"/>
     <param name="offsetZ" value="0.5"/>
     <param name="randNoise" value="0.0"/>
     <param name="swarmMode" value="$(arg swarm_mode)"/>
@@ -59,33 +59,16 @@
      respawn="false" output="screen">
    </node>
   </group>
-  <group ns="beacon_1">
-    <node name="spawn_marker_green_beacon_1" pkg="gazebo_ros" type="spawn_model"
-     args="-file $(find rotors_gazebo)/models/marker/model_green.sdf
-           -sdf
-           -x 3.0
-           -y 3.0
-           -z 1.0
-           -model marker_green_beacon_1"
-     respawn="false" output="screen">
-   </node>
-  </group>
-  <group ns="beacon_2">
-    <node name="spawn_marker_green_beacon_2" pkg="gazebo_ros" type="spawn_model"
-     args="-file $(find rotors_gazebo)/models/marker/model_green.sdf
-           -sdf
-           -x -2.0
-           -y 3.0
-           -z 1.0
-           -model marker_green_beacon_2"
-     respawn="false" output="screen">
-   </node>
-  </group>
 
   <include file="$(find rotors_gazebo)/launch/crazyflie2_distX_inner.launch" pass_all_args="true">
     <arg name="droneNumber" value="0" />
     <arg name="spawnX" value="0.0" />
-    <arg name="spawnY" value="0.0" />
+    <arg name="spawnY" value="-1.0" />
+  </include>
+  <include file="$(find rotors_gazebo)/launch/crazyflie2_distX_inner.launch" pass_all_args="true">
+    <arg name="droneNumber" value="1" />
+    <arg name="spawnX" value="0.0" />
+    <arg name="spawnY" value="1.0" />
   </include>
 
   <node name="distance_measurement_sim" pkg="rotors_control" type="distance_measurement_sim" output="screen">

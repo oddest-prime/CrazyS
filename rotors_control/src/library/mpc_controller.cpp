@@ -111,7 +111,7 @@ MpcController::MpcController()
 MpcController::~MpcController() {}
 
 //The callback saves data come from simulation into csv files
-void MpcController::CallbackSaveData(const ros::TimerEvent& event){
+void MpcController::FileSaveData(void){
 
       if(!dataStoring_active_){
          return;
@@ -130,7 +130,7 @@ void MpcController::CallbackSaveData(const ros::TimerEvent& event){
       ofstream fileDronePosition;
       ofstream fileTrajectory;
 
-      ROS_INFO("CallbackSavaData MpcController. droneNumber: %d, Time: %f seconds, %f nanoseconds, ",
+      ROS_INFO("FileSaveData MpcController. droneNumber: %d, Time: %f seconds, %f nanoseconds, ",
       droneNumber_, odometry_.timeStampSec, odometry_.timeStampNsec);
 
       filePropellersVelocity.open(std::string("/tmp/log_output/PropellersVelocity") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
@@ -221,7 +221,7 @@ void MpcController::SetLaunchFileParameters(){
 	if(dataStoring_active_){
 
 		// Time after which the data storing function is turned on
-		timer_ = n_.createTimer(ros::Duration(dataStoringTime_), &MpcController::CallbackSaveData, this, false, true);
+		//timer_ = n_.createTimer(ros::Duration(dataStoringTime_), &MpcController::CallbackSaveData, this, false, true);
 
 		// Cleaning the string vector contents
     listPropellersVelocity_.clear();
@@ -321,9 +321,8 @@ void MpcController::CalculateRotorVelocities(Eigen::Vector4d* rotor_velocities) 
    if(dataStoring_active_){
      // Saving drone attitude in a file
      std::stringstream tempPropellersVelocity;
-     tempPropellersVelocity << omega_1 << "," << omega_2 << "," << omega_3 << "," << omega_4 << ","
-             << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+     tempPropellersVelocity << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+     tempPropellersVelocity << omega_1 << "," << omega_2 << "," << omega_3 << "," << omega_4 << "\n";
      listPropellersVelocity_.push_back(tempPropellersVelocity.str());
    }
 
@@ -373,16 +372,14 @@ void MpcController::ControlMixer(double* PWM_1, double* PWM_2, double* PWM_3, do
     if(dataStoring_active_){
       // Saving drone attitude in a file
       std::stringstream tempPWM;
-      tempPWM << *PWM_1 << "," << *PWM_2 << "," << *PWM_3 << "," << *PWM_4 << ","
-              << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+      tempPWM << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+      tempPWM << *PWM_1 << "," << *PWM_2 << "," << *PWM_3 << "," << *PWM_4 << "\n";
       listPWM_.push_back(tempPWM.str());
 
       // Saving drone attitude in a file
       std::stringstream tempPWMComponents;
-      tempPWMComponents << control_t_.thrust << "," << delta_theta << "," << delta_phi << "," << delta_psi << ","
-              << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+      tempPWMComponents << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+      tempPWMComponents << control_t_.thrust << "," << delta_theta << "," << delta_phi << "," << delta_psi << "\n";
       listPWMComponents_.push_back(tempPWMComponents.str());
     }
 
@@ -438,15 +435,14 @@ void MpcController::XYController(double* theta_command, double* phi_command) {
     if(dataStoring_active_){
       // Saving drone attitude in a file
       std::stringstream tempCommandAttitude;
-      tempCommandAttitude << *theta_command << "," << *phi_command << ","
-              << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+      tempCommandAttitude << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+      tempCommandAttitude << *theta_command << "," << *phi_command << "\n";
       listCommandAttitude_.push_back(tempCommandAttitude.str());
 
       // Saving drone position errors in a file
       std::stringstream tempXeYe;
-      tempXeYe << xe << "," << ye << "," << e_vx << "," << e_vy << "," << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+      tempXeYe << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+      tempXeYe << xe << "," << ye << "," << e_vx << "," << e_vy << "\n";
       listXeYe_.push_back(tempXeYe.str());
 
     }
@@ -545,17 +541,15 @@ void MpcController::XYControllerMpc(double* theta_command, double* phi_command) 
     if(dataStoring_active_){
       // Saving drone attitude in a file
       std::stringstream tempCommandAttitude;
-      tempCommandAttitude << *theta_command << "," << *phi_command << ","
-              << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+      tempCommandAttitude << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+      tempCommandAttitude << *theta_command << "," << *phi_command << "\n";
       listCommandAttitude_.push_back(tempCommandAttitude.str());
 
       // Saving drone position errors in a file
       std::stringstream tempXeYe;
-      tempXeYe << xe << "," << ye << "," << e_vx << "," << e_vy << "," << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+      tempXeYe << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+      tempXeYe << xe << "," << ye << "," << e_vx << "," << e_vy << "\n";
       listXeYe_.push_back(tempXeYe.str());
-
     }
 
      //ROS_DEBUG("Theta_kp (mpc): %f, Theta_ki: %f", theta_command_kp, theta_command_ki_);
@@ -596,17 +590,15 @@ void MpcController::XYControllerExplicit(double* theta_command, double* phi_comm
     if(dataStoring_active_){
       // Saving drone attitude in a file
       std::stringstream tempCommandAttitude;
-      tempCommandAttitude << *theta_command << "," << *phi_command << ","
-              << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+      tempCommandAttitude << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+      tempCommandAttitude << *theta_command << "," << *phi_command << "\n";
       listCommandAttitude_.push_back(tempCommandAttitude.str());
 
       // Saving drone position errors in a file
       std::stringstream tempXeYe;
-      tempXeYe << xe << "," << ye << "," << xe << "," << ye << "," << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+      tempXeYe << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+      tempXeYe << xe << "," << ye << "," << u << "," << v << "\n";
       listXeYe_.push_back(tempXeYe.str());
-
     }
 
      ROS_DEBUG("Phi_c (explicit): %f, Theta_c: %f", *phi_command, *theta_command);
@@ -638,11 +630,10 @@ void MpcController::YawController(double* r_command) {
    if(dataStoring_active_){
      // Saving drone attitude in a file
      std::stringstream tempRCommand;
-     tempRCommand << *r_command << "," << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+     tempRCommand << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+     tempRCommand << *r_command << "\n";
      listRCommand_.push_back(tempRCommand.str());
    }
-
 }
 
 void MpcController::HoveringController(double* omega) {
@@ -681,17 +672,15 @@ void MpcController::HoveringController(double* omega) {
      if(dataStoring_active_){
        // Saving drone attitude in a file
        std::stringstream tempOmegaCommand;
-       tempOmegaCommand << *omega << "," << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+       tempOmegaCommand << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+       tempOmegaCommand << *omega << "\n";
        listOmegaCommand_.push_back(tempOmegaCommand.str());
 
        // Saving drone attitude in a file
        std::stringstream tempDroneAttitude;
-       tempDroneAttitude << roll << "," << pitch << "," << yaw << ","
-               << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+       tempDroneAttitude << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+       tempDroneAttitude << roll << "," << pitch << "," << yaw << "\n";
        listDroneAttitude_.push_back(tempDroneAttitude.str());
-
      }
 
      ROS_DEBUG("Delta_omega_kp: %f, Delta_omega_ki: %f, Delta_omega_kd: %f", delta_omega_kp, delta_omega_ki_, delta_omega_kd);
@@ -743,8 +732,8 @@ void MpcController::ErrorBodyFrame(double* xe, double* ye) {
     if(dataStoring_active_){
       // Saving trajectory in a file
       std::stringstream tempTrajectory;
-      tempTrajectory << x_r << "," << y_r << "," << z_r << "," << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+      tempTrajectory << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+      tempTrajectory << x_r << "," << y_r << "," << z_r << "\n";
       listTrajectory_.push_back(tempTrajectory.str());
     }
 
@@ -790,10 +779,9 @@ void MpcController::SetOdometryWithoutStateEstimator(const EigenOdometry& odomet
 
       // Saving drone Position and Velocity in a file
       std::stringstream tempDronePosition;
+      tempDronePosition << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
       tempDronePosition << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ","
-                        << dot_x << "," << dot_y << "," << dot_z << ","
-                      << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+                        << dot_x << "," << dot_y << "," << dot_z << "\n";
       listDronePosition_.push_back(tempDronePosition.str());
     }
 }
@@ -855,9 +843,8 @@ void MpcController::RateController(double* delta_phi, double* delta_theta, doubl
     if(dataStoring_active_){
       // Saving drone attitude in a file
       std::stringstream tempDeltaCommands;
-      tempDeltaCommands << *delta_phi << "," << *delta_theta << "," << *delta_psi << ","
-              << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+      tempDeltaCommands << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+      tempDeltaCommands << *delta_phi << "," << *delta_theta << "," << *delta_psi << "\n";
       listDeltaCommands_.push_back(tempDeltaCommands.str());
     }
 
@@ -902,9 +889,8 @@ void MpcController::AttitudeController(double* p_command, double* q_command) {
     if(dataStoring_active_){
       // Saving drone attitude in a file
       std::stringstream tempPQCommands;
-      tempPQCommands << *p_command << "," << *q_command << "," << phi_command << "," << theta_command << ","
-              << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "\n";
-
+      tempPQCommands << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+      tempPQCommands << *p_command << "," << *q_command << "," << phi_command << "," << theta_command << "\n";
       listPQCommands_.push_back(tempPQCommands.str());
     }
 

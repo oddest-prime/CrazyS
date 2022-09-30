@@ -56,6 +56,7 @@ namespace rotors_control {
             void CallbackAttitudeEstimation();
             void CallbackHightLevelControl();
             void SetLaunchFileParameters();
+            void FileSaveData(void);
 
             // Lunch file parameters
             std::string user_;
@@ -93,8 +94,8 @@ namespace rotors_control {
 
             // Callbacks
             ros::NodeHandle n_;
-            ros::Timer timer_;
-            void CallbackSaveData(const ros::TimerEvent& event);
+            //ros::Timer timer_;
+            //void CallbackSaveData(const ros::TimerEvent& event);
 
             //Integrator initial conditions
             double theta_command_ki_;

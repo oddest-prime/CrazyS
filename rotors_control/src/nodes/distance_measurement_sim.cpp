@@ -117,6 +117,7 @@ void DistanceMeasurementSim::InitializeParams() {
     }
     else
         ROS_ERROR("Failed to get param 'droneCount'");
+
     if (pnh.getParam("beaconCount", beaconCount)){
        ROS_INFO("Got param 'beaconCount': %d", beaconCount);
        beaconCount_ = beaconCount;
@@ -154,19 +155,22 @@ void DistanceMeasurementSim::InitializeParams() {
 
 void DistanceMeasurementSim::ModelstateCallback(const gazebo_msgs::ModelStatesConstPtr& modelstates_msg)
 {
-    ROS_INFO_ONCE("DistanceMeasurementSim got first ModelstateCallback.");
+    ROS_INFO_ONCE("DistanceMeasurementSim got ModelstateCallback.");
 
     int b = 0;
     for (size_t i = 0; i < modelstates_msg->name.size(); i++) // iterate over models
     {
-        if(modelstates_msg->name[i] == "marker_green_beacon_0") // todo adjust to parse all beacons!
+        for (size_t j = 0; j < beaconCount_; j++) // iterate over all beacons
         {
-            // save beacon positions
-            beacon_gt_[b][0] = modelstates_msg->pose[i].position.x;
-            beacon_gt_[b][1] = modelstates_msg->pose[i].position.y;
-            beacon_gt_[b][2] = modelstates_msg->pose[i].position.z;
-            ROS_INFO_ONCE("model %d: %s (%d) at location %s", (int)i, modelstates_msg->name[i].c_str(), b, VectorToString(beacon_gt_[b]).c_str());
-            b ++;
+            if(modelstates_msg->name[i] == std::string("marker_green_beacon_").append(std::to_string(j)))
+            {
+                // save beacon positions
+                beacon_gt_[b][0] = modelstates_msg->pose[i].position.x;
+                beacon_gt_[b][1] = modelstates_msg->pose[i].position.y;
+                beacon_gt_[b][2] = modelstates_msg->pose[i].position.z;
+                ROS_INFO_ONCE("model %d: %s (%d) at location %s", (int)i, modelstates_msg->name[i].c_str(), b, VectorToString(beacon_gt_[b]).c_str());
+                b ++;
+            }
         }
     }
 }

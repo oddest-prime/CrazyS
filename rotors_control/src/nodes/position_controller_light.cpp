@@ -74,11 +74,13 @@ PositionControllerLight::~PositionControllerLight(){}
 void PositionControllerLight::CallbackSaveData(const ros::TimerEvent& event){
   ROS_INFO("PositionControllerLight CallbackSavaData. droneNumber: %d", droneNumber_);
   FileSaveData();
+  position_controller_.FileSaveData();
 }
 
 void PositionControllerLight::SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg) {
   ROS_INFO("PositionControllerLight SaveLogCallback. droneNumber: %d", droneNumber_);
   FileSaveData();
+  position_controller_.FileSaveData();
 }
 
 void PositionControllerLight::FileSaveData(void){
@@ -90,8 +92,6 @@ void PositionControllerLight::FileSaveData(void){
       ofstream fileDistance;
       ofstream fileMetrics;
       ofstream fileState;
-
-      ROS_INFO("CallbackSavaData PositionControllerLight. droneNumber: %d", droneNumber_);
 
       //fileDistance.open(std::string("/tmp/log_output/PosCtrlLightDistance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
       //fileMetrics.open(std::string("/tmp/log_output/PosCtrlLightMetrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);

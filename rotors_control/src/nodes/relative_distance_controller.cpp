@@ -97,21 +97,21 @@ void RelativeDistanceController::InitializeParams() {
     GetRosParameter(pnh, "swarm/neighbourhood_distance", (float)99, &neighbourhood_distance_);
     GetRosParameter(pnh, "dist/eps_move", (float)0.2, &eps_move_);
     GetRosParameter(pnh, "dist/n_move_max", (int)2, &n_move_max_);
-    GetRosParameter(pnh, "dist/sticking_bonus", (float)1, &sticking_bonus_);
     GetRosParameter(pnh, "dist/spc_cohesion_weight", (float)1.0, &spc_cohesion_weight_);
     GetRosParameter(pnh, "dist/spc_separation_weight", (float)1.0, &spc_separation_weight_);
     GetRosParameter(pnh, "dist/spc_target_weight", (float)1.0, &spc_target_weight_);
     GetRosParameter(pnh, "dist/spc_height_weight", (float)1.0, &spc_height_weight_);
+    GetRosParameter(pnh, "dist/spc_calm_weight", (float)1.0, &spc_calm_weight_);
 
     ROS_INFO_ONCE("[RelativeDistanceController] GetRosParameter values:");
     ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
     ROS_INFO_ONCE("  dist/eps_move=%f", eps_move_);
     ROS_INFO_ONCE("  dist/n_move_max=%d", n_move_max_);
-    ROS_INFO_ONCE("  dist/sticking_bonus=%f", sticking_bonus_);
     ROS_INFO_ONCE("  dist/spc_cohesion_weight=%f", spc_cohesion_weight_);
     ROS_INFO_ONCE("  dist/spc_separation_weight=%f", spc_separation_weight_);
     ROS_INFO_ONCE("  dist/spc_target_weight=%f", spc_target_weight_);
     ROS_INFO_ONCE("  dist/spc_height_weight=%f", spc_height_weight_);
+    ROS_INFO_ONCE("  dist/spc_cohesion_weight=%f", spc_cohesion_weight_);
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
@@ -568,6 +568,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             }
 
             float min_sum = FLT_MAX;
+            float min_sum_calm = FLT_MAX;
             for(int xi = 0-n_move_max_; xi <= n_move_max_; xi ++) // iterate over all possible next actions in x-, y- and z-dimension
             {
                 for(int yi = 0-n_move_max_; yi <= n_move_max_; yi ++)
@@ -606,15 +607,16 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                         total_sum = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
                         // separation term
                         total_sum += spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
+                        if(neighbourhood_cnt == 0) total_sum = 0; // division by 0 is not useful
                         // target-seeking term
                         total_sum += spc_target_weight_ * target_sum;
-
-                        if(xi == 0 && yi == 0 && zi == 0) // bonus for cost if not moving
-                            total_sum /= sticking_bonus_;
+                        // calm term
+                        total_sum += spc_calm_weight_ * potential_movement.norm();
 
                         if(total_sum < min_sum)
                         {
                             min_sum = total_sum;
+                            min_sum_calm = spc_calm_weight_ * potential_movement.norm();
                             min_xi = xi;
                             min_yi = yi;
                             min_zi = zi;
@@ -625,7 +627,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             set_point.pose.position.x = odometry_gt_.position[0] + (float)min_xi * eps_move_;
             set_point.pose.position.y = odometry_gt_.position[1] + (float)min_yi * eps_move_;
             set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_*1.5; // TODO: proper scaling
-            ROS_INFO_ONCE("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
+            ROS_INFO("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f calm=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum, min_sum_calm);
             tempEnv << exploration_info << "," << (float)min_xi * eps_move_ << "," << (float)min_yi * eps_move_ << "," << (float)min_zi * eps_move_*1.5 << "," << (float)min_sum << ",";
         }
     }
@@ -830,8 +832,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                             ROS_INFO_ONCE("---------------------- droneNumber_ = %d (neighbourhood_cnt = %d) ----------------------", droneNumber_, neighbourhood_cnt);
                         ROS_INFO_ONCE("xi=%2d yi=%2d zi=%2d | target_sum=%f height_sum=%f total_sum=%f", xi, yi , zi, target_sum, height_sum, total_sum);
 
-                        if(xi == 0 && yi == 0 && zi == 0) // bonus for cost if not moving
-                            total_sum /= sticking_bonus_;
+                        //if(xi == 0 && yi == 0 && zi == 0) // bonus for cost if not moving
+                        //    total_sum /= sticking_bonus_;
 
                         if(total_sum < min_sum)
                         {

@@ -15,12 +15,12 @@ mpc1: {
   }
 dist: {
   eps_move: 0.05,
-  n_move_max: 3,
-  sticking_bonus: 1.05,
+  n_move_max: 6,
   spc_cohesion_weight: 20.0,
   spc_separation_weight: 100.0,
   spc_target_weight: 150.0,
   spc_height_weight: 5000.0,
+  spc_calm_weight: 200.0,
   }
 gradient: {
   scale_factor: 0.005

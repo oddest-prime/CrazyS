@@ -436,7 +436,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         ROS_INFO_ONCE("RelativeDistanceController starting swarm mode (SWARM_DECLARATIVE_DISTANCES)");
 
         //if(!transform_ok_) // need to do exploration
-        if(!transform_ok_ && !(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES_GT)) // need to do exploration (no exploration if ground truth data used for debugging)
+        if(!transform_ok_ && (enable_swarm_ != SWARM_DECLARATIVE_DISTANCES_GT)) // need to do exploration (no exploration if ground truth data used for debugging)
         {
             if(random_direction_.norm() <= 0.02) // need new random value, if value was cleared
             {
@@ -604,12 +604,12 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                          distances_differences_[2][i] * potential_movement_transformed[2];
 
                             float dist_gt = dronestate[i].GetDistance_sim_gt(&dronestate[droneNumber_], potential_movement);
-                            if(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES_GT) // only for debug! using ground truth positions to infer distances.
+                            if(enable_swarm_ == SWARM_DECLARATIVE_DISTANCES_GT) // only for debug! using ground truth positions to infer distances.
                                 dist = dist_gt;
 
                             cohesion_sum += dist*dist;
                             separation_sum += 1.0/(dist*dist);
-                            ROS_INFO("dr.%d (%2d/%2d/%2d) i=%d, dist=%f, dist_gt=%f, cohesion_sum=%f, separation_sum=%f", droneNumber_, xi, yi, zi, (int)i, dist, dist_gt, cohesion_sum, separation_sum);
+                            ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d) i=%d, dist=%f, dist_gt=%f, cohesion_sum=%f, separation_sum=%f", droneNumber_, xi, yi, zi, (int)i, dist, dist_gt, cohesion_sum, separation_sum);
                         }
 
                         float dist_beacon0 = beacons_[droneNumber_][0] +
@@ -631,7 +631,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                         else
                             total_sum = target_term + calm_term;
 
-                        ROS_INFO("dr.%d (%2d/%2d/%2d) coh=%f sep=%f tar=%f calm=%f total=%f", droneNumber_, xi, yi, zi, coehesion_term, separation_term, target_term, calm_term, total_sum);
+                        ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d) coh=%f sep=%f tar=%f calm=%f total=%f", droneNumber_, xi, yi, zi, coehesion_term, separation_term, target_term, calm_term, total_sum);
 
                               /*
                         // coehesion term

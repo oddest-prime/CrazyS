@@ -1,7 +1,7 @@
 # Swarm controller parameters
 {
 "swarm": {
-  "position_noise": 0.0, # simulate gaussian sensor noise, sigma = 10 cm
+  "position_noise": 0.0, # simulate gaussian sensor noise, sigma = 0 cm
   "distance_noise": 0.0, # simulate gaussian sensor noise, sigma = 0 cm
   "neighbourhood_distance": 999.0, # global neighbourhood
   "drone_radius": 0.07, # 7 cm
@@ -17,7 +17,7 @@
   },
 "dist": {
   "eps_move": 0.05,
-  "n_move_max": 6,
+  "n_move_max": 3,
   "spc_cohesion_weight": 20.0,
   "spc_separation_weight": 200.0,
   "spc_target_weight": 150.0,

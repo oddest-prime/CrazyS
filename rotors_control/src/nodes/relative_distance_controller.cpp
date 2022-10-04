@@ -436,7 +436,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         ROS_INFO_ONCE("RelativeDistanceController starting swarm mode (SWARM_DECLARATIVE_DISTANCES)");
 
         //if(!transform_ok_) // need to do exploration
-        if(!transform_ok_ && (enable_swarm_ != SWARM_DECLARATIVE_DISTANCES_GT)) // need to do exploration (no exploration if ground truth data used for debugging)
+        if(!transform_ok_ && !(enable_swarm_ & SWARM_USE_GROUND_TRUTH)) // need to do exploration (no exploration if ground truth data used for debugging)
         {
             if(random_direction_.norm() <= 0.02) // need new random value, if value was cleared
             {
@@ -604,7 +604,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                          distances_differences_[2][i] * potential_movement_transformed[2];
 
                             float dist_gt = dronestate[i].GetDistance_sim_gt(&dronestate[droneNumber_], potential_movement);
-                            if(enable_swarm_ == SWARM_DECLARATIVE_DISTANCES_GT) // only for debug! using ground truth positions to infer distances.
+                            if(enable_swarm_ & SWARM_USE_GROUND_TRUTH) // only for debug! using ground truth positions to infer distances.
                                 dist = dist_gt;
 
                             cohesion_sum += dist*dist;

@@ -51,7 +51,8 @@
 #define SWARM_LANDING             32768
 #define SWARM_DECLARATIVE_DISTANCES           1
 #define SWARM_DECLARATIVE_DISTANCES_GROUND    2
-#define SWARM_DECLARATIVE_DISTANCES_GT        (SWARM_DECLARATIVE_DISTANCES|4) // only for debug! it is using grount grouth absolute positions!
+#define SWARM_USE_GROUND_TRUTH                4 // only for debug! it is using grount grouth absolute positions!
+#define SWARM_DECLARATIVE_DISTANCES_GT        (SWARM_DECLARATIVE_DISTANCES|SWARM_USE_GROUND_TRUTH) // only for debug! it is using grount grouth absolute positions!
 
 
 #define OPERATION_MODE_NONE         0

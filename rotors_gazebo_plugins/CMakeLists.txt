@@ -96,7 +96,7 @@ message(STATUS "CMAKE_BINARY_DIR = ${CMAKE_BINARY_DIR}")
 # =================== EIGEN ==================== #
 # ============================================== #
 
-find_package(Eigen REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 # ============================================== #
 # =================== OCTOMAP ================== #

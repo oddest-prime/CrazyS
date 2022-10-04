@@ -74,12 +74,12 @@ extra varchar(64), \
 launch_file varchar(64));" | sqlite3 simulations.database
 
 echo "create table metrics(\
-date_hash_mode varchar(255) primary key, \
+date_hash_mode varchar(255), \
 name varchar(64), \
 val float);" | sqlite3 simulations.database
 
 echo "create table params(\
-date_hash_mode varchar(255) primary key, \
+date_hash_mode varchar(255), \
 name varchar(64), \
 val float);" | sqlite3 simulations.database
 

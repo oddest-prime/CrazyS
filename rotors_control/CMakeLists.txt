@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(
-  Eigen REQUIRED
+  Eigen3 REQUIRED
 )
 
 catkin_package(
@@ -23,7 +23,7 @@ catkin_package(
     mellinger_controller internal_model_controller
     roll_pitch_yawrate_thrust_controller_crazyflie
   CATKIN_DEPENDS geometry_msgs mav_msgs nav_msgs roscpp sensor_msgs
-  DEPENDS Eigen
+  DEPENDS Eigen3
 )
 
 

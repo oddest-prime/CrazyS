@@ -124,7 +124,7 @@ echo "=========================================================" >> /tmp/video.i
 
 # save metrics in database
 
-echo "insert into runs values('${date_hash_mode}', '${hash}', '${mode}', '${params}', '${obstacleScenario}', '${pathScenario}', '${extra}', '${launch_file}');" | sqlite3 /crazyflie_ws/src/crazys/simulations.database
+echo "insert into runs values('${date_hash_mode}', '${hash}', '${mode}', '${params}', '${obstacleScenario}', '${pathScenario}', '${extra}', '${launch_file}');" | sqlite3 -cmd ".timeout 1000" /crazyflie_ws/src/crazys/simulations.database
 
 SAVEIFS=$IFS
 IFS=$( echo -e "\n\b")
@@ -132,7 +132,7 @@ for line in `grep "metric:" /tmp/log_output/Metrics.txt`
 do
     field_name=`echo $line | cut -d " " -f 2-5`
     field_val=`echo $line | cut -d " " -f 6`
-    echo "insert into metrics values('${date_hash_mode}', '${field_name}', '${field_val}');" | sqlite3 /crazyflie_ws/src/crazys/simulations.database
+    echo "insert into metrics values('${date_hash_mode}', '${field_name}', '${field_val}');" | sqlite3 -cmd ".timeout 1000" /crazyflie_ws/src/crazys/simulations.database
 done
 
 linecnt=0
@@ -154,7 +154,7 @@ do
 
         field_name="$line1.$line2"
         field_val="$line3"
-        echo "insert into params values('${date_hash_mode}', '${field_name}', '${field_val}');" | sqlite3 /crazyflie_ws/src/crazys/simulations.database
+        echo "insert into params values('${date_hash_mode}', '${field_name}', '${field_val}');" | sqlite3 -cmd ".timeout 1000" /crazyflie_ws/src/crazys/simulations.database
     fi;
 done;
 IFS=$SAVEIFS

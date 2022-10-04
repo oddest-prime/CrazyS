@@ -9,7 +9,7 @@ for i in a b c
 do
   for j in 50 70 100 150 200 250 300 350 400 500 600 700 800 900 1000 2000 # dyn_sep
   do
-    dyn_sep="j"
+    dyn_sep="$j"
     echo "i = $i, j = $j, dyn_sep = $dyn_sep"
 
     cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml

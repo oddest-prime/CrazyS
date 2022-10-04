@@ -1,30 +1,32 @@
 # Swarm controller parameters
-swarm: {
-  position_noise: 0.0001, # simulate gaussian sensor noise, sigma = 10 cm
-  neighbourhood_distance: 999.0, # global neighbourhood
-  drone_radius: 0.07, # 7 cm
-  obstacle_radius: 0.25 # 15 cm
+{
+"swarm": {
+  "position_noise": 0.0, # simulate gaussian sensor noise, sigma = 10 cm
+  "neighbourhood_distance": 999.0, # global neighbourhood
+  "drone_radius": 0.07, # 7 cm
+  "obstacle_radius": 0.25 # 15 cm
+  },
+"mpc1": {
+  "eps_move": 0.06,
+  "n_move_max": 3,
+  "mpc_cohesion_weight": 20.0,
+  "mpc_separation_weight": 11.0,
+  "mpc_target_weight": 150.0,
+  "mpc_obstacle_weight": 20.0
+  },
+"dist": {
+  "eps_move": 0.05,
+  "n_move_max": 6,
+  "spc_cohesion_weight": 20.0,
+  "spc_separation_weight": 200.0,
+  "spc_target_weight": 150.0,
+  "spc_height_weight": 5000.0,
+  "spc_calm_weight": 0.0
+  },
+"gradient": {
+  "scale_factor": 0.005
+  },
+"inner": {
+  "controller": 2 # 1 -> PID (A), 2 -> explicit (B)
   }
-mpc1: {
-  eps_move: 0.06,
-  n_move_max: 3,
-  mpc_cohesion_weight: 20.0,
-  mpc_separation_weight: 11.0,
-  mpc_target_weight: 150.0,
-  mpc_obstacle_weight: 20.0
-  }
-dist: {
-  eps_move: 0.05,
-  n_move_max: 6,
-  spc_cohesion_weight: 20.0,
-  spc_separation_weight: 100.0,
-  spc_target_weight: 150.0,
-  spc_height_weight: 5000.0,
-  spc_calm_weight: 400.0,
-  }
-gradient: {
-  scale_factor: 0.005
-  }
-inner: {
-  controller: 2 # 1 -> PID (A), 2 -> explicit (B)
-  }
+}

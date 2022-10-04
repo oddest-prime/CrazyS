@@ -5,7 +5,8 @@ rm -f /tmp/stop
 
 cd ~/SWARM/crazys
 
-
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 dist mpc1_params2a 0 4 "eel" &
+exit 9
 #                                                                                                                         hash                         launch mode   params        obs path extra
 docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_params2a 0 4 "eel" &
 docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_params2a 0 4 "eel" &

@@ -58,3 +58,34 @@
 	ffmpeg -i my_cam1.mp4 -i my_cam3.mp4 -filter_complex hstack my_out1.mp4
 	ffmpeg -i my_cam2.mp4 -i my_cam4.mp4 -filter_complex hstack my_out2.mp4
 	ffmpeg -i my_out1.mp4 -i my_out2.mp4 -filter_complex vstack my_out.mp4
+
+## Database notes
+
+### Create database and table
+
+	echo "create table runs(\
+date_hash_mode varchar(255) primary key, \
+hash varchar(32), \
+mode varchar(32), \
+params varchar(64), \
+obstacleScenario varchar(64), \
+pathScenario varchar(64), \
+extra varchar(64), \
+launch_file varchar(64));" | sqlite3 simulations.database
+
+echo "create table metrics(\
+date_hash_mode varchar(255) primary key, \
+name varchar(64), \
+val float);" | sqlite3 simulations.database
+
+echo "create table params(\
+date_hash_mode varchar(255) primary key, \
+name varchar(64), \
+val float);" | sqlite3 simulations.database
+
+### Read data
+echo "select * from runs;" | sqlite3 simulations.database
+echo "select * from metrics;" | sqlite3 simulations.database
+
+### Insert data
+	echo "insert into metrics values('x', 'x', 'x');" | sqlite3 simulations.database

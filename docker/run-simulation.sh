@@ -124,3 +124,40 @@ cp /tmp/video.info /tmp/log_output/simulation.info
 /crazyflie_ws/src/crazys/docker/generate-video.sh "${date_hash_mode}"
 mv /tmp/log_output /crazyflie_ws/src/crazys/log_${date_hash_mode}
 mv /tmp/plot_output /crazyflie_ws/src/crazys/plot_${date_hash_mode}
+
+# save metrics in database
+
+echo "insert into runs values('${date_hash_mode}', '${hash}', '${mode}', '${params}', '${obstacleScenario}', '${pathScenario}', '${extra}', '${launch_file}');" | sqlite3 /crazyflie_ws/src/crazys/simulations.database
+
+SAVEIFS=$IFS
+IFS=$( echo -e "\n\b")
+for line in `grep "metric: " Metrics.txt`
+do
+    field_name=`echo $line | cut -d " " -f 2-5`
+    field_val=`echo $line | cut -d " " -f 6`
+    echo "insert into metrics values('${date_hash_mode}', '${field_name}', '${field_val}');" | sqlite3 /crazyflie_ws/src/crazys/simulations.database
+done
+
+linecnt=0
+for line in `cat /crazyflie_ws/src/crazys/rotors_gazebo/resource/crazyflie2_${params}.yaml | cut -d "#" -f 1 | jq 'keys[] as $k | [(.[$k] | to_entries[] | [$k, .key, .value] )] | flatten[]'`
+do
+    linecnt=$(($linecnt + 1))
+    if [ $linecnt -eq 1 ]
+    then
+        line1=`echo $line | cut -d "\"" -f 2`
+    fi;
+    if [ $linecnt -eq 2 ]
+    then
+        line2=`echo $line | cut -d "\"" -f 2`
+    fi;
+    if [ $linecnt -eq 3 ]
+    then
+        line3=`echo $line | cut -d "\"" -f 2`
+        linecnt=0
+
+        field_name="$line1.$line2"
+        field_val="$line3"
+        echo "insert into params values('${date_hash_mode}', '${field_name}', '${field_val}');" | sqlite3 /crazyflie_ws/src/crazys/simulations.database
+    fi;
+done;
+IFS=$SAVEIFS

@@ -122,18 +122,13 @@ grep "metric:" Metrics.txt >> /tmp/video.info
 #grep "metric:" States.txt >> /tmp/video.info
 echo "=========================================================" >> /tmp/video.info
 
-cp /tmp/video.info /tmp/log_output/simulation.info
-/crazyflie_ws/src/crazys/docker/generate-video.sh "${date_hash_mode}"
-mv /tmp/log_output /crazyflie_ws/src/crazys/log_${date_hash_mode}
-mv /tmp/plot_output /crazyflie_ws/src/crazys/plot_${date_hash_mode}
-
 # save metrics in database
 
 echo "insert into runs values('${date_hash_mode}', '${hash}', '${mode}', '${params}', '${obstacleScenario}', '${pathScenario}', '${extra}', '${launch_file}');" | sqlite3 /crazyflie_ws/src/crazys/simulations.database
 
 SAVEIFS=$IFS
 IFS=$( echo -e "\n\b")
-for line in `grep "metric: " Metrics.txt`
+for line in `grep "metric:" /tmp/log_output/Metrics.txt`
 do
     field_name=`echo $line | cut -d " " -f 2-5`
     field_val=`echo $line | cut -d " " -f 6`
@@ -163,3 +158,8 @@ do
     fi;
 done;
 IFS=$SAVEIFS
+
+cp /tmp/video.info /tmp/log_output/simulation.info
+/crazyflie_ws/src/crazys/docker/generate-video.sh "${date_hash_mode}"
+mv /tmp/log_output /crazyflie_ws/src/crazys/log_${date_hash_mode}
+mv /tmp/plot_output /crazyflie_ws/src/crazys/plot_${date_hash_mode}

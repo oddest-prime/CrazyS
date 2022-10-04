@@ -86,6 +86,7 @@ val float);" | sqlite3 simulations.database
 ### Read data
 echo "select * from runs;" | sqlite3 simulations.database
 echo "select * from metrics;" | sqlite3 simulations.database
+echo "select * from params;" | sqlite3 simulations.database
 
 ### Insert data
 	echo "insert into metrics values('x', 'x', 'x');" | sqlite3 simulations.database

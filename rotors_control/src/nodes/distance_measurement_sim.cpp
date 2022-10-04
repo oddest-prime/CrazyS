@@ -100,10 +100,10 @@ void DistanceMeasurementSim::InitializeParams() {
 
     ROS_INFO_ONCE("[DistanceMeasurementSim] InitializeParams");
 
-    GetRosParameter(pnh, "distances/distance_noise", (float)0.1, &distance_noise_);
+    GetRosParameter(pnh, "swarm/distance_noise", (float)0.1, &distance_noise_);
 
     ROS_INFO_ONCE("[DistanceMeasurementSim] GetRosParameter values:");
-    ROS_INFO_ONCE("  distances/distance_noise=%f", distance_noise_);
+    ROS_INFO_ONCE("  swarm/distance_noise=%f", distance_noise_);
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;

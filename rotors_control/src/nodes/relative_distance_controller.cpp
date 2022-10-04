@@ -627,7 +627,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             set_point.pose.position.x = odometry_gt_.position[0] + (float)min_xi * eps_move_;
             set_point.pose.position.y = odometry_gt_.position[1] + (float)min_yi * eps_move_;
             set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_*1.5; // TODO: proper scaling
-            ROS_INFO("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f calm=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum, min_sum_calm);
+            ROS_INFO_ONCE("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f calm=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum, min_sum_calm);
             tempEnv << exploration_info << "," << (float)min_xi * eps_move_ << "," << (float)min_yi * eps_move_ << "," << (float)min_zi * eps_move_*1.5 << "," << (float)min_sum << ",";
         }
     }

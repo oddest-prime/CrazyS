@@ -435,7 +435,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     {
         ROS_INFO_ONCE("RelativeDistanceController starting swarm mode (SWARM_DECLARATIVE_DISTANCES)");
 
-        if(!transform_ok_) // need to do exploration
+        //if(!transform_ok_) // need to do exploration
+        if(!transform_ok_ && !(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES_GT)) // need to do exploration (no exploration if ground truth data used for debugging)
         {
             if(random_direction_.norm() <= 0.02) // need new random value, if value was cleared
             {
@@ -608,7 +609,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
                             cohesion_sum += dist*dist;
                             separation_sum += 1.0/(dist*dist);
-                            ROS_INFO("droneNumber_=%d, xi=%d, yi=%d, zi=%d, i=%d, dist=%f, dist_gt=%f, cohesion_sum=%f, separation_sum=%f", droneNumber_, xi, yi, zi, (int)i, dist, dist_gt, cohesion_sum, separation_sum);
+                            ROS_INFO("dr.%d (%2d/%2d/%2d) i=%d, dist=%f, dist_gt=%f, cohesion_sum=%f, separation_sum=%f", droneNumber_, xi, yi, zi, (int)i, dist, dist_gt, cohesion_sum, separation_sum);
                         }
 
                         float dist_beacon0 = beacons_[droneNumber_][0] +
@@ -618,6 +619,21 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
                         float target_sum = dist_beacon0*dist_beacon0;
 
+                        float coehesion_term = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
+                        float separation_term = spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
+                        float target_term = spc_target_weight_ * target_sum;
+                        float calm_term = spc_calm_weight_ * potential_movement.norm();
+
+                        target_term = 0; // debug!!
+
+                        if(neighbourhood_cnt != 0)
+                            total_sum = coehesion_term + separation_term + target_term + calm_term;
+                        else
+                            total_sum = target_term + calm_term;
+
+                        ROS_INFO("dr.%d (%2d/%2d/%2d) coh=%f sep=%f tar=%f calm=%f total=%f", droneNumber_, xi, yi, zi, coehesion_term, separation_term, target_term, calm_term, total_sum);
+
+                              /*
                         // coehesion term
                         total_sum = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
                         // separation term
@@ -627,7 +643,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                         total_sum += spc_target_weight_ * target_sum;
                         // calm term
                         total_sum += spc_calm_weight_ * potential_movement.norm();
-
+                              */
                         if(total_sum < min_sum)
                         {
                             min_sum = total_sum;

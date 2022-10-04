@@ -51,6 +51,7 @@
 #define SWARM_LANDING             32768
 #define SWARM_DECLARATIVE_DISTANCES           1
 #define SWARM_DECLARATIVE_DISTANCES_GROUND    2
+#define SWARM_DECLARATIVE_DISTANCES_GT        (SWARM_DECLARATIVE_DISTANCES|4) // only for debug! it is using grount grouth absolute positions!
 
 
 #define OPERATION_MODE_NONE         0
@@ -381,6 +382,11 @@ int main(int argc, char** argv) {
   {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_DECLARATIVE_DISTANCES_GROUND");
     swarm_mode = SWARM_DECLARATIVE_DISTANCES_GROUND;
+  }
+  else if(swarmMode == "distGT")
+  {
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_DECLARATIVE_DISTANCES_GT");
+    swarm_mode = SWARM_DECLARATIVE_DISTANCES_GT;
   }
   else
     ROS_FATAL("global_controller: 'swarmMode' not recognized (%s)", swarmMode.c_str());

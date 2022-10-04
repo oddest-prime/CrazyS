@@ -70,7 +70,6 @@ RelativeDistanceController::RelativeDistanceController() {
     transform_available_ = 0;
 
     // Topics subscribe
-    // Topics subscribe
     cmd_multi_dof_joint_trajectory_sub_ = nh.subscribe(mav_msgs::default_topics::COMMAND_TRAJECTORY, 1, &RelativeDistanceController::MultiDofJointTrajectoryCallback, this);
     odometry_sub_ = nh.subscribe(mav_msgs::default_topics::ODOMETRY, 1, &RelativeDistanceController::OdometryCallback, this);
     enable_sub_ = nh.subscribe("enable", 1, &RelativeDistanceController::EnableCallback, this);
@@ -78,6 +77,17 @@ RelativeDistanceController::RelativeDistanceController() {
     distances_sub_ = nh.subscribe("/drone_distances", 1, &RelativeDistanceController::DistancesCallback, this);
     positions_sub_ = nh.subscribe("/drone_positions", 1, &RelativeDistanceController::PositionsCallback, this);
     beacons_sub_ = nh.subscribe("/beacon_distances", 1, &RelativeDistanceController::BeaconsCallback, this);
+
+    // Absolute position of drones, only used for debugging!
+    ros::NodeHandle nhq[N_DRONES_MAX];
+    for (size_t i = 0; i < droneCount_; i++)
+    {
+      nhq[i] = ros::NodeHandle(std::string("/crazyflie2_") + std::to_string(i));
+
+      dronestate[i].SetId(droneNumber_, i);
+      ROS_INFO("RelativeDistanceController: Setup subscriber %s/lps_pose.", nhq[i].getNamespace().c_str());
+      pose_other_sub_[i] = nhq[i].subscribe("lps_pose", 1, &DroneStateWithTime::PoseCallback, &dronestate[i]);
+    }
 
     // To publish the set-point
     setpoint_pub_ = nh.advertise<geometry_msgs::PoseStamped>("set_point", 1);
@@ -584,16 +594,21 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
                         for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
                         {
+                            if(i == droneNumber_) // skip for own quadcopter
+                                continue;
+
                             float dist = distances_[droneNumber_][i] +
                                          distances_differences_[0][i] * potential_movement_transformed[0] +
                                          distances_differences_[1][i] * potential_movement_transformed[1] +
                                          distances_differences_[2][i] * potential_movement_transformed[2];
 
-                            if(i == droneNumber_) // skip for own quadcopter
-                              continue;
+                            float dist_gt = dronestate[i].GetDistance_sim_gt(&dronestate[droneNumber_], potential_movement);
+                            if(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES_GT) // only for debug! using ground truth positions to infer distances.
+                                dist = dist_gt;
 
                             cohesion_sum += dist*dist;
                             separation_sum += 1.0/(dist*dist);
+                            ROS_INFO("droneNumber_=%d, xi=%d, yi=%d, zi=%d, i=%d, dist=%f, dist_gt=%f, cohesion_sum=%f, separation_sum=%f", droneNumber_, xi, yi, zi, (int)i, dist, dist_gt, cohesion_sum, separation_sum);
                         }
 
                         float dist_beacon0 = beacons_[droneNumber_][0] +
@@ -950,6 +965,46 @@ void RelativeDistanceController::PositionsCallback(const std_msgs::Float32MultiA
 
         ROS_INFO_ONCE("PositionsCallback (%d) drone#%d @ %s.", droneNumber_, (int)i, VectorToString(positions_gt_[i]).c_str());
     }
+}
+
+// This is only used for debugging. Absolute position of drones are not available for controller!
+void DroneStateWithTime::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg) {
+    ROS_INFO_ONCE("DroneStateWithTime got first odometry message.");
+
+    // received message containing other drone position information
+    // odometry_gt_ = EigenOdometry();
+    odometry_gt_.timeStampSec = pose_msg->header.stamp.sec;
+    odometry_gt_.timeStampNsec = pose_msg->header.stamp.nsec;
+    odometry_gt_.position[0] = pose_msg->pose.position.x;
+    odometry_gt_.position[1] = pose_msg->pose.position.y;
+    odometry_gt_.position[2] = pose_msg->pose.position.z;
+
+    ROS_INFO_ONCE("DroneStateWithTime got odometry message: x=%f y=%f z=%f (self:%d, other:%d)", odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2], self_, other_);
+}
+
+float DroneStateWithTime::GetDistance_gt(EigenOdometry* odometry_gt) {
+    if(self_ == other_)
+        return 0;
+
+    float distance_x = fabs(odometry_gt_.position[0] - odometry_gt->position[0]);
+    float distance_y = fabs(odometry_gt_.position[1] - odometry_gt->position[1]);
+    float distance_z = fabs(odometry_gt_.position[2] - odometry_gt->position[2]);
+    return sqrt(distance_x*distance_x + distance_y*distance_y + distance_z*distance_z);
+}
+
+float DroneStateWithTime::GetDistance_sim_gt(DroneStateWithTime* own_state, Vector3f potential_movement)
+{
+    float distance_x = fabs(odometry_gt_.position[0] - (own_state->odometry_gt_.position[0] + potential_movement[0]));
+    float distance_y = fabs(odometry_gt_.position[1] - (own_state->odometry_gt_.position[1] + potential_movement[1]));
+    float distance_z = fabs(odometry_gt_.position[2] - (own_state->odometry_gt_.position[2] + potential_movement[2]));
+    return sqrt(distance_x*distance_x + distance_y*distance_y + distance_z*distance_z);
+}
+
+
+void DroneStateWithTime::SetId(int self, int other)
+{
+    self_ = self;
+    other_ = other;
 }
 
 

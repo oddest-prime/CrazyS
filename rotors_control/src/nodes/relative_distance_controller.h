@@ -56,10 +56,23 @@
 #define SWARM_DISABLED                        0
 #define SWARM_DECLARATIVE_DISTANCES           1
 #define SWARM_DECLARATIVE_DISTANCES_GROUND    2
+#define SWARM_DECLARATIVE_DISTANCES_GT        (SWARM_DECLARATIVE_DISTANCES|4) // only for debug! it is using grount grouth absolute positions!
 #define SWARM_LANDING                         32768
 
 namespace rotors_control {
     using namespace Eigen;
+
+    class DroneStateWithTime {
+     public:
+      void SetId(int self, int other);
+      void PoseCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg);
+      float GetDistance_gt(EigenOdometry* odometry_gt);
+      float GetDistance_sim_gt(DroneStateWithTime* own_state, Vector3f potential_movement);
+
+      int self_;
+      int other_;
+      EigenOdometry odometry_gt_; // ground-truth
+    };
 
     class RelativeDistanceController{
         public:
@@ -141,9 +154,12 @@ namespace rotors_control {
             ros::Subscriber beacons_sub_;
             ros::Subscriber enable_sub_;
             ros::Subscriber logsave_sub_;
+            ros::Subscriber pose_other_sub_[N_DRONES_MAX];
 
             //publisher
             ros::Publisher setpoint_pub_;
+
+            DroneStateWithTime dronestate[N_DRONES_MAX];
 
             // Lists for data saving
             std::vector<std::string> listDistance_;

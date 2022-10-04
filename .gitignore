@@ -45,3 +45,8 @@ log_output/*.png
 *.mp4
 tmp_*
 
+plot_*_*_*_*
+log_*_*_*_*
+video_*_*_*_*
+simulations.database
+rotors_gazebo/resource/crazyflie2_mpc1_dyn_*.yaml

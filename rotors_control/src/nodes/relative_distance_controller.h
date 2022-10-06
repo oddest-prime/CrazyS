@@ -97,6 +97,8 @@ namespace rotors_control {
             float spc_calm_weight_;
             float eps_move_;
             float neighbourhood_distance_;
+            float explore_command_length_;
+            float explore_movement_thr_;
 
             bool dataStoring_active_;
             int enable_swarm_ = SWARM_DISABLED;

@@ -112,6 +112,8 @@ void RelativeDistanceController::InitializeParams() {
     GetRosParameter(pnh, "dist/spc_target_weight", (float)1.0, &spc_target_weight_);
     GetRosParameter(pnh, "dist/spc_height_weight", (float)1.0, &spc_height_weight_);
     GetRosParameter(pnh, "dist/spc_calm_weight", (float)1.0, &spc_calm_weight_);
+    GetRosParameter(pnh, "dist/explore_command_length", (float)1.0, &explore_command_length_);
+    GetRosParameter(pnh, "dist/explore_movement_thr", (float)1.0, &explore_movement_thr_);
 
     ROS_INFO_ONCE("[RelativeDistanceController] GetRosParameter values:");
     ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
@@ -122,6 +124,8 @@ void RelativeDistanceController::InitializeParams() {
     ROS_INFO_ONCE("  dist/spc_target_weight=%f", spc_target_weight_);
     ROS_INFO_ONCE("  dist/spc_height_weight=%f", spc_height_weight_);
     ROS_INFO_ONCE("  dist/spc_cohesion_weight=%f", spc_cohesion_weight_);
+    ROS_INFO_ONCE("  dist/explore_command_length=%f", explore_command_length_);
+    ROS_INFO_ONCE("  dist/explore_movement_thr=%f", explore_movement_thr_);
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
@@ -307,7 +311,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     }
 
 //    if(history_cnt_ > 10 || true)
-    if(movement_norm > 0.15) // last move was at least 15cm, TODO: find better threshold?
+    if(movement_norm > explore_movement_thr_) // last move was at least Xcm, TODO: find better threshold?
     {
         ROS_INFO_ONCE("OdometryCallback (%d) movement over threshold: %s", droneNumber_, VectorToString(movement).c_str());
 
@@ -438,7 +442,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         //if(!transform_ok_) // need to do exploration
         if(!transform_ok_ && !(enable_swarm_ & SWARM_USE_GROUND_TRUTH)) // need to do exploration (no exploration if ground truth data used for debugging)
         {
-            if(random_direction_.norm() <= 0.02) // need new random value, if value was cleared
+            if(random_direction_.norm() <= 0.001) // need new random value, if value was cleared
             {
                 std::normal_distribution<float> dist(0.0, 1); // gaussian random number generator
                 random_direction_[0] = dist(generator_);
@@ -551,7 +555,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 }
             }
 
-            direction = direction * 0.5; // length 0.5 for exploration vector
+            direction = direction * explore_command_length_; // length for exploration vector
             set_point.pose.position.x = odometry_gt_.position[0] + direction[0];
             set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
             set_point.pose.position.z = odometry_gt_.position[2] + direction[2];
@@ -624,8 +628,6 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                         float target_term = spc_target_weight_ * target_sum;
                         float calm_term = spc_calm_weight_ * potential_movement.norm();
 
-                        target_term = 0; // debug!!
-
                         if(neighbourhood_cnt != 0)
                             total_sum = coehesion_term + separation_term + target_term + calm_term;
                         else
@@ -670,7 +672,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
         if(!transform_ok_) // need to do exploration
         {
-            if(random_direction_.norm() <= 0.02) // need new random value, if value was cleared
+            if(random_direction_.norm() <= 0.001) // need new random value, if value was cleared
             {
                 std::normal_distribution<float> dist(0.0, 1); // gaussian random number generator
                 random_direction_[0] = dist(generator_);
@@ -783,7 +785,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 }
             }
 
-            direction = direction * 0.5; // length 0.5 for exploration vector
+            direction = direction * explore_command_length_; // length for exploration vector
             set_point.pose.position.x = odometry_gt_.position[0] + direction[0];
             set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
             set_point.pose.position.z = odometry_gt_.position[2] + direction[2];

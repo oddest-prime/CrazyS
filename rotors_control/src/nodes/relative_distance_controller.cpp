@@ -313,7 +313,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 //    if(history_cnt_ > 10 || true)
     if(movement_norm > explore_movement_thr_) // last move was at least Xcm, TODO: find better threshold?
     {
-        ROS_INFO_ONCE("OdometryCallback (%d) movement over threshold: %s", droneNumber_, VectorToString(movement).c_str());
+        ROS_INFO_ONCE("OdometryCallback (%d) movement over threshold (%f): %s", droneNumber_, explore_movement_thr_, VectorToString(movement).c_str());
 
         if(enable_swarm_ != SWARM_DISABLED)
         {

@@ -9,21 +9,25 @@ for i in a
 do
 #  for j in 5 7 10 12 15 20 30 50 70 100 150 200 250 300 500 700 1000 2000 3000 # dyn_sep
 #  for j in 600 700 850 1000 1200 1500 1800 2200 # dyn_sep
-  for j in 1 2 5 7 10 12 15 17 20 25 30 50 120 150 # dyn_thr
+#  for j in 1 2 5 7 10 12 15 17 20 25 30 50 120 150 # dyn_thr
+  for j in 7 15 30 50 100 150 200 300 500 # dyn_tar
   do
     dyn_sep="1000"
-    dyn_thr=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
-    echo "i = $i, j = $j, dyn_sep = $dyn_sep, dyn_sep = $dyn_thr"
+    dyn_thr="12"
+    #dyn_thr=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
+    dyn_tar="$j"
+    echo "i = $i, j = $j, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar"
 
     cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
     sed -i "s/__DYN_SEP__/$dyn_sep/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
     sed -i "s/__DYN_THR__/$dyn_thr/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
+    sed -i "s/__DYN_TAR__/$dyn_tar/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
 
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_a 0 4 "dyn_thr_${dyn_thr}" &
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 distGT mpc1_dyn_a 0 4 "dyn_thr_${dyn_thr}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_a 0 4 "dyn_tar_${dyn_tar}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 distGT mpc1_dyn_a 0 4 "dyn_tar_${dyn_tar}" &
     sleep 150 # delay compilation by 150 seconds in second two docker containers
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_dyn_a 0 4 "dyn_thr_${dyn_thr}" &
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 distGT mpc1_dyn_a 0 4 "dyn_thr_${dyn_thr}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_dyn_a 0 4 "dyn_tar_${dyn_tar}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 distGT mpc1_dyn_a 0 4 "dyn_tar_${dyn_tar}" &
     wait
 
     rm -rf rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml

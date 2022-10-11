@@ -42,6 +42,7 @@
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/MultiArrayDimension.h>
+#include <gazebo_msgs/ModelStates.h>
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
 #include <ros/time.h>
@@ -109,15 +110,13 @@ namespace rotors_control {
 
             EigenOdometry odometry_gt_; // ground-truth
             EigenOdometry odometry_gt_history1_; // ground-truth at history point
-            EigenOdometry odometry_gt_history2_; // ground-truth at history point
 
             float distances_[N_DRONES_MAX][N_DRONES_MAX]; // received distance measurements
             float distances_history1_[N_DRONES_MAX]; // distance measurements to own drone at history point
-            float distances_history2_[N_DRONES_MAX]; // distance measurements to own drone at history point
 
             float beacons_[N_DRONES_MAX][N_BEACONS_MAX]; // received distance measurements
             float beacons_history1_[N_BEACONS_MAX]; // distance measurements to own drone at history point
-            float beacons_history2_[N_BEACONS_MAX]; // distance measurements to own drone at history point
+            float beacons_last_[N_BEACONS_MAX]; // distance measurements from previous message (to check for large changes, when target is updated)
 
             Vector3f positions_gt_[N_DRONES_MAX]; // ground-truth positions of all drones, only to be used for verification of estimation
             float elevation_[N_DRONES_MAX]; // received elevation measurements
@@ -146,6 +145,7 @@ namespace rotors_control {
             void SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg);
             void MultiDofJointTrajectoryCallback(const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& msg);
             void CallbackSaveData(const ros::TimerEvent& event);
+            void ModelstateCallback(const gazebo_msgs::ModelStatesConstPtr& modelstates_msg);
 
             void FileSaveData(void);
 
@@ -158,11 +158,13 @@ namespace rotors_control {
             ros::Subscriber enable_sub_;
             ros::Subscriber logsave_sub_;
             ros::Subscriber pose_other_sub_[N_DRONES_MAX];
+            ros::Subscriber modelstate_sub_;
 
             //publisher
             ros::Publisher setpoint_pub_;
 
-            DroneStateWithTime dronestate[N_DRONES_MAX];
+            Vector3f beacon_gt_[N_BEACONS_MAX]; // ground-truth beacon positions
+            DroneStateWithTime dronestate_[N_DRONES_MAX];
 
             // Lists for data saving
             std::vector<std::string> listDistance_;

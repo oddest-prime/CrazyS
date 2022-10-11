@@ -10,10 +10,10 @@ do
 #  for j in 5 7 10 12 15 20 30 50 70 100 150 200 250 300 500 700 1000 2000 3000 # dyn_sep
 #  for j in 600 700 850 1000 1200 1500 1800 2200 # dyn_sep
 #  for j in 1 2 5 7 10 12 15 17 20 25 30 50 120 150 # dyn_thr
-  for j in 7 15 30 50 100 150 200 300 500 # dyn_tar
+  for j in 15 50 150 500 # dyn_tar
   do
     dyn_sep="1000"
-    dyn_thr="12"
+    dyn_thr="0.12"
     #dyn_thr=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_tar="$j"
     echo "i = $i, j = $j, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar"

@@ -56,9 +56,6 @@ RelativeDistanceController::RelativeDistanceController() {
     odometry_gt_history1_.position[0] = 0;
     odometry_gt_history1_.position[1] = 0;
     odometry_gt_history1_.position[2] = 0;
-    odometry_gt_history2_.position[0] = 0;
-    odometry_gt_history2_.position[1] = 0;
-    odometry_gt_history2_.position[2] = 0;
     for (size_t i = 0; i < N_VECTORS_MAX; i++)
     {
         unit_vectors_[i][0] = 0;
@@ -77,6 +74,7 @@ RelativeDistanceController::RelativeDistanceController() {
     distances_sub_ = nh.subscribe("/drone_distances", 1, &RelativeDistanceController::DistancesCallback, this);
     positions_sub_ = nh.subscribe("/drone_positions", 1, &RelativeDistanceController::PositionsCallback, this);
     beacons_sub_ = nh.subscribe("/beacon_distances", 1, &RelativeDistanceController::BeaconsCallback, this);
+    modelstate_sub_ = nh.subscribe("/gazebo/model_states", 1, &RelativeDistanceController::ModelstateCallback, this);
 
     // Absolute position of drones, only used for debugging!
     ros::NodeHandle nhq[N_DRONES_MAX];
@@ -84,9 +82,9 @@ RelativeDistanceController::RelativeDistanceController() {
     {
       nhq[i] = ros::NodeHandle(std::string("/crazyflie2_") + std::to_string(i));
 
-      dronestate[i].SetId(droneNumber_, i);
+      dronestate_[i].SetId(droneNumber_, i);
       ROS_INFO("RelativeDistanceController: Setup subscriber %s/lps_pose.", nhq[i].getNamespace().c_str());
-      pose_other_sub_[i] = nhq[i].subscribe("lps_pose", 1, &DroneStateWithTime::PoseCallback, &dronestate[i]);
+      pose_other_sub_[i] = nhq[i].subscribe("lps_pose", 1, &DroneStateWithTime::PoseCallback, &dronestate_[i]);
     }
 
     // To publish the set-point
@@ -270,6 +268,41 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     tempState << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
     tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";
 
+    // distance measurements from previous message (to check for large changes, when target is updated)
+    int beacons_moved = 0;
+    for (size_t i = 0; i < beaconCount_; i++)
+    {
+        if(fabs(beacons_last_[i] - beacons_[droneNumber_][i]) > 0.5) // distance changed for more than 50cm within one timestep
+        {
+            beacons_moved = 1;
+            ROS_INFO("OdometryCallback (%d) beacon %d moved (distance old: %f, new: %f).", droneNumber_, (int)i, beacons_last_[i], beacons_[droneNumber_][i]);
+        }
+        beacons_last_[i] = beacons_[droneNumber_][i];
+    }
+    if(beacons_moved)
+    {
+        ROS_INFO("OdometryCallback (%d) at least one beacon moved. Invalidate environment history data.", droneNumber_); // TODO: maybe there is a better way than deleting all data?
+
+        unit_vectors_age_[0] = -2;
+        unit_vectors_age_[1] = -2;
+        unit_vectors_age_[2] = -2;
+
+        // save current point as history point
+        for (size_t i = 0; i < droneCount_; i++)
+        {
+            distances_history1_[i] = distances_[droneNumber_][i];
+        }
+        for (size_t i = 0; i < beaconCount_; i++)
+        {
+            beacons_history1_[i] = beacons_[droneNumber_][i];
+        }
+        odometry_gt_history1_ = odometry_gt_;
+        history_cnt_ = 0;
+        random_direction_[0] = 0;
+        random_direction_[1] = 0;
+        random_direction_[2] = 0;
+    }
+
     // calculate movement vector based on current ground-truth position and history (TODO: use accelerometer data)
     Vector3f movement;
     movement[0] = odometry_gt_.position[0] - odometry_gt_history1_.position[0];
@@ -402,15 +435,12 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         // save current point as history point
         for (size_t i = 0; i < droneCount_; i++)
         {
-            distances_history2_[i] = distances_history1_[i];
             distances_history1_[i] = distances_[droneNumber_][i];
         }
         for (size_t i = 0; i < beaconCount_; i++)
         {
-            beacons_history2_[i] = beacons_history1_[i];
             beacons_history1_[i] = beacons_[droneNumber_][i];
         }
-        odometry_gt_history2_ = odometry_gt_history1_;
         odometry_gt_history1_ = odometry_gt_;
         history_cnt_ = 0;
         random_direction_[0] = 0;
@@ -607,7 +637,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                          distances_differences_[1][i] * potential_movement_transformed[1] +
                                          distances_differences_[2][i] * potential_movement_transformed[2];
 
-                            float dist_gt = dronestate[i].GetDistance_sim_gt(&dronestate[droneNumber_], potential_movement);
+                            float dist_gt = dronestate_[i].GetDistance_sim_gt(&dronestate_[droneNumber_], potential_movement);
                             if(enable_swarm_ & SWARM_USE_GROUND_TRUTH) // only for debug! using ground truth positions to infer distances.
                                 dist = dist_gt;
 
@@ -621,19 +651,25 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                      beacons_differences_[1][0] * potential_movement_transformed[1] +
                                      beacons_differences_[2][0] * potential_movement_transformed[2];
 
-                        float target_sum = dist_beacon0*dist_beacon0;
+                        float dist_gt_beacon0 = sqrt(pow(beacon_gt_[0][0] - (odometry_gt_.position[0] + potential_movement[0]), 2) +
+                                                     pow(beacon_gt_[0][1] - (odometry_gt_.position[1] + potential_movement[1]), 2) +
+                                                     pow(beacon_gt_[0][2] - (odometry_gt_.position[2] + potential_movement[2]), 2));
+                        if(enable_swarm_ & SWARM_USE_GROUND_TRUTH) // only for debug! using ground truth positions to infer distances.
+                           dist_beacon0 = dist_gt_beacon0;
+
+                        float target_sum = fabs(dist_beacon0);
 
                         float coehesion_term = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
                         float separation_term = spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
                         float target_term = spc_target_weight_ * target_sum;
                         float calm_term = spc_calm_weight_ * potential_movement.norm();
 
-                        if(neighbourhood_cnt != 0)
+                        if(neighbourhood_cnt != 0) // no neighbours means there was a division by 0
                             total_sum = coehesion_term + separation_term + target_term + calm_term;
                         else
                             total_sum = target_term + calm_term;
 
-                        ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d) coh=%f sep=%f tar=%f calm=%f total=%f", droneNumber_, xi, yi, zi, coehesion_term, separation_term, target_term, calm_term, total_sum);
+                        ROS_INFO("dr.%d (%2d/%2d/%2d) coh=%f sep=%f tar=%f calm=%f total=%f", droneNumber_, xi, yi, zi, coehesion_term, separation_term, target_term, calm_term, total_sum);
 
                               /*
                         // coehesion term
@@ -982,6 +1018,29 @@ void RelativeDistanceController::PositionsCallback(const std_msgs::Float32MultiA
         positions_gt_[i][2]= positions_msg.data[i*droneCount_ + 2];
 
         ROS_INFO_ONCE("PositionsCallback (%d) drone#%d @ %s.", droneNumber_, (int)i, VectorToString(positions_gt_[i]).c_str());
+    }
+}
+
+// This is only used for debugging. Absolute position of beacons are not available for controller!
+void RelativeDistanceController::ModelstateCallback(const gazebo_msgs::ModelStatesConstPtr& modelstates_msg)
+{
+    ROS_INFO_ONCE("RelativeDistanceController got ModelstateCallback.");
+
+    int b = 0;
+    for (size_t i = 0; i < modelstates_msg->name.size(); i++) // iterate over models
+    {
+        for (size_t j = 0; j < beaconCount_; j++) // iterate over all beacons
+        {
+            if(modelstates_msg->name[i] == std::string("marker_green_beacon_").append(std::to_string(j)))
+            {
+                // save beacon positions
+                beacon_gt_[b][0] = modelstates_msg->pose[i].position.x;
+                beacon_gt_[b][1] = modelstates_msg->pose[i].position.y;
+                beacon_gt_[b][2] = modelstates_msg->pose[i].position.z;
+                ROS_INFO_ONCE("RelativeDistanceController model %d: %s (%d) at location %s", (int)i, modelstates_msg->name[i].c_str(), b, VectorToString(beacon_gt_[b]).c_str());
+                b ++;
+            }
+        }
     }
 }
 

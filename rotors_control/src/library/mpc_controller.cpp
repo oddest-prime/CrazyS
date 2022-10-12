@@ -866,9 +866,15 @@ void MpcController::AttitudeController(double* p_command, double* q_command) {
     else
     {
       if(inner_controller_ == 1) // PID controller
-        XYController(&theta_command, &phi_command);
+      {
+          ROS_INFO("MpcController: inner_controller: %d (PID controller)", inner_controller_);
+          XYController(&theta_command, &phi_command);
+      }
       else if(inner_controller_ == 2) // explicit controller
+      {
+          ROS_INFO("MpcController: inner_controller: %d (explicit controller)", inner_controller_);
           XYControllerExplicit(&theta_command, &phi_command);
+      }
       else
           ROS_FATAL("MpcController: invalid value for inner_controller_ : %c", inner_controller_);
     }

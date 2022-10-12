@@ -8,11 +8,16 @@ allMetricsPng := $(subst csv,png,$(allMetricsTmp))
 
 allStateCsv := $(shell ls State*.csv | grep -v Merged)
 allStatePng := $(subst csv,png,$(allStateCsv))
+
+allCostCsv := $(shell ls Cost*.csv | grep -v Merged)
+allCostPng := $(subst csv,png,$(allCostCsv))
+
 allNoisePng := $(subst State,Noise,$(allStatePng))
 
 all-distance: $(allDistancePng)
 all-metrics: $(allMetricsPng)
 all-state: $(allStatePng)
+all-cost: $(allCostPng)
 all-noise: $(allNoisePng)
 all-trace: TraceXY.png TraceXZ.png TraceYZ.png
 
@@ -37,10 +42,12 @@ Distance%.png: DistSimDistance%.csv Env%.csv Makefile
 		set palette rgb -22,-22,2; \n\
 		set cbrange [-46:90] \n\
 		unset colorbox \n\
-		plot     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/4) with boxes linecolor palette axes x1y2, \
-				 \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
-					 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'dist to 0', \
-					 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'dist to 1', \
+		plot     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/2) with boxes title '' linecolor palette axes x1y2, \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
+				   	 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title 'explore/exploit' axes x1y2 lc 3, \
+				   	 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/750+0.05) with lines title 'expl. cnt', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'dist to 0', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'dist to 1', \
 				   	 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'dist to 2', \
 				   	 \"$<\" using (column(1)+column(2)/1000000000):7 with lines title 'dist to 3', \
 				   	 \"$<\" using (column(1)+column(2)/1000000000):8 with lines title 'dist to 4', \
@@ -100,14 +107,15 @@ Metrics%.png: DistSimMetrics%.csv Env%.csv Makefile
 		set palette rgb -22,-22,2; \n\
 		set cbrange [-46:90] \n\
 		unset colorbox \n\
-		plot     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/4) with boxes linecolor palette axes x1y2, \
+		plot     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/2) with boxes title '' linecolor palette axes x1y2, \
 				 \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
-				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)/4) with lines title 'explore/exploit' axes x1y2 lc 3, \
+				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title 'explore/exploit' axes x1y2 lc 3, \
+				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/250+0.05) with lines title 'expl. cnt', \
 				 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'drone count' axes x1y2 lc 7, \
 				 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'beacon count' axes x1y2, \
 				 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'dist to drone min' lc 1 lw 2, \
 				 \"$<\" using (column(1)+column(2)/1000000000):7 with lines title 'swarm radius' lc 2 lw 2, \
-				 \"$<\" using (column(1)+column(2)/1000000000):8 with lines title 'dist to beacon', \
+				 \"$<\" using (column(1)+column(2)/1000000000):8 with lines title 'dist to beacon0', \
 				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(5)+6) with lines title 'move_x', \
 				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(6)+7) with lines title 'move_y', \
 				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(7)+8) with lines title 'move_z', \
@@ -127,17 +135,54 @@ State%.png: State%.csv Env%.csv Makefile
  		set ylabel \"Position $< [m]\" \n\
 		set y2label \"Count\" \n\
 		set y2range [0:20] \n\
+		set y2tics 0,1,20 \n\
 		set xtics nomirror \n\
 		set y2tics nomirror \n\
  		set output \"$@\" \n\
 		set palette rgb -22,-22,2; \n\
 		set cbrange [-46:90] \n\
 		unset colorbox \n\
-		plot    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/4) with boxes linecolor palette axes x1y2, \
+		plot    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/2) with boxes title '' linecolor palette axes x1y2, \
 				\"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
+				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title 'explore/exploit' axes x1y2 lc 3, \
+				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/250+0.05) with lines title 'expl. cnt', \
 				\"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'pos_x' lc 1, \
 				\"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'pos_y' lc 2, \
 				\"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'pos_z' lc 3, \
+			    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(5)+6) with lines lc 9 title 'move_x', \
+			    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(6)+7) with lines lc 10 title 'move_y', \
+			    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(7)+8) with lines lc 11 title 'move_z', \
+	       	    6 with lines linewidth 1 lc 9 dashtype 3 title '', \
+	       	    7 with lines linewidth 1 lc 10 dashtype 3 title '', \
+	       	    8 with lines linewidth 1 lc 11 dashtype 3 title ''" \
+ 	 | gnuplot
+
+Cost%.png: Cost%.csv Env%.csv Makefile
+	echo " \
+ 		set datafile separator ',' \n\
+	  \n\
+ 		set term pngcairo size 1820,980 \n\
+ 		set grid \n\
+ 		set xlabel \"Time [s]\" \n\
+ 		set ylabel \"Position $< [m]\" \n\
+		set y2label \"Count\" \n\
+		set y2range [0:20] \n\
+		set y2tics 0,1,20 \n\
+		set xtics nomirror \n\
+		set y2tics nomirror \n\
+ 		set output \"$@\" \n\
+		set palette rgb -22,-22,2; \n\
+		set cbrange [-46:90] \n\
+		unset colorbox \n\
+		plot    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/2) with boxes title '' linecolor palette axes x1y2, \
+				\"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
+				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title 'explore/exploit' axes x1y2 lc 3, \
+				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/250+0.05) with lines title 'expl. cnt', \
+				\"$<\" using (column(1)+column(2)/1000000000):(column(4)/100) with lines title 'cost total /100', \
+				\"$<\" using (column(1)+column(2)/1000000000):(column(5)/100) with lines title 'cost coh /100', \
+				\"$<\" using (column(1)+column(2)/1000000000):(column(6)/100) with lines title 'cost sep /100', \
+				\"$<\" using (column(1)+column(2)/1000000000):(column(7)/100) with lines title 'cost target /100', \
+				\"$<\" using (column(1)+column(2)/1000000000):(column(8)/100) with lines title 'cost calm /100', \
 			    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(5)+6) with lines lc 9 title 'move_x', \
 			    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(6)+7) with lines lc 10 title 'move_y', \
 			    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(7)+8) with lines lc 11 title 'move_z', \

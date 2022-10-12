@@ -108,6 +108,7 @@ make StateMerged.png 2> States.txt
 make all-metrics
 make all-distance
 make all-state
+make all-cost
 make all-trace
 
 mkdir -p /tmp/plot_output/

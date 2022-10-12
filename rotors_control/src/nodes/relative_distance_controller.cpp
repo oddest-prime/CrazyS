@@ -202,6 +202,7 @@ void RelativeDistanceController::FileSaveData(void){
       std::ofstream fileDistance;
       std::ofstream fileEnv;
       std::ofstream fileState;
+      std::ofstream fileCost;
 
       ROS_INFO("RelativeDistanceController FileSaveData. droneNumber: %d", droneNumber_);
 
@@ -212,6 +213,7 @@ void RelativeDistanceController::FileSaveData(void){
       fileDistance.open(std::string("/tmp/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
       fileEnv.open(std::string("/tmp/log_output/Env") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
       fileState.open(std::string("/tmp/log_output/State") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileCost.open(std::string("/tmp/log_output/Cost") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
 
       // Saving distances from every to every drone in a file
       for (unsigned n=0; n < listDistance_.size(); ++n) {
@@ -225,11 +227,16 @@ void RelativeDistanceController::FileSaveData(void){
       for (unsigned n=0; n < listState_.size(); ++n) {
           fileState << listState_.at( n );
       }
+      // Saving cost function values in a file
+      for (unsigned n=0; n < listCost_.size(); ++n) {
+          fileCost << listCost_.at( n );
+      }
 
       // Closing all opened files
       fileDistance.close();
       fileEnv.close();
       fileState.close();
+      fileCost.close();
 
       // To have a one shot storing
       dataStoring_active_ = false;
@@ -267,6 +274,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     tempState.precision(24);
     tempState << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
     tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";
+    std::stringstream tempCost;
+    tempCost.precision(24);
+    tempCost << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
 
     // distance measurements from previous message (to check for large changes, when target is updated)
     int beacons_moved = 0;
@@ -479,18 +489,18 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 random_direction_[1] = dist(generator_);
                 random_direction_[2] = dist(generator_);
             }
-            exploration_info = 80;
+            exploration_info = 18;
             Vector3f direction = {1, 1, 1};
             if(unit_vectors_[0].norm() <= 0.02 || unit_vectors_age_[0] < 0) // all unit vectors empty, since they are populated sequentially
             {
                 direction = random_direction_; // go to random direction
-                exploration_info = 10;
+                exploration_info = 5;
             }
             else if(unit_vectors_[1].norm() <= 0.02 || unit_vectors_age_[1] < 0) // only vector 0 is not empty
             {
                 Vector3f tmp = unit_vectors_[0] + random_direction_;
                 direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                exploration_info = 11;
+                exploration_info = 6;
             }
             else if(unit_vectors_[2].norm() <= 0.02 || unit_vectors_age_[2] < 0) // vector 0 and 1 are not empty
             {
@@ -498,12 +508,12 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 { // vectors go into the same direction, need some orthogonal move
                     Vector3f tmp = unit_vectors_[1] + random_direction_;
                     direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 12;
+                    exploration_info = 7;
                 }
                 else
                 { // vectors go into different directions, use them to calculate orthogonal move
                     direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 13;
+                    exploration_info = 8;
                 }
             }
             else // vector 0, 1 and 2 are not empty
@@ -511,39 +521,39 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 if(abs(unit_vectors_[0].dot(unit_vectors_[1])) < 0.5) // dot-procut: same direction = 1; orthogonal = 0
                 { // vectors 0 and 1 are good enough, use to calculate orthogonal move
                     direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 41;
+                    exploration_info = 10;
                 }
                 else if(abs(unit_vectors_[1].dot(unit_vectors_[2])) < 0.5) // dot-procut: same direction = 1; orthogonal = 0
                 { // vectors 1 and 2 are good enough, use to calculate orthogonal move
                     direction = unit_vectors_[1].cross(unit_vectors_[2]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 42;
+                    exploration_info = 11;
                 }
                 else if(abs(unit_vectors_[2].dot(unit_vectors_[0])) < 0.5) // dot-procut: same direction = 1; orthogonal = 0
                 { // vectors 2 and 0 are good enough, use to calculate orthogonal move
                     direction = unit_vectors_[2].cross(unit_vectors_[0]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 43;
+                    exploration_info = 12;
                 }
                 else if(abs(unit_vectors_[0].dot(unit_vectors_[1])) < 0.9) // dot-procut: same direction = 1; orthogonal = 0
                 { // vectors 0 and 1 are good enough, use to calculate orthogonal move
                     direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 51;
+                    exploration_info = 13;
                 }
                 else if(abs(unit_vectors_[1].dot(unit_vectors_[2])) < 0.9) // dot-procut: same direction = 1; orthogonal = 0
                 { // vectors 1 and 2 are good enough, use to calculate orthogonal move
                     direction = unit_vectors_[1].cross(unit_vectors_[2]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 52;
+                    exploration_info = 14;
                 }
                 else if(abs(unit_vectors_[2].dot(unit_vectors_[0])) < 0.9) // dot-procut: same direction = 1; orthogonal = 0
                 { // vectors 2 and 0 are good enough, use to calculate orthogonal move
                     direction = unit_vectors_[2].cross(unit_vectors_[0]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 53;
+                    exploration_info = 15;
                 }
                 else
                 {
                     ROS_INFO("RelativeDistanceController %d unit_vectors_[0].dot(unit_vectors_[1]):%f", droneNumber_, unit_vectors_[0].dot(unit_vectors_[1]));
                     ROS_INFO("RelativeDistanceController %d unit_vectors_[1].dot(unit_vectors_[2]):%f", droneNumber_, unit_vectors_[1].dot(unit_vectors_[2]));
                     ROS_INFO("RelativeDistanceController %d unit_vectors_[2].dot(unit_vectors_[0]):%f", droneNumber_, unit_vectors_[2].dot(unit_vectors_[0]));
-                    exploration_info = 91;
+                    exploration_info = 17;
                 }
             }
 
@@ -590,7 +600,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
             set_point.pose.position.z = odometry_gt_.position[2] + direction[2];
             ROS_INFO_ONCE("RelativeDistanceController %d explore:%d direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
-            tempEnv << exploration_info << "," << direction[0] << "," << direction[1] << "," << direction[2] << "," << -1 << ",";
+            tempEnv << exploration_info << "," << direction[0] << "," << direction[1] << "," << direction[2] << "," << -1 << "," << history_cnt_ << ",";
         }
         else // possible to do exploitation
         {
@@ -613,7 +623,12 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             }
 
             float min_sum = FLT_MAX;
-            float min_sum_calm = FLT_MAX;
+
+            float min_coehesion_term;
+            float min_separation_term;
+            float min_target_term;
+            float min_calm_term;
+
             for(int xi = 0-n_move_max_; xi <= n_move_max_; xi ++) // iterate over all possible next actions in x-, y- and z-dimension
             {
                 for(int yi = 0-n_move_max_; yi <= n_move_max_; yi ++)
@@ -669,7 +684,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                         else
                             total_sum = target_term + calm_term;
 
-                        ROS_INFO("dr.%d (%2d/%2d/%2d) coh=%f sep=%f tar=%f calm=%f total=%f", droneNumber_, xi, yi, zi, coehesion_term, separation_term, target_term, calm_term, total_sum);
+                        ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d) coh=%f sep=%f tar=%f calm=%f total=%f", droneNumber_, xi, yi, zi, coehesion_term, separation_term, target_term, calm_term, total_sum);
 
                               /*
                         // coehesion term
@@ -685,10 +700,15 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                         if(total_sum < min_sum)
                         {
                             min_sum = total_sum;
-                            min_sum_calm = spc_calm_weight_ * potential_movement.norm();
+
                             min_xi = xi;
                             min_yi = yi;
                             min_zi = zi;
+
+                            min_coehesion_term = coehesion_term;
+                            min_separation_term = separation_term;
+                            min_target_term = target_term;
+                            min_calm_term = calm_term;
                         }
                     }
                 }
@@ -696,8 +716,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             set_point.pose.position.x = odometry_gt_.position[0] + (float)min_xi * eps_move_;
             set_point.pose.position.y = odometry_gt_.position[1] + (float)min_yi * eps_move_;
             set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_*1.5; // TODO: proper scaling
-            ROS_INFO_ONCE("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f calm=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum, min_sum_calm);
-            tempEnv << exploration_info << "," << (float)min_xi * eps_move_ << "," << (float)min_yi * eps_move_ << "," << (float)min_zi * eps_move_*1.5 << "," << (float)min_sum << ",";
+            ROS_INFO_ONCE("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
+            tempEnv << exploration_info << "," << (float)min_xi * eps_move_ << "," << (float)min_yi * eps_move_ << "," << (float)min_zi * eps_move_*1.5 << "," << (float)min_sum << "," << history_cnt_ << ",";
+            tempCost << min_sum << "," << min_coehesion_term << "," << min_separation_term << "," << min_target_term << "," << min_calm_term << ",";
         }
     }
     else if(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES_GROUND)
@@ -935,6 +956,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         listEnv_.push_back(tempEnv.str());
         tempState << "\n";
         listState_.push_back(tempState.str());
+        tempCost << "\n";
+        listCost_.push_back(tempCost.str());
     }
 
     // move gazebo markers

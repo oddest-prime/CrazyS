@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "rotors_control/mpc_controller.h"
+#include "rotors_control/llc_controller.h"
 #include "rotors_control/transform_datatypes.h"
 #include "rotors_control/Matrix3x3.h"
 #include "rotors_control/Quaternion.h"
@@ -58,7 +58,7 @@
 
 namespace rotors_control{
 
-MpcController::MpcController()
+LlcController::LlcController()
     : controller_active_(false),
     state_estimator_active_(false),
     dataStoring_active_(false),
@@ -108,10 +108,10 @@ MpcController::MpcController()
       controller_mode_ = MODE_TARGET_WAYPOINT; // default: use trajectory points instead of setpoints for attitude
 }
 
-MpcController::~MpcController() {}
+LlcController::~LlcController() {}
 
 //The callback saves data come from simulation into csv files
-void MpcController::FileSaveData(void){
+void LlcController::FileSaveData(void){
 
       if(!dataStoring_active_){
          return;
@@ -130,7 +130,7 @@ void MpcController::FileSaveData(void){
       ofstream fileDronePosition;
       ofstream fileTrajectory;
 
-      ROS_INFO("FileSaveData MpcController. droneNumber: %d, Time: %f seconds, %f nanoseconds, ",
+      ROS_INFO("FileSaveData LlcController. droneNumber: %d, Time: %f seconds, %f nanoseconds, ",
       droneNumber_, odometry_.timeStampSec, odometry_.timeStampNsec);
 
       filePropellersVelocity.open(std::string("/tmp/log_output/PropellersVelocity") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
@@ -215,13 +215,13 @@ void MpcController::FileSaveData(void){
 }
 
 // Reading parameters come frame launch file
-void MpcController::SetLaunchFileParameters(){
+void LlcController::SetLaunchFileParameters(){
 
 	// The boolean variable is used to inactive the logging if it is not useful
 	if(dataStoring_active_){
 
 		// Time after which the data storing function is turned on
-		//timer_ = n_.createTimer(ros::Duration(dataStoringTime_), &MpcController::CallbackSaveData, this, false, true);
+		//timer_ = n_.createTimer(ros::Duration(dataStoringTime_), &LlcController::CallbackSaveData, this, false, true);
 
 		// Cleaning the string vector contents
     listPropellersVelocity_.clear();
@@ -241,7 +241,7 @@ void MpcController::SetLaunchFileParameters(){
 }
 
 // Controller gains are entered into local global variables
-void MpcController::SetControllerGains(){
+void LlcController::SetControllerGains(){
 
       xy_gain_kp_ = Eigen::Vector2f(controller_parameters_.xy_gain_kp_.x(), controller_parameters_.xy_gain_kp_.y());
       xy_gain_ki_ = Eigen::Vector2f(controller_parameters_.xy_gain_ki_.x(), controller_parameters_.xy_gain_ki_.y());
@@ -261,12 +261,12 @@ void MpcController::SetControllerGains(){
 
 }
 
-void MpcController::SetTrajectoryPoint(const mav_msgs::EigenTrajectoryPoint& command_trajectory) {
+void LlcController::SetTrajectoryPoint(const mav_msgs::EigenTrajectoryPoint& command_trajectory) {
     command_trajectory_= command_trajectory;
     controller_active_= true;
 }
 
-void MpcController::SetSetPoint(double z, double pitch, double roll, double yaw) {
+void LlcController::SetSetPoint(double z, double pitch, double roll, double yaw) {
     setpoint_z_ = z;
     setpoint_pitch_ = pitch;
     setpoint_roll_ = roll;
@@ -275,7 +275,7 @@ void MpcController::SetSetPoint(double z, double pitch, double roll, double yaw)
     controller_active_= true;
 }
 
-void MpcController::CalculateRotorVelocities(Eigen::Vector4d* rotor_velocities) {
+void LlcController::CalculateRotorVelocities(Eigen::Vector4d* rotor_velocities) {
     assert(rotor_velocities);
 
     // This is to disable the controller if we do not receive a trajectory
@@ -330,7 +330,28 @@ void MpcController::CalculateRotorVelocities(Eigen::Vector4d* rotor_velocities) 
     *rotor_velocities = Eigen::Vector4d(omega_1, omega_2, omega_3, omega_4);
 }
 
-void MpcController::Quaternion2Euler(double* roll, double* pitch, double* yaw) const {
+void LlcController::VelocitiesWorldFrame(double* dot_x, double* dot_y, double* dot_z) {
+    assert(dot_x);
+    assert(dot_y);
+    assert(dot_z);
+
+    // Velocity along x,y,z-axis from body to inertial frame
+    double roll, pitch, yaw;
+    Quaternion2Euler(&roll, &pitch, &yaw);
+    // taken from: https://math.stackexchange.com/questions/2796055/3d-coordinate-rotation-using-roll-pitch-yaw
+    // Needed because both angular and linear velocities are expressed in the aircraft body frame
+    *dot_x =  cos(pitch)*cos(yaw)*state_.linearVelocity.x +
+            (sin(roll)*sin(pitch)*cos(yaw) - cos(roll)*sin(yaw))*state_.linearVelocity.y +
+            (cos(roll)*sin(pitch)*cos(yaw) + sin(roll)*sin(yaw))*state_.linearVelocity.z;
+    *dot_y =  cos(pitch)*sin(yaw)*state_.linearVelocity.x +
+            (sin(roll)*sin(pitch)*sin(yaw) + cos(roll)*cos(yaw))*state_.linearVelocity.y +
+            (cos(roll)*sin(pitch)*sin(yaw) - sin(roll)*cos(yaw))*state_.linearVelocity.z;
+    *dot_z = -sin(pitch)*state_.linearVelocity.x +
+             sin(roll)*cos(pitch)*state_.linearVelocity.y +
+             cos(roll)*cos(pitch)*state_.linearVelocity.z;
+}
+
+void LlcController::Quaternion2Euler(double* roll, double* pitch, double* yaw) const {
     assert(roll);
     assert(pitch);
     assert(yaw);
@@ -350,7 +371,7 @@ void MpcController::Quaternion2Euler(double* roll, double* pitch, double* yaw) c
 
 }
 
-void MpcController::ControlMixer(double* PWM_1, double* PWM_2, double* PWM_3, double* PWM_4) {
+void LlcController::ControlMixer(double* PWM_1, double* PWM_2, double* PWM_3, double* PWM_4) {
     assert(PWM_1);
     assert(PWM_2);
     assert(PWM_3);
@@ -388,11 +409,9 @@ void MpcController::ControlMixer(double* PWM_1, double* PWM_2, double* PWM_3, do
     ROS_DEBUG("PWM1: %f, PWM2: %f, PWM3: %f, PWM4: %f", *PWM_1, *PWM_2, *PWM_3, *PWM_4);
 }
 
-void MpcController::XYController(double* theta_command, double* phi_command) {
+void LlcController::XYController(double* theta_command, double* phi_command) {
     assert(theta_command);
     assert(phi_command);
-
-    //ROS_FATAL("XYController is deprecated, use XYControllerExplicit instead!");
 
     double v, u;
     u = state_.linearVelocity.x;
@@ -453,7 +472,7 @@ void MpcController::XYController(double* theta_command, double* phi_command) {
      ROS_DEBUG("E_x: %f, E_y: %f", xe, ye);
 }
 
-void MpcController::XYControllerMpc(double* theta_command, double* phi_command) {
+void LlcController::XYControllerMpc(double* theta_command, double* phi_command) {
     assert(theta_command);
     assert(phi_command);
 
@@ -559,13 +578,20 @@ void MpcController::XYControllerMpc(double* theta_command, double* phi_command) 
      ROS_DEBUG("E_x (mpc): %f, E_y: %f", xe, ye);
 }
 
-void MpcController::XYControllerExplicit(double* theta_command, double* phi_command) {
+void LlcController::XYControllerExplicit(double* theta_command, double* phi_command) {
     assert(theta_command);
     assert(phi_command);
 
     double v, u;
     u = state_.linearVelocity.x;
     v = state_.linearVelocity.y;
+
+    // Velocity along x,y,z-axis from body to inertial frame
+    double dot_x, dot_y, dot_z;
+    VelocitiesWorldFrame(&dot_x, &dot_y, &dot_z);
+
+    u = dot_x;
+    v = dot_y;
 
     double xe, ye;
     ErrorBodyFrame(&xe, &ye);
@@ -605,7 +631,7 @@ void MpcController::XYControllerExplicit(double* theta_command, double* phi_comm
      ROS_DEBUG("E_x (explicit): %f, E_y: %f", xe, ye);
 }
 
-void MpcController::YawController(double* r_command) {
+void LlcController::YawController(double* r_command) {
     assert(r_command);
 
     double roll, pitch, yaw;
@@ -636,7 +662,7 @@ void MpcController::YawController(double* r_command) {
    }
 }
 
-void MpcController::HoveringController(double* omega) {
+void LlcController::HoveringController(double* omega) {
     assert(omega);
 
     double z_error, z_reference, dot_zeta;
@@ -689,7 +715,7 @@ void MpcController::HoveringController(double* omega) {
      ROS_DEBUG("Omega: %f, delta_omega: %f", *omega, delta_omega);
 }
 
-void MpcController::ErrorBodyFrame(double* xe, double* ye) {
+void LlcController::ErrorBodyFrame(double* xe, double* ye) {
     assert(xe);
     assert(ye);
 
@@ -702,24 +728,6 @@ void MpcController::ErrorBodyFrame(double* xe, double* ye) {
     double x_error_, y_error_;
     x_error_ = x_r - state_.position.x;
     y_error_ = y_r - state_.position.y;
-
-/*
-    if(odometry_.timeStampSec < 10)
-    {
-      x_error_ = 0;
-      y_error_ = 0;
-    }
-    else if(odometry_.timeStampSec < 20)
-    {
-      x_error_ = 0.5;
-      y_error_ = 0;
-    }
-    else
-    {
-      x_error_ = 0;
-      y_error_ = 0;
-    }
-*/
 
     // The aircraft attitude (estimated or not, it depends by the employed controller)
     double yaw, roll, pitch;
@@ -743,7 +751,7 @@ void MpcController::ErrorBodyFrame(double* xe, double* ye) {
 /* FROM HERE THE FUNCTIONS EMPLOYED WHEN THE STATE ESTIMATOR IS UNABLE ARE REPORTED */
 
 //Such function is invoked by the position controller node when the state estimator is not in the loop
-void MpcController::SetOdometryWithoutStateEstimator(const EigenOdometry& odometry) {
+void LlcController::SetOdometryWithoutStateEstimator(const EigenOdometry& odometry) {
 
     odometry_ = odometry;
 
@@ -763,19 +771,8 @@ void MpcController::SetOdometryWithoutStateEstimator(const EigenOdometry& odomet
     if(dataStoring_active_){
 
       // Velocity along x,y,z-axis from body to inertial frame
-      double roll, pitch, yaw;
-      Quaternion2Euler(&roll, &pitch, &yaw);
-      // taken from: https://math.stackexchange.com/questions/2796055/3d-coordinate-rotation-using-roll-pitch-yaw
-      // Needed because both angular and linear velocities are expressed in the aircraft body frame
-      double dot_x =  cos(pitch)*cos(yaw)*state_.linearVelocity.x +
-                      (sin(roll)*sin(pitch)*cos(yaw) - cos(roll)*sin(yaw))*state_.linearVelocity.y +
-                      (cos(roll)*sin(pitch)*cos(yaw) + sin(roll)*sin(yaw))*state_.linearVelocity.z;
-      double dot_y =  cos(pitch)*sin(yaw)*state_.linearVelocity.x +
-                      (sin(roll)*sin(pitch)*sin(yaw) + cos(roll)*cos(yaw))*state_.linearVelocity.y +
-                      (cos(roll)*sin(pitch)*sin(yaw) - sin(roll)*cos(yaw))*state_.linearVelocity.z;
-      double dot_z =  -sin(pitch)*state_.linearVelocity.x +
-                      sin(roll)*cos(pitch)*state_.linearVelocity.y +
-  	                  cos(roll)*cos(pitch)*state_.linearVelocity.z;
+      double dot_x, dot_y, dot_z;
+      VelocitiesWorldFrame(&dot_x, &dot_y, &dot_z);
 
       // Saving drone Position and Velocity in a file
       std::stringstream tempDronePosition;
@@ -787,7 +784,7 @@ void MpcController::SetOdometryWithoutStateEstimator(const EigenOdometry& odomet
 }
 
 // Odometry values are put in the state structure. The structure contains the aircraft state
-void MpcController::SetSensorData() {
+void LlcController::SetSensorData() {
 
     // Only the position sensor is ideal, any virtual sensor or systems is available to get it
     state_.position.x = odometry_.position[0];
@@ -808,7 +805,7 @@ void MpcController::SetSensorData() {
     state_.angularVelocity.z = odometry_.angular_velocity[2];
 }
 
-void MpcController::RateController(double* delta_phi, double* delta_theta, double* delta_psi) {
+void LlcController::RateController(double* delta_phi, double* delta_theta, double* delta_psi) {
     assert(delta_phi);
     assert(delta_theta);
     assert(delta_psi);
@@ -850,7 +847,7 @@ void MpcController::RateController(double* delta_phi, double* delta_theta, doubl
 
 }
 
-void MpcController::AttitudeController(double* p_command, double* q_command) {
+void LlcController::AttitudeController(double* p_command, double* q_command) {
     assert(p_command);
     assert(q_command);
 
@@ -867,16 +864,16 @@ void MpcController::AttitudeController(double* p_command, double* q_command) {
     {
       if(inner_controller_ == 1) // PID controller
       {
-          ROS_INFO("MpcController: inner_controller: %d (PID controller)", inner_controller_);
+          ROS_INFO("LlcController: inner_controller: %d (PID controller)", inner_controller_);
           XYController(&theta_command, &phi_command);
       }
       else if(inner_controller_ == 2) // explicit controller
       {
-          ROS_INFO("MpcController: inner_controller: %d (explicit controller)", inner_controller_);
+          ROS_INFO("LlcController: inner_controller: %d (explicit controller)", inner_controller_);
           XYControllerExplicit(&theta_command, &phi_command);
       }
       else
-          ROS_FATAL("MpcController: invalid value for inner_controller_ : %c", inner_controller_);
+          ROS_FATAL("LlcController: invalid value for inner_controller_ : %c", inner_controller_);
     }
 
     double phi_error, theta_error;
@@ -910,24 +907,24 @@ void MpcController::AttitudeController(double* p_command, double* q_command) {
 /* FROM HERE THE FUNCTIONS EMPLOYED WHEN THE STATE ESTIMATOR IS ABLED ARE REPORTED */
 
 // Such function is invoked by the position controller node when the state estimator is considered in the loop
-void MpcController::SetOdometryWithStateEstimator(const EigenOdometry& odometry) {
+void LlcController::SetOdometryWithStateEstimator(const EigenOdometry& odometry) {
     odometry_ = odometry;
 }
 
 
 // The aircraft attitude is computed by the complementary filter with a frequency rate of 250Hz
-void MpcController::CallbackAttitudeEstimation() {
+void LlcController::CallbackAttitudeEstimation() {
     ROS_DEBUG("CallbackAttitudeEstimation");
 }
 
 // The high level control runs with a frequency of 100Hz
-void MpcController::CallbackHightLevelControl() {
+void LlcController::CallbackHightLevelControl() {
   ROS_DEBUG("CallbackHightLevelControl");
 
 }
 
 // The aircraft angular velocities are update with a frequency of 500Hz
-void MpcController::SetSensorData(const sensorData_t& sensors) {
+void LlcController::SetSensorData(const sensorData_t& sensors) {
 
     // The functions runs at 500Hz, the same frequency with which the IMU topic publishes new values (with a frequency of 500Hz)
     sensors_ = sensors;

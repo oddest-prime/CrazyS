@@ -379,7 +379,19 @@ void LlcController::ControlMixer(double* PWM_1, double* PWM_2, double* PWM_3, do
 
     // When the state estimator is disable, the delta_omega_ value is computed as soon as the new odometry message is available.
     //The timing is managed by the publication of the odometry topic
-    HoveringController(&control_t_.thrust);
+    if(inner_controller_ == 1 || inner_controller_ == 2) // PID controller, explicit controller
+    {
+        ROS_INFO_ONCE("LlcController: inner_controller: %d (HoveringController)", inner_controller_);
+        HoveringController(&control_t_.thrust);
+    }
+    else if(inner_controller_ == 3) // velocity controller
+    {
+        ROS_INFO_ONCE("LlcController: inner_controller: %d (HoveringControllerVelocity)", inner_controller_);
+        HoveringControllerVelocity(&control_t_.thrust);
+    }
+    else
+        ROS_FATAL("LlcController: invalid value for inner_controller_ : %c", inner_controller_);
+
 
     // Control signals are sent to the on board control architecture if the state estimator is active
     double delta_phi, delta_theta, delta_psi;
@@ -633,6 +645,60 @@ void LlcController::XYControllerExplicit(double* theta_command, double* phi_comm
      ROS_DEBUG("E_x (explicit): %f, E_y: %f", xe, ye);
 }
 
+void LlcController::XYControllerVelocity(double* theta_command, double* phi_command) {
+    assert(theta_command);
+    assert(phi_command);
+
+    // X and Y reference velocity
+    double x_r = command_trajectory_.velocity_W[0];
+    double y_r = command_trajectory_.velocity_W[1];
+    double z_r = command_trajectory_.velocity_W[2];
+
+    // Velocity along x,y,z-axis from body to inertial frame
+    double dot_x, dot_y, dot_z;
+    VelocitiesWorldFrame(&dot_x, &dot_y, &dot_z);
+
+    double xe, ye;
+    xe = (x_r*1.08) - dot_x;
+    ye = (y_r*1.08) - dot_y;
+
+    double prediction_t = 0.2; // seconds
+
+    *theta_command = atan((xe) / (9.81 * prediction_t));
+    *phi_command   = atan((0 - ye) / (9.81 * prediction_t));
+
+    // ROS_INFO("x_r: %7f, xe: %7f, dot_x: %7f;    y_r: %7f, ye: %7f, dot_y: %7f", x_r, xe, dot_x, y_r, ye, dot_y);
+
+    // Theta command is saturated considering the aircraft physical constraints
+    if(*theta_command > MAX_THETA_COMMAND)
+       *theta_command = MAX_THETA_COMMAND;
+    if(*theta_command < -MAX_THETA_COMMAND)
+       *theta_command = -MAX_THETA_COMMAND;
+
+    // Phi command is saturated considering the aircraft physical constraints
+    if(*phi_command > MAX_PHI_COMMAND)
+       *phi_command = MAX_PHI_COMMAND;
+    if(*phi_command < -MAX_PHI_COMMAND)
+       *phi_command = -MAX_PHI_COMMAND;
+
+    if(dataStoring_active_){
+      // Saving drone attitude in a file
+      std::stringstream tempCommandAttitude;
+      tempCommandAttitude << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+      tempCommandAttitude << *theta_command << "," << *phi_command << "\n";
+      listCommandAttitude_.push_back(tempCommandAttitude.str());
+
+      // Saving drone position errors in a file
+      std::stringstream tempXeYe;
+      tempXeYe << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+      tempXeYe << xe << "," << ye << "," << dot_x << "," << dot_y << "\n";
+      listXeYe_.push_back(tempXeYe.str());
+    }
+
+     ROS_DEBUG("Phi_c (velocity): %f, Theta_c: %f", *phi_command, *theta_command);
+     ROS_DEBUG("E_x (velocity): %f, E_y: %f", xe, ye);
+}
+
 void LlcController::YawController(double* r_command) {
     assert(r_command);
 
@@ -686,6 +752,58 @@ void LlcController::HoveringController(double* omega) {
     delta_omega_kp = hovering_gain_kp_ * z_error;
     delta_omega_ki_ = delta_omega_ki_ + (hovering_gain_ki_ * z_error * SAMPLING_TIME);
     delta_omega_kd = hovering_gain_kd_ * -dot_zeta;
+    delta_omega = delta_omega_kp + delta_omega_ki_ + delta_omega_kd;
+
+    // Delta omega value is saturated considering the aircraft physical constraints
+    if(delta_omega > MAX_POS_DELTA_OMEGA || delta_omega < MAX_NEG_DELTA_OMEGA)
+      if(delta_omega > MAX_POS_DELTA_OMEGA)
+         delta_omega = MAX_POS_DELTA_OMEGA;
+      else
+         delta_omega = -MAX_NEG_DELTA_OMEGA;
+
+     *omega = OMEGA_OFFSET + delta_omega;
+
+     if(dataStoring_active_){
+       // Saving drone attitude in a file
+       std::stringstream tempOmegaCommand;
+       tempOmegaCommand << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+       tempOmegaCommand << *omega << "\n";
+       listOmegaCommand_.push_back(tempOmegaCommand.str());
+
+       // Saving drone attitude in a file
+       std::stringstream tempDroneAttitude;
+       tempDroneAttitude << odometry_.timeStampSec << "," << odometry_.timeStampNsec << ",";
+       tempDroneAttitude << roll << "," << pitch << "," << yaw << "\n";
+       listDroneAttitude_.push_back(tempDroneAttitude.str());
+     }
+
+     ROS_DEBUG("Delta_omega_kp: %f, Delta_omega_ki: %f, Delta_omega_kd: %f", delta_omega_kp, delta_omega_ki_, delta_omega_kd);
+     ROS_DEBUG("Z_error: %f, Delta_omega: %f", z_error, delta_omega);
+     ROS_DEBUG("Dot_zeta: %f", dot_zeta);
+     ROS_DEBUG("Omega: %f, delta_omega: %f", *omega, delta_omega);
+}
+
+void LlcController::HoveringControllerVelocity(double* omega) {
+    assert(omega);
+
+    // Velocity along z-axis from body to inertial frame
+    double roll, pitch, yaw;
+    Quaternion2Euler(&roll, &pitch, &yaw);
+
+    // Needed because both angular and linear velocities are expressed in the aircraft body frame
+    double dot_zeta = -sin(pitch)*state_.linearVelocity.x + sin(roll)*cos(pitch)*state_.linearVelocity.y +
+	            cos(roll)*cos(pitch)*state_.linearVelocity.z;
+
+    double z_error, z_reference;
+    z_reference = command_trajectory_.velocity_W[2];
+    z_error = z_reference - dot_zeta;
+
+    // ROS_INFO("z_reference: %7f, dot_zeta: %7f, z_error: %7f", z_reference, dot_zeta, z_error);
+
+    double delta_omega, delta_omega_kp, delta_omega_kd;
+    delta_omega_kp = 10*hovering_gain_kp_ * z_error; // TODO: 10*hovering_gain_kp_ should be moved to params file as separate parameter.
+    delta_omega_ki_ = delta_omega_ki_ + (hovering_gain_ki_ * z_error * SAMPLING_TIME);
+    delta_omega_kd = 0; // hovering_gain_kd_ * -dot_zeta;
     delta_omega = delta_omega_kp + delta_omega_ki_ + delta_omega_kd;
 
     // Delta omega value is saturated considering the aircraft physical constraints
@@ -877,7 +995,7 @@ void LlcController::AttitudeController(double* p_command, double* q_command) {
       else if(inner_controller_ == 3) // velocity controller
       {
           ROS_INFO_ONCE("LlcController: inner_controller: %d (velocity controller)", inner_controller_);
-          XYControllerExplicit(&theta_command, &phi_command);
+          XYControllerVelocity(&theta_command, &phi_command);
       }
       else
           ROS_FATAL("LlcController: invalid value for inner_controller_ : %c", inner_controller_);

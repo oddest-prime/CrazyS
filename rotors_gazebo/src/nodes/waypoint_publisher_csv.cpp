@@ -130,11 +130,11 @@ int main(int argc, char** argv) {
     desired_position(0) = wp.position[0];
     desired_position(1) = wp.position[1];
     desired_position(2) = wp.position[2];
+    desired_yaw = wp.yaw;
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
 
-    ROS_INFO("Publishing waypoint on namespace %s: [%f, %f, %f] waiting %f seconds.",
-    nh.getNamespace().c_str(), desired_position.x(),
-    desired_position.y(), desired_position.z(), wp.waiting_time);
+    ROS_INFO("Publishing waypoint on namespace %s: [%f, %f, %f, %f] waiting %f seconds.",
+    nh.getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z(), desired_yaw, wp.waiting_time);
 
     trajectory_pub.publish(trajectory_msg);
 

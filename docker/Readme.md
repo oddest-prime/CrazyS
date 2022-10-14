@@ -49,6 +49,7 @@
 	roslaunch rotors_gazebo crazyflie2_step_response.launch gui:=true swarm_params:=step-response_A
 	roslaunch rotors_gazebo crazyflie2_step_response.launch gui:=true swarm_params:=step-response_B
 	roslaunch rotors_gazebo crazyflie2_step_response.launch gui:=true swarm_params:=step-response_C
+	roslaunch rotors_gazebo crazyflie2_step_response.launch gui:=true swarm_params:=step-response_C waypoints:=step_v
 
 ### Misc.
 	rm -f *.csv && rm /tmp/cam* -rf && roslaunch rotors_gazebo crazyflie2_hovering_two.launch

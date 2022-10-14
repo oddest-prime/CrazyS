@@ -1076,8 +1076,8 @@ void SwarmController::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pos
 */
   }
 
-  if(enable_swarm_ != SWARM_DISABLED || set_point.pose.position.z > 0.01) // do not enable drone until proper target point received
-    setpoint_pub_.publish(set_point);
+  if(enable_swarm_ != SWARM_DISABLED || set_point.pose.position.z > 0.01 || target_swarm_.getYaw() > 0.01) // do not enable drone until proper target point received
+      setpoint_pub_.publish(set_point);
 
   if(dataStoring_active_) // save data for log files
   {

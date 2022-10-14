@@ -130,10 +130,12 @@ namespace rotors_control {
             void AttitudeController(double* p_command, double* q_command);
             void ErrorBodyFrame(double* xe, double* ye);
             void HoveringController(double* delta_omega);
+            void HoveringControllerVelocity(double* delta_omega);
             void YawController(double* r_command);
             void XYController(double* theta_command, double* phi_command);
             void XYControllerMpc(double* theta_command, double* phi_command); // deprecated !!
             void XYControllerExplicit(double* theta_command, double* phi_command);
+            void XYControllerVelocity(double* theta_command, double* phi_command);
             void ControlMixer(double* PWM_1, double* PWM_2, double* PWM_3, double* PWM_4);
             void VelocitiesWorldFrame(double* dot_x, double* dot_y, double* dot_z);
             void Quaternion2Euler(double* roll, double* pitch, double* yaw) const;

@@ -27,7 +27,8 @@
   roslaunch rotors_gazebo crazyflie2_swarm2.launch gui:=true swarm_mode:=gradenum swarm_params:=spc_global_B
 
 	roslaunch rotors_gazebo crazyflie2_test1.launch gui:=true swarm_params:=spc_global_B
-	roslaunch rotors_gazebo crazyflie2_dist2.launch gui:=true
+
+	roslaunch rotors_gazebo crazyflie2_dist2.launch gui:=true swarm_params:=mpc1_params2b
 
 	roslaunch rotors_gazebo crazyflie2_dist5.launch gui:=true swarm_mode:=distgnd
 

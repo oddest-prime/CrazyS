@@ -190,7 +190,7 @@ void PositionControllerLight::InitializeParams() {
 
     position_controller_.SetControllerGains();
 
-    GetRosParameter(pnh, "inner/controller", (int)'a', &inner_controller_);
+    GetRosParameter(pnh, "inner/controller", 0, &inner_controller_);
 
     ROS_INFO_ONCE("[PositionControllerLight] GetRosParameter values:");
     ROS_INFO_ONCE("  inner/controller=%d", inner_controller_);

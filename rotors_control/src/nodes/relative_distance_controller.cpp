@@ -112,6 +112,8 @@ void RelativeDistanceController::InitializeParams() {
     GetRosParameter(pnh, "dist/spc_calm_weight", (float)1.0, &spc_calm_weight_);
     GetRosParameter(pnh, "dist/explore_command_length", (float)1.0, &explore_command_length_);
     GetRosParameter(pnh, "dist/explore_movement_thr", (float)1.0, &explore_movement_thr_);
+    GetRosParameter(pnh, "dist/velocity_scaling", (float)0.1, &velocity_scaling_);
+    GetRosParameter(pnh, "inner/controller", 0, &inner_controller_);
 
     ROS_INFO_ONCE("[RelativeDistanceController] GetRosParameter values:");
     ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
@@ -124,6 +126,8 @@ void RelativeDistanceController::InitializeParams() {
     ROS_INFO_ONCE("  dist/spc_cohesion_weight=%f", spc_cohesion_weight_);
     ROS_INFO_ONCE("  dist/explore_command_length=%f", explore_command_length_);
     ROS_INFO_ONCE("  dist/explore_movement_thr=%f", explore_movement_thr_);
+    ROS_INFO_ONCE("  dist/velocity_scaling=%f", velocity_scaling_);
+    ROS_INFO_ONCE("  inner/controller=%d", inner_controller_);
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
@@ -464,9 +468,21 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     if(enable_swarm_ == SWARM_DISABLED) // set target point if not in swarm mode
     {
         ROS_INFO_ONCE("RelativeDistanceController %d swarm disabled x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
-        set_point.pose.position.x = target_swarm_.position_W[0];
-        set_point.pose.position.y = target_swarm_.position_W[1];
-        set_point.pose.position.z = target_swarm_.position_W[2];
+        if(inner_controller_ == 3) // velocity controller
+        {
+          set_point.pose.position.x = 0;
+          set_point.pose.position.y = 0;
+          if(odometry_gt_.position[2] < target_swarm_.position_W[2])
+              set_point.pose.position.z = 0.5;
+          else
+              set_point.pose.position.z = 0;
+        }
+        else
+        {
+            set_point.pose.position.x = target_swarm_.position_W[0];
+            set_point.pose.position.y = target_swarm_.position_W[1];
+            set_point.pose.position.z = target_swarm_.position_W[2];
+        }
     }
     else if(enable_swarm_ == SWARM_LANDING) // set keep target point and set small z if in landing mode
     {
@@ -596,10 +612,21 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             }
 
             direction = direction * explore_command_length_; // length for exploration vector
-            set_point.pose.position.x = odometry_gt_.position[0] + direction[0];
-            set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
-            set_point.pose.position.z = odometry_gt_.position[2] + direction[2];
-            ROS_INFO_ONCE("RelativeDistanceController %d explore:%d direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
+
+            if(inner_controller_ == 3) // velocity controller
+            {
+                set_point.pose.position.x = direction[0] * velocity_scaling_;
+                set_point.pose.position.y = direction[1] * velocity_scaling_;
+                set_point.pose.position.z = direction[2] * velocity_scaling_;
+                ROS_INFO("RelativeDistanceController %d explore:%d (velocity) direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
+            }
+            else
+            {
+                set_point.pose.position.x = odometry_gt_.position[0] + direction[0];
+                set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
+                set_point.pose.position.z = odometry_gt_.position[2] + direction[2];
+                ROS_INFO_ONCE("RelativeDistanceController %d explore:%d direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
+            }
             tempEnv << exploration_info << "," << direction[0] << "," << direction[1] << "," << direction[2] << "," << -1 << "," << history_cnt_ << ",";
         }
         else // possible to do exploitation
@@ -713,11 +740,22 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                     }
                 }
             }
-            set_point.pose.position.x = odometry_gt_.position[0] + (float)min_xi * eps_move_;
-            set_point.pose.position.y = odometry_gt_.position[1] + (float)min_yi * eps_move_;
-            set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_*1.5; // TODO: proper scaling
-            ROS_INFO_ONCE("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
-            tempEnv << exploration_info << "," << (float)min_xi * eps_move_ << "," << (float)min_yi * eps_move_ << "," << (float)min_zi * eps_move_*1.5 << "," << (float)min_sum << "," << history_cnt_ << ",";
+            if(inner_controller_ == 3) // velocity controller
+            {
+                set_point.pose.position.x = (float)min_xi * eps_move_ * velocity_scaling_;
+                set_point.pose.position.y = (float)min_yi * eps_move_ * velocity_scaling_;
+                set_point.pose.position.z = (float)min_zi * eps_move_ * velocity_scaling_;
+                ROS_INFO("RelativeDistanceController %d exploitation (velocity) xi=%d yi=%d zi=%d tsum=%f scal=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum, velocity_scaling_);
+                tempEnv << exploration_info << "," << (float)min_xi * eps_move_ * velocity_scaling_ << "," << (float)min_yi * eps_move_ * velocity_scaling_ << "," << (float)min_zi * eps_move_ * velocity_scaling_ << "," << (float)min_sum << "," << history_cnt_ << ",";
+            }
+            else
+            {
+                set_point.pose.position.x = odometry_gt_.position[0] + (float)min_xi * eps_move_;
+                set_point.pose.position.y = odometry_gt_.position[1] + (float)min_yi * eps_move_;
+                set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_*1.5; // TODO: proper scaling
+                ROS_INFO_ONCE("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
+                tempEnv << exploration_info << "," << (float)min_xi * eps_move_ << "," << (float)min_yi * eps_move_ << "," << (float)min_zi * eps_move_*1.5 << "," << (float)min_sum << "," << history_cnt_ << ",";
+            }
             tempCost << min_sum << "," << min_coehesion_term << "," << min_separation_term << "," << min_target_term << "," << min_calm_term << ",";
         }
     }

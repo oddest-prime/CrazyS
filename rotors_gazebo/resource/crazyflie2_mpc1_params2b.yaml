@@ -24,12 +24,13 @@
   "spc_separation_weight": 200.0,
   "spc_target_weight": 150.0,
   "spc_height_weight": 5000.0,
-  "spc_calm_weight": 0.0
+  "spc_calm_weight": 0.0,
+  "velocity_scaling": 0.05
   },
 "gradient": {
   "scale_factor": 0.005
   },
 "inner": {
-  "controller": 2 # 1 -> PID (A), 2 -> explicit (B)
+  "controller": 3 # 1 -> PID (A), 2 -> explicit (B)
   }
 }

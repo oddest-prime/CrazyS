@@ -100,6 +100,8 @@ namespace rotors_control {
             float neighbourhood_distance_;
             float explore_command_length_;
             float explore_movement_thr_;
+            float velocity_scaling_;
+            int inner_controller_;
 
             bool dataStoring_active_;
             int enable_swarm_ = SWARM_DISABLED;

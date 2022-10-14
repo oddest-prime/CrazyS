@@ -41,7 +41,7 @@
 
 
 #include "rotors_control/common.h"
-#include "rotors_control/mpc_controller.h"
+#include "rotors_control/llc_controller.h"
 #include "rotors_control/position_controller.h"
 #include "rotors_control/crazyflie_complementary_filter.h"
 
@@ -91,7 +91,7 @@ namespace rotors_control {
             int neighbourhood_cnt_;
 
 //            PositionController position_controller_;
-            MpcController position_controller_;
+            LlcController position_controller_;
             sensorData_t sensors_;
             EigenOdometry odometry_;
 

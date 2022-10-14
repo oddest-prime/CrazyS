@@ -1,4 +1,4 @@
-Llc/*
+/*
  * Copyright 2018 Giuseppe Silano, University of Sannio in Benevento, Italy
  * Copyright 2018 Emanuele Aucone, University of Sannio in Benevento, Italy
  * Copyright 2018 Benjamin Rodriguez, MIT, USA
@@ -132,7 +132,7 @@ namespace rotors_control {
             void HoveringController(double* delta_omega);
             void YawController(double* r_command);
             void XYController(double* theta_command, double* phi_command);
-            void XYControllerLlc(double* theta_command, double* phi_command);
+            void XYControllerMpc(double* theta_command, double* phi_command); // deprecated !!
             void XYControllerExplicit(double* theta_command, double* phi_command);
             void ControlMixer(double* PWM_1, double* PWM_2, double* PWM_3, double* PWM_4);
             void VelocitiesWorldFrame(double* dot_x, double* dot_y, double* dot_z);

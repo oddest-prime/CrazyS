@@ -1,0 +1,4 @@
+# only LLC parameters are relevant for step-response
+inner: {
+  controller: 3 # 1 -> PID (A), 2 -> explicit (B), 3 -> velocity (C)
+  }

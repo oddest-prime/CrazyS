@@ -41,8 +41,8 @@
 
 
 #include "rotors_control/common.h"
-#include "rotors_control/mpc_controller.h"
-#include "rotors_control/position_controller.h"
+//#include "rotors_control/llc_controller.h"
+//#include "rotors_control/position_controller.h"
 #include "rotors_control/crazyflie_complementary_filter.h"
 
 #define N_DRONES_MAX  30          /* maximum number of drones */
@@ -58,6 +58,8 @@
 #define SWARM_GRADIENT_ENUM       32
 #define SWARM_PHASE_ESTABLISHED   64
 #define SWARM_LANDING             32768
+
+using namespace std;
 
 namespace rotors_control {
 
@@ -120,7 +122,7 @@ namespace rotors_control {
             int neighbourhood_cnt_;
 
 //            PositionController position_controller_;
-            MpcController position_controller_;
+//            MpcController position_controller_;
             sensorData_t sensors_;
             EigenOdometry odometry_; // with simulated sensor noise
             EigenOdometry odometry_gt_; // ground-truth

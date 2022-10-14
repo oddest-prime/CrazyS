@@ -46,8 +46,11 @@
 	roslaunch rotors_gazebo crazyflie2_hovering_example.launch gui:=false
 
 ### Record step-response of inner loop controller
-	roslaunch rotors_gazebo crazyflie2_step_response.launch gui:=true swarm_params:=spc_global_B
+	roslaunch rotors_gazebo crazyflie2_step_response.launch gui:=true swarm_params:=step-response_A
+	roslaunch rotors_gazebo crazyflie2_step_response.launch gui:=true swarm_params:=step-response_B
+	roslaunch rotors_gazebo crazyflie2_step_response.launch gui:=true swarm_params:=step-response_C
 
+### Misc.
 	rm -f *.csv && rm /tmp/cam* -rf && roslaunch rotors_gazebo crazyflie2_hovering_two.launch
 
 	ffmpeg -r 30 -pattern_type glob -i "/tmp/cam1/default_camera1_link_*.jpg" -c:v libx264 my_cam1.mp4

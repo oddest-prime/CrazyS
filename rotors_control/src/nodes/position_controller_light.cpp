@@ -257,6 +257,9 @@ void PositionControllerLight::SetpointCallback(const geometry_msgs::PoseStampedC
   new_setpoint.position_W[0] = setpoint_msg->pose.position.x;
   new_setpoint.position_W[1] = setpoint_msg->pose.position.y;
   new_setpoint.position_W[2] = setpoint_msg->pose.position.z;
+  new_setpoint.velocity_W[0] = setpoint_msg->pose.position.x;
+  new_setpoint.velocity_W[1] = setpoint_msg->pose.position.y;
+  new_setpoint.velocity_W[2] = setpoint_msg->pose.position.z;
   position_controller_.SetTrajectoryPoint(new_setpoint);
 
   waypointHasBeenPublished_ = true;

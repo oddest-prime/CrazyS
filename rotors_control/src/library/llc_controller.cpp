@@ -590,6 +590,8 @@ void LlcController::XYControllerExplicit(double* theta_command, double* phi_comm
     double dot_x, dot_y, dot_z;
     VelocitiesWorldFrame(&dot_x, &dot_y, &dot_z);
 
+    // ROS_INFO("u; %7f, dot_x: %7f;    v: %7f, dot_y: %7f", u, dot_x, v, dot_y);
+
     u = dot_x;
     v = dot_y;
 
@@ -864,12 +866,17 @@ void LlcController::AttitudeController(double* p_command, double* q_command) {
     {
       if(inner_controller_ == 1) // PID controller
       {
-          ROS_INFO("LlcController: inner_controller: %d (PID controller)", inner_controller_);
+          ROS_INFO_ONCE("LlcController: inner_controller: %d (PID controller)", inner_controller_);
           XYController(&theta_command, &phi_command);
       }
       else if(inner_controller_ == 2) // explicit controller
       {
-          ROS_INFO("LlcController: inner_controller: %d (explicit controller)", inner_controller_);
+          ROS_INFO_ONCE("LlcController: inner_controller: %d (explicit controller)", inner_controller_);
+          XYControllerExplicit(&theta_command, &phi_command);
+      }
+      else if(inner_controller_ == 3) // velocity controller
+      {
+          ROS_INFO_ONCE("LlcController: inner_controller: %d (velocity controller)", inner_controller_);
           XYControllerExplicit(&theta_command, &phi_command);
       }
       else

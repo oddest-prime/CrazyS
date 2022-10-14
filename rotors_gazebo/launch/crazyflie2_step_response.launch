@@ -7,9 +7,11 @@
   <arg name="enable_state_estimator" default="false" />
   <arg name="log_file" default="$(arg mav_name)" />
   <arg name="swarm_params" default="swarm_params"/>
+  <arg name="waypoints" default="step_x"/>
+  <!--arg name="waypoints" default="step_multiple"/-->
   <arg name="paused" value="true"/>
   <arg name="debug" default="false"/>
-  <arg name="gui" default="true"/>
+  <arg name="gui" default="false"/>
   <arg name="csvFilesStoring" default="yes"/>
   <arg name="csvFilesStoringTime" default="30.0"/> <!-- seconds -->
   <!-- The following line causes gzmsg and gzerr messages to be printed to the console
@@ -21,7 +23,7 @@
   <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find rotors_gazebo)/models"/>
   <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find rotors_gazebo)/models"/>
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find rotors_gazebo)/worlds/$(arg world_name)_crazyflie.world" />
+    <arg name="world_name" value="$(find rotors_gazebo)/worlds/$(arg world_name)_crazyflie_large.world" />
     <arg name="debug" value="$(arg debug)" />
     <arg name="paused" value="$(arg paused)"/>
     <arg name="gui" value="$(arg gui)" />
@@ -61,9 +63,9 @@
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
 
-   <node name="waypoint_publisher_csv" pkg="rotors_gazebo" type="waypoint_publisher_csv" required="true" output="screen" args="/crazyflie_ws/src/crazys/waypoints/waypoints_step_x.txt"/>
+   <node name="waypoint_publisher_csv" pkg="rotors_gazebo" type="waypoint_publisher_csv" required="true" output="screen" args="$(find rotors_gazebo)/waypoints/waypoints_$(arg waypoints).txt"/>
  />
-   <!--node name="hovering_example" pkg="rotors_gazebo" type="hovering_example" output="screen" /-->
+
    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
    <node name="quaternion_to_rpy" pkg="rotors_gazebo" type="quaternion_to_rpy" output="screen" >

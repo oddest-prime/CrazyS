@@ -17,8 +17,8 @@ find_package(
 )
 
 catkin_package(
-  INCLUDE_DIRS include ${Eigen_INCLUDE_DIRS}
-  LIBRARIES lee_position_controller position_controller mpc_controller crazyflie_onboard_controller
+  INCLUDE_DIRS include ${Eigen3_INCLUDE_DIRS}
+  LIBRARIES lee_position_controller position_controller llc_controller crazyflie_onboard_controller
     roll_pitch_yawrate_thrust_controller sensfusion6 crazyflie_complementary_filter eigen_helpers
     mellinger_controller internal_model_controller
     roll_pitch_yawrate_thrust_controller_crazyflie
@@ -30,7 +30,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${Eigen_INCLUDE_DIRS}
+  ${Eigen3_INCLUDE_DIRS}
 )
 
 add_library(lee_position_controller
@@ -41,8 +41,8 @@ add_library(position_controller
    src/library/position_controller.cpp
 )
 
-add_library(mpc_controller
-   src/library/mpc_controller.cpp
+add_library(llc_controller
+   src/library/llc_controller.cpp
 )
 
 add_library(crazyflie_onboard_controller
@@ -83,8 +83,8 @@ add_dependencies(lee_position_controller ${catkin_EXPORTED_TARGETS})
 target_link_libraries(position_controller ${catkin_LIBRARIES})
 add_dependencies(position_controller ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(mpc_controller ${catkin_LIBRARIES})
-add_dependencies(mpc_controller ${catkin_EXPORTED_TARGETS})
+target_link_libraries(llc_controller ${catkin_LIBRARIES})
+add_dependencies(llc_controller ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(mellinger_controller ${catkin_LIBRARIES})
 add_dependencies(mellinger_controller ${catkin_EXPORTED_TARGETS})
@@ -124,13 +124,13 @@ target_link_libraries(position_controller_node
 add_executable(position_controller_light src/nodes/position_controller_light.cpp)
 add_dependencies(position_controller_light ${catkin_EXPORTED_TARGETS})
 target_link_libraries(position_controller_light
-  mpc_controller position_controller crazyflie_complementary_filter crazyflie_onboard_controller
+  llc_controller position_controller crazyflie_complementary_filter crazyflie_onboard_controller
   sensfusion6 mellinger_controller internal_model_controller ${catkin_LIBRARIES})
 
 add_executable(swarm_controller src/nodes/swarm_controller.cpp)
 add_dependencies(swarm_controller ${catkin_EXPORTED_TARGETS})
 target_link_libraries(swarm_controller
-  mpc_controller position_controller crazyflie_complementary_filter crazyflie_onboard_controller
+  llc_controller position_controller crazyflie_complementary_filter crazyflie_onboard_controller
   sensfusion6 mellinger_controller internal_model_controller ${catkin_LIBRARIES})
 
 add_executable(swarm_state_estimator src/nodes/swarm_state_estimator.cpp)
@@ -153,7 +153,7 @@ target_link_libraries(distance_measurement_sim
 add_executable(playback_node src/nodes/playback_node.cpp)
 add_dependencies(playback_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(playback_node
-  mpc_controller crazyflie_complementary_filter crazyflie_onboard_controller
+  llc_controller crazyflie_complementary_filter crazyflie_onboard_controller
   sensfusion6 mellinger_controller internal_model_controller ${catkin_LIBRARIES})
 
 add_executable(roll_pitch_yawrate_thrust_controller_node

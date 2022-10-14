@@ -307,6 +307,7 @@ TraceYZ.png: State0.csv Makefile
 
 
 
+
 CleanedMetrics%.csv: Metrics%.csv
 	grep ",65," $< > $@
 #	grep ",96," $< > $@
@@ -322,6 +323,224 @@ StateMerged.csv: $(allStateCsv)
 
 EnvMerged.csv:
 	touch $@
+
+
+
+
+
+all-step: \
+DronePosition0.png \
+DronePositionTrajectory0.png \
+DroneAttitude0.png \
+XeYe0.png \
+DeltaCommands0.png \
+OmegaCommand0.png \
+RCommand0.png \
+PQCommands0.png \
+AttiudeCommands0.png \
+PropellersVelocity0.png \
+XYcontroller0.png \
+Attiudecontroller0.png
+
+DronePosition%.png: DronePosition%.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+ 		set ylabel \"Position $< [m] (given by ground-truth odometry)\" \n\
+		set y2label \"Velocity $< [m/s] (given by ground-truth odometry)\" \n\
+		set xtics nomirror \n\
+		set y2tics nomirror \n\
+		set output \"$@\" \n\
+		plot     \"$<\" using (column(1)+column(2)/1000000000):3 with lines title 'X-Pos', \
+				 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'Y-Pos', \
+				 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'Z-Pos', \
+				 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'X-Velocity' axis x2y2, \
+				 \"$<\" using (column(1)+column(2)/1000000000):7 with lines title 'Y-Velocity' axis x2y2, \
+				 \"$<\" using (column(1)+column(2)/1000000000):8 with lines title 'Z-Velocity' axis x2y2" \
+	 | gnuplot
+#	 set xrange [20:25] \n\
+#	 set x2range [20:25] \n\
+#	 set yrange [7.8:8.6] \n\
+
+DronePositionTrajectory%.png: DronePosition%.csv Trajectory%.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		 \n\
+		set output \"$@\" \n\
+		set ylabel \"DronePosition (given by ground-truth odometry) and Trajectory (set-point commands)\" \n\
+		plot     \"$(word 1,$^)\" using (column(1)+column(2)/1000000000):3 with lines title 'X-Pos', \
+			     \"$(word 1,$^)\" using (column(1)+column(2)/1000000000):4 with lines title 'Y-Pos', \
+			     \"$(word 1,$^)\" using (column(1)+column(2)/1000000000):5 with lines title 'Z-Pos', \
+			     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):3 with lines title 'X-command', \
+		     	 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):4 with lines title 'Y-command', \
+		     	 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):5 with lines title 'Z-command'" \
+	 | gnuplot
+
+DroneAttitude%.png: DroneAttitude%.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		 \n\
+		set output \"$@\" \n\
+		set ylabel \"Drone attitude (given by ground-truth odometry (?))\" \n\
+		plot     \"$<\" using (column(1)+column(2)/1000000000):3 with lines title 'roll', \
+			     \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'pitch', \
+			     \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'yaw'" \
+	 | gnuplot
+
+XeYe%.png: XeYe%.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		 \n\
+		set output \"$@\" \n\
+		set ylabel \"Drone position and velocity errors (of XYController)\" \n\
+		plot     \"$<\" using (column(1)+column(2)/1000000000):3 with lines title 'X-error', \
+			     \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'Y-error', \
+			     \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'X-velocity-error', \
+			     \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'Y-velocity-error'" \
+	 | gnuplot
+
+DeltaCommands%.png: DeltaCommands%.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		 \n\
+		set output \"$@\" \n\
+		set ylabel \"Delta Commands (of RateController)\" \n\
+		plot     \"$<\" using (column(1)+column(2)/1000000000):3 with lines title 'delta-phi', \
+			     \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'delta-theta', \
+			     \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'delta-psi'" \
+	 | gnuplot
+
+OmegaCommand%.png: OmegaCommand%.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		 \n\
+		set output \"$@\" \n\
+		set ylabel \"Omega Command (of HoveringController)\" \n\
+		plot     \"$<\" using (column(1)+column(2)/1000000000):3 with lines title 'omega-command'" \
+	 | gnuplot
+
+RCommand%.png: RCommand%.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		 \n\
+		set output \"$@\" \n\
+		set ylabel \"R Command (of YawMpcController)\" \n\
+		plot     \"$<\" using (column(1)+column(2)/1000000000):3 with lines title 'r-command'" \
+	 | gnuplot
+
+PQCommands%.png: PQCommands%.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		 \n\
+		set output \"$@\" \n\
+		set ylabel \"PQ Commands (of AttitudeController)\" \n\
+		plot    \"$<\" using (column(1)+column(2)/1000000000):3 with lines title 'p-command', \
+	 		    \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'q-command'" \
+	 | gnuplot
+
+AttiudeCommands%.png: PQCommands%.csv DroneAttitude%.csv DronePosition%.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		 \n\
+		set output \"$@\" \n\
+		set ylabel \"Attitude and Commands\" \n\
+		plot     \"$(word 1,$^)\" using (column(1)+column(2)/1000000000):3 with lines title 'phi-command', \
+			     \"$(word 1,$^)\" using (column(1)+column(2)/1000000000):4 with lines title 'theta-command', \
+			     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):3 with lines title 'pitch', \
+			     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):4 with lines title 'roll', \
+			     \"$(word 3,$^)\" using (column(1)+column(2)/1000000000):3 with lines title 'X-Pos', \
+			     \"$(word 3,$^)\" using (column(1)+column(2)/1000000000):4 with lines title 'Y-Pos'" \
+	 | gnuplot
+
+PropellersVelocity%.png: PropellersVelocity%.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		 \n\
+		set output \"$@\" \n\
+		set ylabel \"Propellers velocity\" \n\
+		plot     \"$<\" using (column(1)+column(2)/1000000000):3 with lines title 'A', \
+			     \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'B', \
+			     \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'C', \
+			     \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'D'" \
+	 | gnuplot
+
+XYcontroller%.png: XeYe%.csv CommandAttitude%.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		 \n\
+		set output \"$@\" \n\
+		set ylabel \"XYcontroller\" \n\
+		plot     \"$(word 1,$^)\" using (column(1)+column(2)/1000000000):3 with lines title 'error-x', \
+			     \"$(word 1,$^)\" using (column(1)+column(2)/1000000000):4 with lines title 'error-y', \
+			     \"$(word 1,$^)\" using (column(1)+column(2)/1000000000):5 with lines title 'error-Vx', \
+			     \"$(word 1,$^)\" using (column(1)+column(2)/1000000000):6 with lines title 'error-Vy', \
+			     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):3 with lines title 'theta-command', \
+			     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):4 with lines title 'phi-command'" \
+	 | gnuplot
+
+Attiudecontroller%.png: CommandAttitude%.csv DroneAttitude%.csv PQCommands%.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1024,768 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		 \n\
+		set output \"$@\" \n\
+		set ylabel \"Attiudecontroller\" \n\
+		plot     \"$(word 1,$^)\" using (column(1)+column(2)/1000000000):3 with lines title 'theta-command', \
+		       	 \"$(word 1,$^)\" using (column(1)+column(2)/1000000000):4 with lines title 'phi-command', \
+			     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):4 with lines title 'pitch (theta)', \
+			     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):3 with lines title 'roll (phi)', \
+		     	 \"$(word 3,$^)\" using (column(1)+column(2)/1000000000):4 with lines title 'q-command (theta-command)', \
+			     \"$(word 3,$^)\" using (column(1)+column(2)/1000000000):3 with lines title 'p-command (phi-command)'" \
+	 | gnuplot
+
+
+
 
 rm-csv:
 	rm -f *.csv

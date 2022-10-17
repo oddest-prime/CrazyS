@@ -326,6 +326,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
     // setpoint for message to be sent to low-level controller
     geometry_msgs::PoseStamped set_point;
+    Vector3f set_point_marker;
     set_point.header.stamp = odometry_msg->header.stamp;
 
     history_cnt_ ++;
@@ -483,6 +484,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             set_point.pose.position.y = target_swarm_.position_W[1];
             set_point.pose.position.z = target_swarm_.position_W[2];
         }
+        set_point_marker[0] = set_point.pose.position.x;
+        set_point_marker[1] = set_point.pose.position.y;
+        set_point_marker[2] = set_point.pose.position.z;
     }
     else if(enable_swarm_ == SWARM_LANDING) // set keep target point and set small z if in landing mode
     {
@@ -619,6 +623,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 set_point.pose.position.y = direction[1] * velocity_scaling_;
                 set_point.pose.position.z = direction[2] * velocity_scaling_;
                 ROS_INFO("RelativeDistanceController %d explore:%d (velocity) direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
+                set_point_marker[0] = odometry_gt_.position[0] + direction[0] * velocity_scaling_;
+                set_point_marker[1] = odometry_gt_.position[1] + direction[1] * velocity_scaling_;
+                set_point_marker[2] = odometry_gt_.position[2] + direction[2] * velocity_scaling_;
             }
             else
             {
@@ -626,6 +633,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
                 set_point.pose.position.z = odometry_gt_.position[2] + direction[2];
                 ROS_INFO_ONCE("RelativeDistanceController %d explore:%d direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
+                set_point_marker[0] = set_point.pose.position.x;
+                set_point_marker[1] = set_point.pose.position.y;
+                set_point_marker[2] = set_point.pose.position.z;
             }
             tempEnv << exploration_info << "," << direction[0] << "," << direction[1] << "," << direction[2] << "," << -1 << "," << history_cnt_ << ",";
         }
@@ -746,6 +756,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 set_point.pose.position.y = (float)min_yi * eps_move_ * velocity_scaling_;
                 set_point.pose.position.z = (float)min_zi * eps_move_ * velocity_scaling_;
                 ROS_INFO("RelativeDistanceController %d exploitation (velocity) xi=%d yi=%d zi=%d tsum=%f scal=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum, velocity_scaling_);
+                set_point_marker[0] = odometry_gt_.position[0] + (float)min_xi * eps_move_ * velocity_scaling_;
+                set_point_marker[1] = odometry_gt_.position[1] + (float)min_yi * eps_move_ * velocity_scaling_;
+                set_point_marker[2] = odometry_gt_.position[2] + (float)min_zi * eps_move_ * velocity_scaling_;
                 tempEnv << exploration_info << "," << (float)min_xi * eps_move_ * velocity_scaling_ << "," << (float)min_yi * eps_move_ * velocity_scaling_ << "," << (float)min_zi * eps_move_ * velocity_scaling_ << "," << (float)min_sum << "," << history_cnt_ << ",";
             }
             else
@@ -754,6 +767,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 set_point.pose.position.y = odometry_gt_.position[1] + (float)min_yi * eps_move_;
                 set_point.pose.position.z = odometry_gt_.position[2] + (float)min_zi * eps_move_*1.5; // TODO: proper scaling
                 ROS_INFO_ONCE("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f", droneNumber_, min_xi, min_yi, min_zi, min_sum);
+                set_point_marker[0] = set_point.pose.position.x;
+                set_point_marker[1] = set_point.pose.position.y;
+                set_point_marker[2] = set_point.pose.position.z;
                 tempEnv << exploration_info << "," << (float)min_xi * eps_move_ << "," << (float)min_yi * eps_move_ << "," << (float)min_zi * eps_move_*1.5 << "," << (float)min_sum << "," << history_cnt_ << ",";
             }
             tempCost << min_sum << "," << min_coehesion_term << "," << min_separation_term << "," << min_target_term << "," << min_calm_term << ",";
@@ -1001,9 +1017,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     // move gazebo markers
     geometry_msgs::Point pr2_position_red;
     geometry_msgs::Point pr2_position_blue;
-    pr2_position_red.x = set_point.pose.position.x;
-    pr2_position_red.y = set_point.pose.position.y;
-    pr2_position_red.z = set_point.pose.position.z;
+    pr2_position_red.x = set_point_marker[0];
+    pr2_position_red.y = set_point_marker[1];
+    pr2_position_red.z = set_point_marker[2];
     if(enable_swarm_ == SWARM_DISABLED) // hovering at fixed position, use both markers
     {
         pr2_position_blue = pr2_position_red;

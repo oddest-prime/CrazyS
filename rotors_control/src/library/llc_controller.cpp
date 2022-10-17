@@ -759,7 +759,7 @@ void LlcController::HoveringController(double* omega) {
       if(delta_omega > MAX_POS_DELTA_OMEGA)
          delta_omega = MAX_POS_DELTA_OMEGA;
       else
-         delta_omega = -MAX_NEG_DELTA_OMEGA;
+         delta_omega = MAX_NEG_DELTA_OMEGA;
 
      *omega = OMEGA_OFFSET + delta_omega;
 
@@ -811,7 +811,7 @@ void LlcController::HoveringControllerVelocity(double* omega) {
       if(delta_omega > MAX_POS_DELTA_OMEGA)
          delta_omega = MAX_POS_DELTA_OMEGA;
       else
-         delta_omega = -MAX_NEG_DELTA_OMEGA;
+         delta_omega = MAX_NEG_DELTA_OMEGA;
 
      *omega = OMEGA_OFFSET + delta_omega;
 
@@ -830,8 +830,7 @@ void LlcController::HoveringControllerVelocity(double* omega) {
      }
 
      ROS_DEBUG("Delta_omega_kp: %f, Delta_omega_ki: %f, Delta_omega_kd: %f", delta_omega_kp, delta_omega_ki_, delta_omega_kd);
-     ROS_DEBUG("Z_error: %f, Delta_omega: %f", z_error, delta_omega);
-     ROS_DEBUG("Dot_zeta: %f", dot_zeta);
+     ROS_DEBUG("Z_error: %f, Delta_omega: %f, Dot_zeta: %f", z_error, delta_omega, dot_zeta);
      ROS_DEBUG("Omega: %f, delta_omega: %f", *omega, delta_omega);
 }
 
@@ -881,8 +880,9 @@ void LlcController::SetOdometryWithoutStateEstimator(const EigenOdometry& odomet
         odometry_.velocity[0], odometry_.velocity[1], odometry_.velocity[2],
         odometry_.angular_velocity[0], odometry_.angular_velocity[1], odometry_.angular_velocity[2]);
         */
-    ROS_DEBUG("target: x=%f, y=%f, z=%f, yaw=%f  odom: x=%f y=%f z=%f",
+    ROS_DEBUG("target: x=%f, y=%f, z=%f, yaw=%f, vx=%f, vy=%f, vz=%f  odom: x=%f y=%f z=%f",
         command_trajectory_.position_W[0], command_trajectory_.position_W[1], command_trajectory_.position_W[2], command_trajectory_.getYaw(),
+        command_trajectory_.velocity_W[0], command_trajectory_.velocity_W[1], command_trajectory_.velocity_W[2],
         odometry_.position[0], odometry_.position[1], odometry_.position[2]);
 
     // Such function is invoked when the ideal odometry sensor is employed

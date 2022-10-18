@@ -10,13 +10,14 @@ do
 #  for j in 5 7 10 12 15 20 30 50 70 100 150 200 250 300 500 700 1000 2000 3000 # dyn_sep
 #  for j in 600 700 850 1000 1200 1500 1800 2200 # dyn_sep
 #  for j in 1 2 5 7 10 12 15 17 20 25 30 50 120 150 # dyn_thr
-#  for j in 10 20 35 50 75 # dyn_tar
-  for j in 5 10 20 50 100 200 250 500 1000 # dyn_sca
+  for j in 10 20 35 50 75 100 150 200 300 500 # dyn_tar
+#  for j in 5 10 20 50 100 200 250 500 1000 # dyn_sca
   do
     dyn_sep="1000"
     dyn_thr="0.12"
     dyn_tar="50"
-    dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
+    dyn_sca="1"
+#    dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     echo "i = $i, j = $j, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca"
 
     cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml

@@ -15,7 +15,7 @@ do
   do
     dyn_sep="1000"
     dyn_thr="0.12"
-    dyn_tar="50"
+    dyn_tar="$j"
     dyn_sca="1"
 #    dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     echo "i = $i, j = $j, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca"

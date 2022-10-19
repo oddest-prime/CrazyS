@@ -84,7 +84,7 @@ namespace rotors_control {
             void InitializeParams();
 
         private:
-            std::default_random_engine generator_;
+            std::mt19937 generator_;
 
             int droneNumber_;
             int droneCount_;

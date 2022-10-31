@@ -24,7 +24,7 @@
   "spc_separation_weight": __DYN_SEP__,
   "spc_target_weight": __DYN_TAR__,
   "spc_height_weight": 0.0,
-  "spc_calm_weight": 0.0,
+  "spc_calm_weight": __DYN_CAL__,
   "velocity_scaling": __DYN_SCA__
   },
 "gradient": {

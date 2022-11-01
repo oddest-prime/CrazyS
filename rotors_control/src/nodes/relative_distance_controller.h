@@ -91,6 +91,7 @@ namespace rotors_control {
             int beaconCount_;
 
             int n_move_max_;
+            float drone_radius_;
             float spc_cohesion_weight_;
             float spc_separation_weight_;
             float spc_target_weight_;

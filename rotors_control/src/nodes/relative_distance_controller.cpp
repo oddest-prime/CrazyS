@@ -103,6 +103,7 @@ void RelativeDistanceController::InitializeParams() {
 
     ROS_INFO_ONCE("[RelativeDistanceController] InitializeParams");
 
+    GetRosParameter(pnh, "swarm/drone_radius", (float)0.1, &drone_radius_);
     GetRosParameter(pnh, "swarm/neighbourhood_distance", (float)99, &neighbourhood_distance_);
     GetRosParameter(pnh, "dist/eps_move", (float)0.2, &eps_move_);
     GetRosParameter(pnh, "dist/n_move_max", (int)2, &n_move_max_);
@@ -117,6 +118,7 @@ void RelativeDistanceController::InitializeParams() {
     GetRosParameter(pnh, "inner/controller", 0, &inner_controller_);
 
     ROS_INFO_ONCE("[RelativeDistanceController] GetRosParameter values:");
+    ROS_INFO_ONCE("  swarm/drone_radius=%f", drone_radius_);
     ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
     ROS_INFO_ONCE("  dist/eps_move=%f", eps_move_);
     ROS_INFO_ONCE("  dist/n_move_max=%d", n_move_max_);
@@ -695,8 +697,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                 if(enable_swarm_ & SWARM_USE_GROUND_TRUTH) // only for debug! using ground truth positions to infer distances.
                                     dist = dist_gt;
 
-                                cohesion_sum += dist*dist;
-                                separation_sum += 1.0/(dist*dist);
+                                cohesion_sum += pow(dist, 2);
+                                separation_sum += 1.0/pow(fmax(0.000001, dist - drone_radius_), 2);
                                 ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) i=%d, dist=%f, dist_gt=%f, cohesion_sum=%f, separation_sum=%f", droneNumber_, xi, yi, zi, ai, (int)i, dist, dist_gt, cohesion_sum, separation_sum);
                             }
 

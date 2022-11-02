@@ -37,6 +37,7 @@
 #include <std_msgs/Int8.h>
 #include <std_msgs/Int32.h>
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
+#include <geometry_msgs/Twist.h>
 
 #define N_DRONES_MAX  30          /* maximum number of drones */
 
@@ -86,6 +87,7 @@ ros::Publisher trajectory_pub[N_DRONES_MAX];
 ros::Publisher enable_pub[N_DRONES_MAX];
 ros::Publisher logsave_pub[N_DRONES_MAX];
 ros::Publisher logsave_pub_global;
+ros::Publisher rover_pub;
 ros::NodeHandle* nhp;
 
 int droneCount;
@@ -425,6 +427,7 @@ int main(int argc, char** argv) {
     logsave_pub[i] = nhq[i].advertise<std_msgs::Int32>("logsave", 10);
   }
   logsave_pub_global = nh.advertise<std_msgs::Int32>("logsave", 10);
+  rover_pub = nh.advertise<std_msgs::Int32>("/rover_0/cmd_vel", 10);
 
   if(operation_mode == OPERATION_MODE_TIMED)
   {
@@ -500,6 +503,14 @@ int main(int argc, char** argv) {
       ROS_INFO("global_controller: Publishing enable on namespace %s: %d.", nhq[i].getNamespace().c_str(), enable_msg.data);
       enable_pub[i].publish(enable_msg);
     }
+
+    /* let rover drive
+    ROS_INFO("global_controller: Let rover drive.");
+    geometry_msgs::Twist msg;
+    msg.linear.x = 1.0;
+    msg.angular.z = 0.1;
+    rover_pub.publish(msg);
+    */
 
     ros::Duration(0.1).sleep();
     ros::spinOnce();

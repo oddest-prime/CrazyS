@@ -172,6 +172,15 @@ void DistanceMeasurementSim::ModelstateCallback(const gazebo_msgs::ModelStatesCo
                 b ++;
             }
         }
+        if(modelstates_msg->name[i] == "jackal")
+        {
+            // save jackal position as beacon 1
+            beacon_gt_[1][0] = modelstates_msg->pose[i].position.x;
+            beacon_gt_[1][1] = modelstates_msg->pose[i].position.y;
+            beacon_gt_[1][2] = modelstates_msg->pose[i].position.z;
+            ROS_INFO_ONCE("model %d: %s (%d) at location %s", (int)i, modelstates_msg->name[i].c_str(), 1, VectorToString(beacon_gt_[b]).c_str());
+            b ++;
+        }
     }
 }
 

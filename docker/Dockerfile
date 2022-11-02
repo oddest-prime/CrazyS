@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     ros-melodic-rqt-rotors ros-melodic-rotors-comm ros-melodic-mav-msgs ros-melodic-rotors-control \
     ros-melodic-rotors-gazebo ros-melodic-rotors-evaluation ros-melodic-rotors-joy-interface \
     ros-melodic-rotors-gazebo-plugins ros-melodic-mav-planning-msgs ros-melodic-rotors-description ros-melodic-rotors-hil-interface \
+    ros-melodic-jackal-desktop ros-melodic-jackal-simulator \
     ffmpeg screen xvfb imagemagick gnuplot sqlite3 jq
 
 RUN apt-get update && apt-get -y remove ros-melodic-gazebo* gazebo* && \
@@ -60,6 +61,8 @@ RUN cd /crazyflie_ws/src && git clone -b med18_gazebo9 https://github.com/gsilan
 # RUN /bin/bash -c "source /opt/ros/melodic/setup.bash; cd /crazyflie_ws; catkin clean; catkin build"
 # RUN echo "source /crazyflie_ws/devel/setup.bash" >> ~/.bashrc
 
-RUN echo "alias crazys_init='catkin clean --yes; catkin build; source /crazyflie_ws/devel/setup.bash'" >> ~/.bashrc
+RUN echo "alias crazys_init='catkin clean --yes; catkin build; source /crazyflie_ws/devel/setup.bash'" >> ~/.bashrc && \
+    echo "" >> ~/.bashrc && \
+    echo "source /crazyflie_ws/devel/setup.bash" >> ~/.bashrc
 
 CMD /bin/bash

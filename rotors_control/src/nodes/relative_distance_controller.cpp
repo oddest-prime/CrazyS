@@ -289,7 +289,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     int beacons_moved = 0;
     for (size_t i = 0; i < beaconCount_; i++)
     {
-        if(fabs(beacons_last_[i] - beacons_[droneNumber_][i]) > 0.5) // distance changed for more than 50cm within one timestep
+        if(fabs(beacons_last_[i] - beacons_[droneNumber_][i]) > 1.5) // distance changed for more than 150cm within one timestep
         {
             beacons_moved = 1;
             ROS_INFO("OdometryCallback (%d) beacon %d moved (distance old: %f, new: %f).", droneNumber_, (int)i, beacons_last_[i], beacons_[droneNumber_][i]);

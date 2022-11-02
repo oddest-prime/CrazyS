@@ -278,7 +278,8 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     std::vector<float> vec(droneCount_*droneCount_, 0);
     for (size_t i = 0; i < droneCount_; i++)
       for (size_t j = 0; j < droneCount_; j++)
-        vec[i*droneCount_ + j] = dronestate_[i].distances_gt_[j];
+        vec[i*droneCount_ + j] = dronestate_[i].distances_[j]; // distances with simulated sensor noise
+      //vec[i*droneCount_ + j] = dronestate_[i].distances_gt_[j]; // ground-truth only for debugging
     dat.data = vec;
     distances_pub_->publish(dat);
 
@@ -330,7 +331,8 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     std::vector<float> bec(droneCount_*beaconCount_, 0);
     for (size_t i = 0; i < droneCount_; i++)
       for (size_t j = 0; j < beaconCount_; j++)
-        bec[i*beaconCount_ + j] = dronestate_[i].beacon_distances_gt_[j];
+        bec[i*beaconCount_ + j] = dronestate_[i].beacon_distances_[j]; // distances with simulated sensor noise
+      //bec[i*beaconCount_ + j] = dronestate_[i].beacon_distances_gt_[j]; // ground-truth only for debugging
     be.data = bec;
     beacons_pub_->publish(be);
 

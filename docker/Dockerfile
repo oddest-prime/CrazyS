@@ -34,7 +34,7 @@ USER flie
 RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc && \
     echo "alias crazys_init='catkin clean --yes; catkin build; source /crazyflie_ws/devel/setup.bash'" >> ~/.bashrc && \
     echo "test -e && source /crazyflie_ws/devel/setup.bash" >> ~/.bashrc && \
-    echo "echo -e \"you are in a screen session, use CTRL+A C to create new tab, CTRL+A space to change to next tab\n\nalias for initial build:\n  crazys_init\nthen you might try:\n  roslaunch rotors_gazebo crazyflie2_hovering_example.launch\n  roslaunch rotors_gazebo crazyflie2_waypoint_example.launch\n\n\"" >> ~/.bashrc && \
+    echo "echo -e \"you are in a screen session, use CTRL+A,C to create new tab, CTRL+A,space to change to next tab\n\nalias for initial build:\n  crazys_init\nthen you might try:\n  roslaunch rotors_gazebo crazyflie2_hovering_example.launch\n  roslaunch rotors_gazebo crazyflie2_waypoint_example.launch\n\n\"" >> ~/.bashrc && \
     echo "shell \"/bin/bash\"" >> ~/.screenrc
 
 WORKDIR /crazyflie_ws

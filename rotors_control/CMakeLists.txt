@@ -1,6 +1,5 @@
-cmake_minimum_required(VERSION 2.8.3)
-project(rotors_control)
-
+cmake_minimum_required(VERSION 3.0.2)
+project(rotors_control VERSION 7.0.1)
 add_definitions(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -19,7 +18,7 @@ find_package(
 catkin_package(
   INCLUDE_DIRS include ${Eigen3_INCLUDE_DIRS}
   LIBRARIES lee_position_controller position_controller llc_controller crazyflie_onboard_controller
-    roll_pitch_yawrate_thrust_controller sensfusion6 crazyflie_complementary_filter eigen_helpers
+    roll_pitch_yawrate_thrust_controller sensfusion6 crazyflie_complementary_filter
     mellinger_controller internal_model_controller
     roll_pitch_yawrate_thrust_controller_crazyflie
   CATKIN_DEPENDS geometry_msgs mav_msgs nav_msgs roscpp sensor_msgs

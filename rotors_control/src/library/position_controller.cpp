@@ -42,7 +42,7 @@
 
 
 #define M_PI                                     3.14159265358979323846  /* pi [rad]*/
-#define OMEGA_OFFSET                             6874  /* OMEGA OFFSET [PWM]*/
+#define OMEGA_OFFSET                             6474  /* OMEGA OFFSET [PWM]*/
 #define ANGULAR_MOTOR_COEFFICIENT                0.2685 /* ANGULAR_MOTOR_COEFFICIENT */
 #define MOTORS_INTERCEPT                         426.24 /* MOTORS_INTERCEPT [rad/s]*/
 #define MAX_PROPELLERS_ANGULAR_VELOCITY          2618 /* MAX PROPELLERS ANGULAR VELOCITY [rad/s]*/
@@ -494,7 +494,7 @@ void PositionController::HoveringController(double* omega) {
       if(delta_omega > MAX_POS_DELTA_OMEGA)
          delta_omega = MAX_POS_DELTA_OMEGA;
       else
-         delta_omega = -MAX_NEG_DELTA_OMEGA;
+         delta_omega = MAX_NEG_DELTA_OMEGA;
 
      *omega = OMEGA_OFFSET + delta_omega;
 

@@ -15,15 +15,15 @@ do
 #  for j in 5 10 20 50 100 200 250 500 1000 # dyn_sca
 #  for j in 0 5 10 20 35 50 75 100 150 200 300 500 # dyn_cal
 #  for j in 5 7 10 15 20 35 50 70 100 # dyn_eps
-for j in 0 2 5 10 # dyn_nse
+for j in 0 1 2 3 5 7 10 15 20 35 50 # dyn_nse
   do
     dyn_nse=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_eps="0.07"
     dyn_sep="1000"
-    dyn_thr="0.12"
+    dyn_thr="0.15" # "0.12"
     dyn_tar="150"
     dyn_sca="1"
-    dyn_cal="10"
+    dyn_cal="5"
     #    dyn_eps=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     #    dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_eps = $dyn_eps, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal"

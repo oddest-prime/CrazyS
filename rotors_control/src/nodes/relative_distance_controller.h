@@ -61,8 +61,12 @@
 #define SWARM_DECLARATIVE_DISTANCES_GT        (SWARM_DECLARATIVE_DISTANCES|SWARM_USE_GROUND_TRUTH) // only for debug! it is using grount grouth absolute positions!
 #define SWARM_LANDING                         32768
 
+#define HISTORY_CNT_MAX                       512
+
 namespace rotors_control {
     using namespace Eigen;
+
+    void linearLeastSquaresApproximation(float* dataset, size_t n_points, float* alpha0, float* alpha1);
 
     class DroneStateWithTime {
      public:
@@ -118,11 +122,13 @@ namespace rotors_control {
             float distances_[N_DRONES_MAX][N_DRONES_MAX]; // received distance measurements
             float distances_filtered_[N_DRONES_MAX][N_DRONES_MAX]; // distance measurements filtered
             float distances_history1_[N_DRONES_MAX]; // distance measurements to own drone at history point
+            float distances_history_[N_DRONES_MAX][HISTORY_CNT_MAX]; // distance measurements to own drone history
 
             float beacons_[N_DRONES_MAX][N_BEACONS_MAX]; // received distance measurements
             float beacons_filtered_[N_DRONES_MAX][N_BEACONS_MAX]; // distance measurements filtered
             float beacons_history1_[N_BEACONS_MAX]; // distance measurements to own drone at history point
             float beacons_last_[N_BEACONS_MAX]; // distance measurements from previous message (to check for large changes, when target is updated)
+            float beacons_history_[N_BEACONS_MAX][HISTORY_CNT_MAX]; // distance measurements to own drone history
 
             Vector3f positions_gt_[N_DRONES_MAX]; // ground-truth positions of all drones, only to be used for verification of estimation
             float elevation_[N_DRONES_MAX]; // received elevation measurements

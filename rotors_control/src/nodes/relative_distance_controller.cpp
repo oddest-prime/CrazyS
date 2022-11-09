@@ -50,6 +50,13 @@ RelativeDistanceController::RelativeDistanceController() {
     generator_.seed(droneNumber_); // make sure random numbers are different for each drone
     ROS_INFO("RelativeDistanceController: Seed random number generator (droneNumber_): %d", droneNumber_);
 
+    // TODO remove DEBUG...
+/*
+    float test[] = {1,2,3,4,5,6,7};
+    float alpha0, alpha1;
+    linearLeastSquaresApproximation(test, 5, &alpha0, &alpha1);
+*/
+
     history_cnt_ = 0;
     random_direction_[0] = 0;
     random_direction_[1] = 0;
@@ -319,15 +326,6 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         unit_vectors_age_[1] = -2;
         unit_vectors_age_[2] = -2;
 
-        // save current point as history point
-        for (size_t i = 0; i < droneCount_; i++)
-        {
-            distances_history1_[i] = distances_[droneNumber_][i];
-        }
-        for (size_t i = 0; i < beaconCount_; i++)
-        {
-            beacons_history1_[i] = beacons_[droneNumber_][i];
-        }
         odometry_gt_history1_ = odometry_gt_;
         history_cnt_ = 0;
         random_direction_[0] = 0;
@@ -347,7 +345,13 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     Vector3f set_point_marker;
     set_point.header.stamp = odometry_msg->header.stamp;
 
-    history_cnt_ ++;
+    if(history_cnt_ < HISTORY_CNT_MAX)
+    {
+        for (size_t i = 0; i < droneCount_; i++)
+            distances_history_[i][history_cnt_] = distances_[droneNumber_][i];
+        for (size_t i = 0; i < beaconCount_; i++)
+            beacons_history_[i][history_cnt_] = beacons_[droneNumber_][i];
+    }
     if(unit_vectors_age_[0] >= 0) unit_vectors_age_[0] ++; // age of -1 means this unit vector is invalid
     if(unit_vectors_age_[1] >= 0) unit_vectors_age_[1] ++; // age of -1 means this unit vector is invalid
     if(unit_vectors_age_[2] >= 0) unit_vectors_age_[2] ++; // age of -1 means this unit vector is invalid
@@ -376,8 +380,16 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         ROS_INFO("OdometryCallback (%d) deleted old unit_vector_2", droneNumber_);
     }
 
-//    if(history_cnt_ > 10 || true)
-    if(movement_norm > explore_movement_thr_) // last move was at least Xcm, TODO: find better threshold?
+    if(history_cnt_ >= HISTORY_CNT_MAX)
+    {
+        ROS_INFO("OdometryCallback (%d) Over threshold: %d. Reset history_cnt_: %d.", droneNumber_, HISTORY_CNT_MAX, history_cnt_);
+        odometry_gt_history1_ = odometry_gt_;
+        history_cnt_ = 0;
+        random_direction_[0] = 0;
+        random_direction_[1] = 0;
+        random_direction_[2] = 0;
+    }
+    else if(movement_norm > explore_movement_thr_) // last move was at least Xcm, TODO: find better threshold?
     {
         ROS_INFO_ONCE("OdometryCallback (%d) movement over threshold (%f): %s", droneNumber_, explore_movement_thr_, VectorToString(movement).c_str());
 
@@ -415,10 +427,36 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             ROS_INFO_ONCE("OdometryCallback (%d) replace unit vector: %d", droneNumber_, (int)index_dot_product);
             unit_vectors_[index_dot_product] = movement;
             unit_vectors_age_[index_dot_product] = 0;
+/*
+            // old version using difference only
             for (size_t i = 0; i < droneCount_; i++)
-                distances_differences_[index_dot_product][i] = (distances_[droneNumber_][i] - distances_history1_[i]) / movement_norm;
+                distances_differences_[index_dot_product][i] = (distances_[droneNumber_][i] - distances_history_[i][0]) / movement_norm;
             for (size_t i = 0; i < beaconCount_; i++)
-                beacons_differences_[index_dot_product][i] = (beacons_[droneNumber_][i] - beacons_history1_[i]) / movement_norm;
+                beacons_differences_[index_dot_product][i] = (beacons_[droneNumber_][i] - beacons_history_[i][0]) / movement_norm;
+*/
+            // new version using linear least squares approximation
+            for (size_t i = 0; i < droneCount_; i++)
+            {
+                if(i == droneNumber_) // skip for own quadcopter
+                {
+                    distances_differences_[index_dot_product][i] = 0;
+                    continue;
+                }
+
+                float alpha0, alpha1;
+                linearLeastSquaresApproximation(distances_history_[i], (size_t)history_cnt_, &alpha0, &alpha1);
+                distances_differences_[index_dot_product][i] = (alpha1 * history_cnt_) / movement_norm;
+                /*float distances_differences_diff = (distances_[droneNumber_][i] - distances_history_[i][0]) / movement_norm;
+                ROS_INFO("OdometryCallback distances_=%f distances_history_=%f", distances_[droneNumber_][i], distances_history_[i][0]);
+                ROS_INFO("OdometryCallback (%d) to %d (history_cnt_=%d) LSQApr=%f, diff=%f ", droneNumber_, (int)i, history_cnt_, distances_differences_[index_dot_product][i], distances_differences_diff);
+                */
+            }
+            for (size_t i = 0; i < beaconCount_; i++)
+            {
+                float alpha0, alpha1;
+                linearLeastSquaresApproximation(beacons_history_[i], (size_t)history_cnt_, &alpha0, &alpha1);
+                beacons_differences_[index_dot_product][i] = (alpha1 * history_cnt_) / movement_norm;
+            }
 
             ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_0 (age:%d): %s", droneNumber_, unit_vectors_age_[0], VectorToString(unit_vectors_[0]).c_str());
             ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_1 (age:%d): %s", droneNumber_, unit_vectors_age_[1], VectorToString(unit_vectors_[1]).c_str());
@@ -465,22 +503,15 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             }
         }
 
-        // save current point as history point
-        for (size_t i = 0; i < droneCount_; i++)
-        {
-            distances_history1_[i] = distances_[droneNumber_][i];
-        }
-        for (size_t i = 0; i < beaconCount_; i++)
-        {
-            beacons_history1_[i] = beacons_[droneNumber_][i];
-        }
         odometry_gt_history1_ = odometry_gt_;
-        ROS_INFO("OdometryCallback (%d) Reset history_cnt_: %d.", droneNumber_, history_cnt_);
+        ROS_INFO_ONCE("OdometryCallback (%d) Reset history_cnt_: %d.", droneNumber_, history_cnt_);
         history_cnt_ = 0;
         random_direction_[0] = 0;
         random_direction_[1] = 0;
         random_direction_[2] = 0;
     }
+    else
+        history_cnt_ ++;
 
     int exploration_info = 0;
 
@@ -1181,6 +1212,34 @@ void DroneStateWithTime::SetId(int self, int other)
 
 
 }
+
+void rotors_control::linearLeastSquaresApproximation(float* dataset, size_t n_points, float* alpha0, float* alpha1)
+{
+    // ROS_INFO("linearLeastSquaresApproximation n_points=%d", (int)n_points);
+
+    float x_mean = ((float)n_points+1)/2.0;
+
+    float y_mean = 0;
+    for (size_t i = 0; i < n_points; i++)
+        y_mean += dataset[i];
+    y_mean /= (float)n_points;
+
+    float dividend = 0.0, divisor = 0.0;
+    for (size_t i = 0; i < n_points; i++)
+        dividend += ((float)i+1.0) * dataset[i];
+    dividend -= ((int)n_points)*x_mean*y_mean;
+    for (size_t i = 0; i < n_points; i++)
+        divisor += ((float)i+1.0) * ((float)i+1.0);
+    divisor -= ((float)n_points)*(x_mean*x_mean);
+
+    float quotient = dividend / divisor;
+    *alpha1 = quotient;
+    *alpha0 = y_mean - quotient*x_mean;
+
+    // ROS_INFO("linearLeastSquaresApproximation alpha0=%f alpha1=%f", *alpha0, *alpha1);
+}
+
+
 
 int main(int argc, char** argv){
     ros::init(argc, argv, "relative_distance_controller_node");

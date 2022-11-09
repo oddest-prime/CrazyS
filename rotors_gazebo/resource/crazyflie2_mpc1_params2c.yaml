@@ -25,7 +25,8 @@
   "spc_target_weight": 50.0,
   "spc_height_weight": 5000.0,
   "spc_calm_weight": 0.0,
-  "velocity_scaling": 1.0
+  "velocity_scaling": 1.0,
+  "distance_iir_filter": 0.05
   },
 "gradient": {
   "scale_factor": 0.005

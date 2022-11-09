@@ -2,6 +2,10 @@ allDistanceCsv := $(shell ls DistSimDistance*.csv | grep -v Merged)
 allDistanceTmp := $(subst DistSimDistance,Distance,$(allDistanceCsv))
 allDistancePng := $(subst csv,png,$(allDistanceTmp))
 
+allDistanceGTCsv := $(shell ls DistSimDistance*.csv | grep -v Merged)
+allDistanceGTTmp := $(subst DistSimDistance,DistanceGT,$(allDistanceGTCsv))
+allDistanceGTPng := $(subst csv,png,$(allDistanceGTTmp))
+
 allMetricsCsv := $(shell ls DistSimMetrics*.csv | grep -v Merged)
 allMetricsTmp := $(subst DistSimMetrics,Metrics,$(allMetricsCsv))
 allMetricsPng := $(subst csv,png,$(allMetricsTmp))
@@ -15,16 +19,19 @@ allCostPng := $(subst csv,png,$(allCostCsv))
 allNoisePng := $(subst State,Noise,$(allStatePng))
 
 all-distance: $(allDistancePng)
+all-distanceGT: $(allDistanceGTPng)
 all-metrics: $(allMetricsPng)
 all-state: $(allStatePng)
 all-cost: $(allCostPng)
 all-noise: $(allNoisePng)
 all-trace: TraceXY.png TraceXZ.png TraceYZ.png
 
+all: all-distance all-distanceGT all-metrics all-state all-cost all-trace
+
 plot_start_val := 0
 plot_end_val := 9999999999999999999
 
-Distance%.png: DistSimDistance%.csv Env%.csv Makefile
+Distance%.png: Distance%.csv Env%.csv DistSimDistance%.csv Makefile
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -43,9 +50,61 @@ Distance%.png: DistSimDistance%.csv Env%.csv Makefile
 		set cbrange [-46:90] \n\
 		unset colorbox \n\
 		plot     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/2) with boxes title '' linecolor palette axes x1y2, \
-				   	 \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
-				   	 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title 'explore/exploit' axes x1y2 lc 3, \
-				   	 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/750+0.05) with lines title 'expl. cnt', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title '> enable/established/4' axes x1y2 lc 4, \
+				   	 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title '> explore/exploit' axes x1y2 lc 3, \
+				   	 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/500+0.05) with lines title '< expl. cnt/500', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'dist to 0', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'dist to 1', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):8 with lines title 'dist to 2', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):10 with lines title 'dist to 3', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):12 with lines title 'dist to 4', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):14 with lines title 'dist to 5', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):16 with lines title 'dist to 6', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):18 with lines title 'dist to 7', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):20 with lines title 'dist to 8', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'filtered dist to 0', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):7 with lines title 'filtered dist to 1', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):9 with lines title 'filtered dist to 2', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):11 with lines title 'filtered dist to 3', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):13 with lines title 'filtered dist to 4', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):15 with lines title 'filtered dist to 5', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):17 with lines title 'filtered dist to 6', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):19 with lines title 'filtered dist to 7', \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):21 with lines title 'filtered dist to 8', \
+				   	 \"$(word 3,$^)\" using (column(1)+column(2)/1000000000):4 with lines title 'GT dist to 0', \
+				   	 \"$(word 3,$^)\" using (column(1)+column(2)/1000000000):5 with lines title 'GT dist to 1', \
+				   	 \"$(word 3,$^)\" using (column(1)+column(2)/1000000000):6 with lines title 'GT dist to 2', \
+				   	 \"$(word 3,$^)\" using (column(1)+column(2)/1000000000):7 with lines title 'GT dist to 3', \
+				   	 \"$(word 3,$^)\" using (column(1)+column(2)/1000000000):8 with lines title 'GT dist to 4', \
+				   	 \"$(word 3,$^)\" using (column(1)+column(2)/1000000000):9 with lines title 'GT dist to 5', \
+				   	 \"$(word 3,$^)\" using (column(1)+column(2)/1000000000):10 with lines title 'GT dist to 6', \
+				   	 \"$(word 3,$^)\" using (column(1)+column(2)/1000000000):11 with lines title 'GT dist to 7', \
+				   	 \"$(word 3,$^)\" using (column(1)+column(2)/1000000000):12 with lines title 'GT dist to 8', \
+				   	 0.28 with lines linewidth 2 lt rgb 'light-red' dashtype 2 title 'dist_{thr} (28cm)'" \
+	 | gnuplot
+
+DistanceGT%.png: DistSimDistance%.csv Env%.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pngcairo size 1820,980 \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		set ylabel \"Distance [m]\" \n\
+		set y2label \"Count\" \n\
+		set yrange [0:3] \n\
+		set y2range [0:20] \n\
+		set y2tics 0,1,20 \n\
+		set xtics nomirror \n\
+		set y2tics nomirror \n\
+		set output \"$@\" \n\
+		set palette rgb -22,-22,2; \n\
+		set cbrange [-46:90] \n\
+		unset colorbox \n\
+		plot     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/2) with boxes title '' linecolor palette axes x1y2, \
+				   	 \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title '> enable/established/4' axes x1y2 lc 4, \
+				   	 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title '> explore/exploit' axes x1y2 lc 3, \
+				   	 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/500+0.05) with lines title '< expl. cnt/500', \
 				   	 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'dist to 0', \
 				   	 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'dist to 1', \
 				   	 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'dist to 2', \
@@ -108,9 +167,9 @@ Metrics%.png: DistSimMetrics%.csv Env%.csv Makefile
 		set cbrange [-46:90] \n\
 		unset colorbox \n\
 		plot     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/2) with boxes title '' linecolor palette axes x1y2, \
-				 \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
-				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title 'explore/exploit' axes x1y2 lc 3, \
-				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/250+0.05) with lines title 'expl. cnt', \
+				 \"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title '> enable/established/4' axes x1y2 lc 4, \
+				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title '> explore/exploit' axes x1y2 lc 3, \
+				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/250+0.05) with lines title '< expl. cnt/250', \
 				 \"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'drone count' axes x1y2 lc 7, \
 				 \"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'beacon count' axes x1y2, \
 				 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'dist to drone min' lc 1 lw 2, \
@@ -143,9 +202,9 @@ State%.png: State%.csv Env%.csv Makefile
 		set cbrange [-46:90] \n\
 		unset colorbox \n\
 		plot    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/2) with boxes title '' linecolor palette axes x1y2, \
-				\"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
-				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title 'explore/exploit' axes x1y2 lc 3, \
-				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/250+0.05) with lines title 'expl. cnt', \
+				\"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title '> enable/established/4' axes x1y2 lc 4, \
+				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title '> explore/exploit' axes x1y2 lc 3, \
+				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/250+0.05) with lines title '< expl. cnt/250', \
 				\"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'pos_x' lc 1, \
 				\"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'pos_y' lc 2, \
 				\"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'pos_z' lc 3, \
@@ -175,9 +234,9 @@ Cost%.png: Cost%.csv Env%.csv Makefile
 		set cbrange [-46:90] \n\
 		unset colorbox \n\
 		plot    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(20):(column(4)/2) with boxes title '' linecolor palette axes x1y2, \
-				\"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title 'enable/established' axes x1y2 lc 4, \
-				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title 'explore/exploit' axes x1y2 lc 3, \
-				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/250+0.05) with lines title 'expl. cnt', \
+				\"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title '> enable/established/4' axes x1y2 lc 4, \
+				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title '> explore/exploit' axes x1y2 lc 3, \
+				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/250+0.05) with lines title '< expl. cnt/250', \
 				\"$<\" using (column(1)+column(2)/1000000000):(column(4)/100) with lines title 'cost total /100', \
 				\"$<\" using (column(1)+column(2)/1000000000):(column(5)/100) with lines title 'cost coh /100', \
 				\"$<\" using (column(1)+column(2)/1000000000):(column(6)/100) with lines title 'cost sep /100', \

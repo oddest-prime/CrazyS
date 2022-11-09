@@ -107,6 +107,7 @@ make MetricsMerged.png 2> Metrics.txt
 make StateMerged.png 2> States.txt
 make all-metrics
 make all-distance
+make all-distanceGT
 make all-state
 make all-cost
 make all-trace

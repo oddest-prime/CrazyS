@@ -102,6 +102,7 @@ namespace rotors_control {
             float explore_command_length_;
             float explore_movement_thr_;
             float velocity_scaling_;
+            float distance_iir_filter_;
             int inner_controller_;
 
             bool dataStoring_active_;
@@ -115,9 +116,11 @@ namespace rotors_control {
             EigenOdometry odometry_gt_history1_; // ground-truth at history point
 
             float distances_[N_DRONES_MAX][N_DRONES_MAX]; // received distance measurements
+            float distances_filtered_[N_DRONES_MAX][N_DRONES_MAX]; // distance measurements filtered
             float distances_history1_[N_DRONES_MAX]; // distance measurements to own drone at history point
 
             float beacons_[N_DRONES_MAX][N_BEACONS_MAX]; // received distance measurements
+            float beacons_filtered_[N_DRONES_MAX][N_BEACONS_MAX]; // distance measurements filtered
             float beacons_history1_[N_BEACONS_MAX]; // distance measurements to own drone at history point
             float beacons_last_[N_BEACONS_MAX]; // distance measurements from previous message (to check for large changes, when target is updated)
 

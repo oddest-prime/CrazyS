@@ -2,7 +2,7 @@
 {
 "swarm": {
   "position_noise": 0.0, # simulate gaussian sensor noise, sigma = 0 cm
-  "distance_noise": 0.0, # simulate gaussian sensor noise, sigma = 0 cm
+  "distance_noise": 0.1, # simulate gaussian sensor noise, sigma = 0 cm
   "neighbourhood_distance": 999.0, # global neighbourhood
   "drone_radius": 0.07, # 7 cm
   "obstacle_radius": 0.25 # 15 cm
@@ -25,7 +25,8 @@
   "spc_target_weight": 50.0,
   "spc_height_weight": 5000.0,
   "spc_calm_weight": 25.0,
-  "velocity_scaling": 1.0
+  "velocity_scaling": 1.0,
+  "distance_iir_filter": 0.05
   },
 "gradient": {
   "scale_factor": 0.005

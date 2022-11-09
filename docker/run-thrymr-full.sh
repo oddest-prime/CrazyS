@@ -15,7 +15,7 @@ do
 #  for j in 5 10 20 50 100 200 250 500 1000 # dyn_sca
 #  for j in 0 5 10 20 35 50 75 100 150 200 300 500 # dyn_cal
 #  for j in 5 7 10 15 20 35 50 70 100 # dyn_eps
-for j in 0 1 3 5 10 # 15 20 35 # dyn_nse
+for j in 0 2 5 10 # dyn_nse
   do
     dyn_nse=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_eps="0.07"
@@ -42,6 +42,7 @@ for j in 0 1 3 5 10 # 15 20 35 # dyn_nse
     sleep 150 # delay compilation by 150 seconds in second two docker containers
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_dyn_a 0 4 "dyn_nse${dyn_nse}" &
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 distGT mpc1_dyn_a 0 4 "dyn_nse${dyn_nse}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 dist mpc1_dyn_a 0 4 "dyn_nse${dyn_nse}" &
     wait
 
     rm -rf rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml

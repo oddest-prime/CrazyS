@@ -25,7 +25,8 @@
   "spc_target_weight": __DYN_TAR__,
   "spc_height_weight": 0.0,
   "spc_calm_weight": __DYN_CAL__,
-  "velocity_scaling": __DYN_SCA__
+  "velocity_scaling": __DYN_SCA__,
+  "distance_iir_filter": 0.05
   },
 "gradient": {
   "scale_factor": 0.005

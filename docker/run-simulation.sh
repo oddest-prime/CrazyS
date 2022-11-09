@@ -56,8 +56,8 @@ echo "---------------------------------------------------------" >> /tmp/video.i
 cat /crazyflie_ws/src/crazys/rotors_gazebo/resource/crazyflie2_${params}.yaml  >> /tmp/video.info
 
 cd /crazyflie_ws
-source /opt/ros/melodic/setup.bash
-source /crazyflie_ws/devel/setup.bash
+source /opt/ros/noetic/setup.bash
+test -e /crazyflie_ws/devel/setup.bash && source /crazyflie_ws/devel/setup.bash
 
 catkin clean --yes
 catkin build

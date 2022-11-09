@@ -749,17 +749,15 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                 ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) i=%d, dist=%f, dist_gt=%f, cohesion_sum=%f, separation_sum=%f", droneNumber_, xi, yi, zi, ai, (int)i, dist, dist_gt, cohesion_sum, separation_sum);
                             }
 
-                            float dist_beacon0 = beacons_[droneNumber_][0] +
+                            float dist_beacon0 = beacons_filtered_[droneNumber_][0] +
                                          beacons_differences_[0][0] * potential_movement_transformed[0] +
                                          beacons_differences_[1][0] * potential_movement_transformed[1] +
                                          beacons_differences_[2][0] * potential_movement_transformed[2];
-
                             float dist_gt_beacon0 = sqrt(pow(beacon_gt_[0][0] - (odometry_gt_.position[0] + potential_movement[0]), 2) +
                                                          pow(beacon_gt_[0][1] - (odometry_gt_.position[1] + potential_movement[1]), 2) +
                                                          pow(beacon_gt_[0][2] - (odometry_gt_.position[2] + potential_movement[2]), 2));
                             if(enable_swarm_ & SWARM_USE_GROUND_TRUTH) // only for debug! using ground truth positions to infer distances.
                                dist_beacon0 = dist_gt_beacon0;
-
                             float target_sum = fabs(dist_beacon0);
 
                             float coehesion_term = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);

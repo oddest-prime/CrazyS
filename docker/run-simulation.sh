@@ -105,7 +105,9 @@ make DistSimMetricsMerged.csv
 make StateMerged.csv
 make MetricsMerged.png 2> Metrics.txt
 make StateMerged.png 2> States.txt
+make Target.png 2>> Metrics.txt
 make all-metrics
+make all-centroid
 make all-distance
 make all-distanceGT
 make all-state

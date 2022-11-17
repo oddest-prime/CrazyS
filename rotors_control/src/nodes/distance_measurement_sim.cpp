@@ -50,6 +50,8 @@ DistanceMeasurementSim::DistanceMeasurementSim() {
 
     ROS_INFO_ONCE("Started DistanceMeasurementSim");
 
+    old_timeStamp_ = 0;
+
     ros::NodeHandle nh;
     ros::NodeHandle pnh_node("~");
 
@@ -58,10 +60,10 @@ DistanceMeasurementSim::DistanceMeasurementSim() {
     elevation_pub_ = nh.advertise<std_msgs::Float32MultiArray>("drone_elevation", 1);
     beacons_pub_ = nh.advertise<std_msgs::Float32MultiArray>("beacon_distances", 1);
 
+    InitializeParams();
+
     modelstate_sub_ = nh.subscribe("/gazebo/model_states", 1, &DistanceMeasurementSim::ModelstateCallback, this);
     logsave_sub_ = nh.subscribe("logsave", 1, &DistanceMeasurementSim::SaveLogCallback, this);
-
-    InitializeParams();
 
     ros::NodeHandle nhq[N_DRONES_MAX] = { // NodeHandles for each drone (separate namespace)
       ros::NodeHandle("/crazyflie2_0"),
@@ -147,7 +149,7 @@ void DistanceMeasurementSim::InitializeParams() {
     }
 
     for (size_t i = 0; i < droneCount_; i++)
-      dronestate[i].SetId((int)i, droneCount_, beaconCount_, distance_noise_, dronestate, &distances_pub_, &positions_pub_, &elevation_pub_, &beacons_pub_, dataStoring_active, beacon_gt_);
+      dronestate[i].SetId(this, (int)i, droneCount_, beaconCount_, distance_noise_, dronestate, &distances_pub_, &positions_pub_, &elevation_pub_, &beacons_pub_, dataStoring_active, beacon_gt_, &swarm_center_gt_);
 
     ros::NodeHandle nh;
     timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &DistanceMeasurementSim::CallbackSaveData, this, false, true);
@@ -164,12 +166,22 @@ void DistanceMeasurementSim::ModelstateCallback(const gazebo_msgs::ModelStatesCo
         {
             if(modelstates_msg->name[i] == std::string("marker_green_beacon_").append(std::to_string(j)))
             {
+                char beacon0_moved = 0;
+                // extra for beacon0, if its position changed
+                if( fabs(beacon_gt_[b][0] - modelstates_msg->pose[i].position.x) > BEACON_MOVED_SMALL_EPS ||
+                    fabs(beacon_gt_[b][1] - modelstates_msg->pose[i].position.y) > BEACON_MOVED_SMALL_EPS ||
+                    fabs(beacon_gt_[b][2] - modelstates_msg->pose[i].position.z) > BEACON_MOVED_SMALL_EPS)
+                    beacon0_moved = 1;
+
                 // save beacon positions
                 beacon_gt_[b][0] = modelstates_msg->pose[i].position.x;
                 beacon_gt_[b][1] = modelstates_msg->pose[i].position.y;
                 beacon_gt_[b][2] = modelstates_msg->pose[i].position.z;
                 ROS_INFO_ONCE("model %d: %s (%d) at location %s", (int)i, modelstates_msg->name[i].c_str(), b, VectorToString(beacon_gt_[b]).c_str());
                 b ++;
+
+                if(beacon0_moved)
+                  this->RecalcTargetSpeed(ros::Time::now());
             }
         }
         if(modelstates_msg->name[i] == "jackal")
@@ -204,6 +216,9 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     std::stringstream tempState;
     tempState.precision(24);
     tempState << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
+    std::stringstream tempCentroid;
+    tempCentroid.precision(24);
+    tempCentroid << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
 
     ROS_INFO_ONCE("DroneStateWithTime got odometry message: x=%f y=%f z=%f (droneNumber:%d)", odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2], droneNumber_);
 
@@ -212,14 +227,17 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     //rand_cnt_++;
     //if(rand_cnt_ > 10) // reduce frequency of noise
 
-    Vector3f swarm_center_gt = {0,0,0};
+    // Vector3f swarm_center_gt_ = {0,0,0};
+    (*swarm_center_gt_)[0] = 0;
+    (*swarm_center_gt_)[1] = 0;
+    (*swarm_center_gt_)[2] = 0;
     for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
     {
-        swarm_center_gt[0] += dronestate_[i].odometry_gt_.position[0];
-        swarm_center_gt[1] += dronestate_[i].odometry_gt_.position[1];
-        swarm_center_gt[2] += dronestate_[i].odometry_gt_.position[2];
+        (*swarm_center_gt_)[0] += dronestate_[i].odometry_gt_.position[0];
+        (*swarm_center_gt_)[1] += dronestate_[i].odometry_gt_.position[1];
+        (*swarm_center_gt_)[2] += dronestate_[i].odometry_gt_.position[2];
     }
-    swarm_center_gt /= droneCount_;
+    (*swarm_center_gt_) /= droneCount_;
 
     // calculate distance to other drones
     float dist_min_gt = FLT_MAX;
@@ -242,22 +260,23 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     // calculate distance to beacons
     for (size_t i = 0; i < beaconCount_; i++) // iterate over beacons
     {
-        ROS_INFO_ONCE("DroneStateWithTime beacon %d at location %s", (int)i, VectorToString(beacon_gt_[i]).c_str());
+        ROS_INFO_ONCE("DroneStateWithTime (%d) beacon %d at location %s", droneNumber_, (int)i, VectorToString(beacon_gt_[i]).c_str());
         beacon_distances_gt_[i] = sqrt(
           pow(odometry_gt_.position[0] - beacon_gt_[i][0], 2) +
           pow(odometry_gt_.position[1] - beacon_gt_[i][1], 2) +
           pow(odometry_gt_.position[2] - beacon_gt_[i][2], 2));
         float rand_value = std::max(-5*distance_noise_, std::min((float)dist(generator_), 5*distance_noise_));
         beacon_distances_[i] = beacon_distances_gt_[i] + rand_value;
-        ROS_INFO_ONCE("DroneStateWithTime %d beacon %d at location %s distance %f", droneNumber_, (int)i, VectorToString(beacon_gt_[i]).c_str(), beacon_distances_gt_[i]);
+        ROS_INFO_ONCE("DroneStateWithTime (%d) beacon %d at location %s distance %f", droneNumber_, (int)i, VectorToString(beacon_gt_[i]).c_str(), beacon_distances_gt_[i]);
     }
 
-    Vector3f vector_to_center_gt = {(float)(swarm_center_gt[0] - odometry_gt_.position[0]), (float)(swarm_center_gt[1] - odometry_gt_.position[1]), (float)(swarm_center_gt[2] - odometry_gt_.position[2])};
+    Vector3f vector_to_center_gt = {(float)((*swarm_center_gt_)[0] - odometry_gt_.position[0]), (float)((*swarm_center_gt_)[1] - odometry_gt_.position[1]), (float)((*swarm_center_gt_)[2] - odometry_gt_.position[2])};
+    Vector3f beacon0_to_center_gt = {(float)((*swarm_center_gt_)[0] - beacon_gt_[0][0]), (float)((*swarm_center_gt_)[1] - beacon_gt_[0][1]), (float)((*swarm_center_gt_)[2] - beacon_gt_[0][2])};
 
     // save data for log files
     if(dataStoring_active_)
     {
-        ROS_INFO_ONCE("DroneStateWithTime (%d) swarm_center_gt:     %s", droneNumber_, VectorToString(swarm_center_gt).c_str());
+        ROS_INFO_ONCE("DroneStateWithTime (%d) swarm_center_gt_:     %s", droneNumber_, VectorToString((*swarm_center_gt_)).c_str());
         ROS_INFO_ONCE("DroneStateWithTime (%d) vector_to_center_gt: %s", droneNumber_, VectorToString(vector_to_center_gt).c_str());
         ROS_INFO_ONCE("DroneStateWithTime (%d) dist_min_gt=%f r=%f ", droneNumber_, dist_min_gt, vector_to_center_gt.norm());
 
@@ -268,6 +287,10 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         tempMetrics << beacon_distances_gt_[0] << ","; // distance to beacon 0
 
         tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";
+
+        tempCentroid << (*swarm_center_gt_)[0] << "," << (*swarm_center_gt_)[1] << "," << (*swarm_center_gt_)[2] << ","; // position of centroid
+        tempCentroid << beacon_gt_[0][0] << "," << beacon_gt_[0][1] << "," << beacon_gt_[0][2] << ","; // position of beacon0 = target
+        tempCentroid << beacon0_to_center_gt.norm() << ","; // length of vector, distance from the centroid to beacon0
 
         //for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
         //  tempDistance << distances_gt_[i] << "," << distances_[i] << ","; // distance to quadcopter i (first ground truth, then with measurement noise)
@@ -353,14 +376,62 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         listMetrics_.push_back(tempMetrics.str());
         tempState << "\n";
         listState_.push_back(tempState.str());
+        tempCentroid << "\n";
+        listCentroid_.push_back(tempCentroid.str());
     }
-
 }
 
 void DroneStateWithTime::EnableCallback(const std_msgs::Int32ConstPtr& enable_msg) {
-  ROS_INFO("DroneStateWithTime got enable message: %d", enable_msg->data);
+  ROS_INFO("DroneStateWithTime (%d) got enable message: %d", droneNumber_, enable_msg->data);
+
+  if(droneNumber_ == 0 && enable_swarm_ == 0) // call this function only once, per callback (only for drone 0)
+    parentPtr_->RecalcTargetSpeed(ros::Time::now());
 
   enable_swarm_ = enable_msg->data;
+}
+
+void DistanceMeasurementSim::RecalcTargetSpeed(ros::Time timeStamp){
+  Vector3f diff_a = old_swarm_center_gt_ - old_beacon0_gt_;
+  Vector3f diff_b = swarm_center_gt_ - old_beacon0_gt_;
+  float diff_a_norm = diff_a.norm();
+  float diff_b_norm = diff_b.norm();
+  float duration = timeStamp.toSec() - old_timeStamp_;
+
+  float avg_speed = (diff_a_norm - diff_b_norm) / duration;
+
+  if(old_beacon0_gt_.norm() < 100 && beacon_gt_[0].norm() < 100 && timeStamp.sec > 3)
+  {
+    ROS_INFO("----------------------------------------------------");
+    ROS_INFO("DroneStateWithTime RecalcTargetSpeed.");
+    ROS_INFO("old_beacon0_gt_        %s", VectorToString(old_beacon0_gt_).c_str());
+    ROS_INFO("beacon_gt_[0]          %s", VectorToString(beacon_gt_[0]).c_str());
+    ROS_INFO("old_swarm_center_gt_   %s", VectorToString(old_swarm_center_gt_).c_str());
+    ROS_INFO("swarm_center_gt_       %s", VectorToString(swarm_center_gt_).c_str());
+    ROS_INFO("diff_a_norm:           %f", diff_a_norm);
+    ROS_INFO("diff_b_norm:           %f", diff_b_norm);
+    ROS_INFO("duration:              %f", duration);
+    ROS_INFO("avg_speed:             %f", avg_speed);
+/*
+    ROS_INFO("swarm_center_gt_:     %s", VectorToString(swarm_center_gt_).c_str());
+    ROS_INFO("beacon_gt_[0]:        %s", VectorToString(beacon_gt_[0]).c_str());
+    ROS_INFO("beacon0_to_center_gt: %f", beacon0_to_center_gt.norm());
+    */
+    ROS_INFO("----------------------------------------------------");
+
+    std::stringstream tempTarget;
+    tempTarget.precision(24);
+    tempTarget << timeStamp.sec << "," << timeStamp.nsec << ",";
+
+    tempTarget << diff_a_norm << "," << diff_b_norm << "," << duration << "," << avg_speed << ",";
+
+    tempTarget << "\n";
+    listTarget_.push_back(tempTarget.str());
+
+  }
+
+  old_timeStamp_ = timeStamp.toSec();
+  old_swarm_center_gt_ = swarm_center_gt_;
+  old_beacon0_gt_ = beacon_gt_[0];
 }
 
 //The callback saves data into csv files
@@ -368,12 +439,34 @@ void DistanceMeasurementSim::CallbackSaveData(const ros::TimerEvent& event){
   ROS_INFO("DistanceMeasurementSim CallbackSavaData.");
   for (size_t i = 0; i < droneCount_; i++)
     dronestate[i].FileSaveData();
+    this->FileSaveData();
 }
 
 void DistanceMeasurementSim::SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg){
   ROS_INFO("DistanceMeasurementSim SaveLogCallback.");
   for (size_t i = 0; i < droneCount_; i++)
     dronestate[i].FileSaveData();
+  this->FileSaveData();
+}
+
+void DistanceMeasurementSim::FileSaveData(void){
+      std::ofstream fileTarget;
+
+      ROS_INFO("DistanceMeasurementSim FileSaveData.");
+
+      if(mkdir("/tmp/log_output/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
+          if(errno != EEXIST)
+             ROS_ERROR("Cannot create directory /tmp/log_output/");
+
+      fileTarget.open(std::string("/tmp/log_output/DistSimTarget.csv"), std::ios_base::trunc);
+
+      // Saving centroid log data in a file
+      for (unsigned n=0; n < listTarget_.size(); ++n) {
+          fileTarget << listTarget_.at( n );
+      }
+
+      // Closing all opened files
+      fileTarget.close();
 }
 
 void DroneStateWithTime::FileSaveData(void){
@@ -385,6 +478,7 @@ void DroneStateWithTime::FileSaveData(void){
       std::ofstream fileDistance;
       std::ofstream fileMetrics;
       std::ofstream fileState;
+      std::ofstream fileCentroid;
 
       ROS_INFO("DroneStateWithTime FileSaveData. droneNumber: %d", droneNumber_);
 
@@ -395,6 +489,7 @@ void DroneStateWithTime::FileSaveData(void){
       fileDistance.open(std::string("/tmp/log_output/DistSimDistance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
       fileMetrics.open(std::string("/tmp/log_output/DistSimMetrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
       fileState.open(std::string("/tmp/log_output/DistSimState") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileCentroid.open(std::string("/tmp/log_output/DistSimCentroid") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
 
       // Saving distances from every to every drone in a file
       for (unsigned n=0; n < listDistance_.size(); ++n) {
@@ -408,18 +503,25 @@ void DroneStateWithTime::FileSaveData(void){
       for (unsigned n=0; n < listState_.size(); ++n) {
           fileState << listState_.at( n );
       }
+      // Saving centroid log data in a file
+      for (unsigned n=0; n < listCentroid_.size(); ++n) {
+          fileCentroid << listCentroid_.at( n );
+      }
 
       // Closing all opened files
       fileDistance.close();
       fileMetrics.close();
       fileState.close();
+      fileCentroid.close();
 
       // To have a one shot storing
       // dataStoring_active_ = false;
 }
 
-void DroneStateWithTime::SetId(int droneNumber, int droneCount, int beaconCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt)
+void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* swarm_center_gt)
 {
+    parentPtr_ = parentPtr;
+
     droneNumber_ = droneNumber;
     droneCount_ = droneCount;
     beaconCount_ = beaconCount;
@@ -433,6 +535,9 @@ void DroneStateWithTime::SetId(int droneNumber, int droneCount, int beaconCount,
     beacons_pub_ = beacons_pub;
 
     beacon_gt_ = beacon_gt;
+    swarm_center_gt_ = swarm_center_gt;
+
+    enable_swarm_ = 0; // initial value
 }
 
 }

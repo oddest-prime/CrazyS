@@ -45,15 +45,22 @@
 #define N_DRONES_MAX  20          /* maximum number of drones */
 #define N_BEACONS_MAX  5          /* maximum number of beacons */
 
+#define BEACON_MOVED_SMALL_EPS  0.001 /* to compare floats, if beacon moved */
+
 namespace rotors_control {
     using namespace Eigen;
 
+    class DroneStateWithTime;
+    class DistanceMeasurementSim;
+
     class DroneStateWithTime {
      public:
-      void SetId(int droneNumber, int droneCount, int beaconCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt);
+      void SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* swarm_center_gt);
       void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
       void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
       void FileSaveData(void);
+
+      DistanceMeasurementSim* parentPtr_;
 
       // int rand_cnt_;
       std::default_random_engine generator_;
@@ -73,6 +80,7 @@ namespace rotors_control {
       ros::Publisher* beacons_pub_;
 
       Vector3f* beacon_gt_; // ground-truth
+      Vector3f* swarm_center_gt_; // ground-truth
 
       float distances_[N_DRONES_MAX]; // with simulated sensor noise
       float distances_gt_[N_DRONES_MAX]; // ground-truth
@@ -81,10 +89,12 @@ namespace rotors_control {
       float beacon_distances_[N_BEACONS_MAX]; // with simulated sensor noise
       float beacon_distances_gt_[N_BEACONS_MAX]; // ground-truth
 
+
       // Lists for data saving
       std::vector<std::string> listDistance_;
       std::vector<std::string> listMetrics_;
       std::vector<std::string> listState_;
+      std::vector<std::string> listCentroid_;
     };
 
     class DistanceMeasurementSim{
@@ -92,13 +102,14 @@ namespace rotors_control {
             DistanceMeasurementSim();
             ~DistanceMeasurementSim();
 
-            void InitializeParams();
-            void Publish();
+            void RecalcTargetSpeed(ros::Time timeStamp);
 
-            // beacon positions
-            Vector3f beacon_gt_[N_BEACONS_MAX]; // ground-truth
-
+            Vector3f beacon_gt_[N_BEACONS_MAX]; // beacon positions, ground-truth
+            Vector3f swarm_center_gt_; // drone centroid, ground-truth
         private:
+            void InitializeParams();
+            void FileSaveData(void);
+
             int droneCount_;
             int beaconCount_;
             int neighbourhood_cnt_;
@@ -107,6 +118,11 @@ namespace rotors_control {
             EigenOdometry odometry_gt_; // ground-truth
 
             float distance_noise_;
+
+            // RecalcTargetSpeed history data, for last execution
+            float old_timeStamp_;
+            Vector3f old_swarm_center_gt_; // drone centroid, ground-truth
+            Vector3f old_beacon0_gt_;
 
             std::string namespace_;
 
@@ -131,6 +147,9 @@ namespace rotors_control {
 
             // drone states
             DroneStateWithTime dronestate[N_DRONES_MAX];
+
+            // Lists for data saving
+            std::vector<std::string> listTarget_;
     };
 }
 

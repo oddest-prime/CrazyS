@@ -21,7 +21,7 @@ for j in 0 1 2 3 5 7 10 15 20 35 50 # dyn_nse
     dyn_eps="0.07"
     dyn_sep="1000"
     dyn_thr="0.15" # "0.12"
-    dyn_tar="150"
+    dyn_tar="250" # "150"
     dyn_sca="1"
     dyn_cal="5"
     #    dyn_eps=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`

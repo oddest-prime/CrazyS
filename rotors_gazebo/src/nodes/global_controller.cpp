@@ -641,7 +641,32 @@ int main(int argc, char** argv) {
         else if(path_cnt == 1)
         {
           desired_position(0) = 0.0; // x
+          desired_position(1) = 4.0; // y
+          desired_position(2) = 3.5; // z
+        }
+        else if(path_cnt == 2) // no real point, but need to change target, to trigger DistanceMeasurementSim::RecalcTargetSpeed for final position
+        {
+          path_sleep_afterwards = 3.0;
+          desired_position(0) = 0.0; // x
           desired_position(1) = 0.0; // y
+          desired_position(2) = 3.0; // z
+        }
+        else
+          break;
+      }
+      else if(pathScenario == 5) // longer distance for EEL (dist and distgnd)
+      {
+        path_sleep_afterwards = 20.0;
+        if(path_cnt == 0)
+        {
+          desired_position(0) = 10.0; // x
+          desired_position(1) = 0.0; // y
+          desired_position(2) = 3.5; // z
+        }
+        else if(path_cnt == 1)
+        {
+          desired_position(0) = 0.0; // x
+          desired_position(1) = 10.0; // y
           desired_position(2) = 3.5; // z
         }
         else if(path_cnt == 2) // no real point, but need to change target, to trigger DistanceMeasurementSim::RecalcTargetSpeed for final position

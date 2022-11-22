@@ -154,6 +154,7 @@ namespace rotors_control {
             void PositionsCallback(const std_msgs::Float32MultiArray& positions_msg);
             void BeaconsCallback(const std_msgs::Float32MultiArray& distances_msg);
             void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
+            void UpdateCallback(const std_msgs::Int32ConstPtr& update_msg);
             void SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg);
             void MultiDofJointTrajectoryCallback(const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& msg);
             void CallbackSaveData(const ros::TimerEvent& event);
@@ -168,6 +169,7 @@ namespace rotors_control {
             ros::Subscriber positions_sub_;
             ros::Subscriber beacons_sub_;
             ros::Subscriber enable_sub_;
+            ros::Subscriber update_sub_;
             ros::Subscriber logsave_sub_;
             ros::Subscriber pose_other_sub_[N_DRONES_MAX];
             ros::Subscriber modelstate_sub_;

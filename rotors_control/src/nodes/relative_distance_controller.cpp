@@ -86,6 +86,7 @@ RelativeDistanceController::RelativeDistanceController() {
     cmd_multi_dof_joint_trajectory_sub_ = nh.subscribe(mav_msgs::default_topics::COMMAND_TRAJECTORY, 1, &RelativeDistanceController::MultiDofJointTrajectoryCallback, this);
     odometry_sub_ = nh.subscribe(mav_msgs::default_topics::ODOMETRY, 1, &RelativeDistanceController::OdometryCallback, this);
     enable_sub_ = nh.subscribe("enable", 1, &RelativeDistanceController::EnableCallback, this);
+    update_sub_ = nh.subscribe("update", 1, &RelativeDistanceController::UpdateCallback, this);
     logsave_sub_ = nh.subscribe("logsave", 1, &RelativeDistanceController::SaveLogCallback, this);
     distances_sub_ = nh.subscribe("/drone_distances", 1, &RelativeDistanceController::DistancesCallback, this);
     positions_sub_ = nh.subscribe("/drone_positions", 1, &RelativeDistanceController::PositionsCallback, this);
@@ -201,19 +202,35 @@ void RelativeDistanceController::InitializeParams() {
 }
 
 void RelativeDistanceController::EnableCallback(const std_msgs::Int32ConstPtr& enable_msg) {
-    ROS_INFO("RelativeDistanceController got enable message: %d", enable_msg->data);
+    ROS_INFO("RelativeDistanceController (%d) got enable message: %d", droneNumber_, enable_msg->data);
 
     enable_swarm_ = enable_msg->data;
 }
 
+void RelativeDistanceController::UpdateCallback(const std_msgs::Int32ConstPtr& update_msg) {
+    ROS_INFO("RelativeDistanceController (%d) got update message: %d. Invalidate environment history data.", droneNumber_, update_msg->data);
+
+    unit_vectors_age_[0] = -2;
+    unit_vectors_age_[1] = -2;
+    unit_vectors_age_[2] = -2;
+
+    odometry_gt_history1_ = odometry_gt_;
+    history_cnt_ = 0;
+    random_direction_[0] = 0;
+    random_direction_[1] = 0;
+    random_direction_[2] = 0;
+
+    transform_ok_ = 0; // need to do exploration now
+}
+
 //The callback saves data into csv files
 void RelativeDistanceController::CallbackSaveData(const ros::TimerEvent& event){
-  ROS_INFO("RelativeDistanceController CallbackSavaData. droneNumber: %d", droneNumber_);
+  ROS_INFO("RelativeDistanceController (%d) CallbackSavaData.", droneNumber_);
   FileSaveData();
 }
 
 void RelativeDistanceController::SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg) {
-  ROS_INFO("RelativeDistanceController SaveLogCallback. droneNumber: %d", droneNumber_);
+  ROS_INFO("RelativeDistanceController (%d) SaveLogCallback.", droneNumber_);
   FileSaveData();
 }
 
@@ -318,6 +335,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         }
         beacons_last_[i] = beacons_[droneNumber_][i];
     }
+/*
     if(beacons_moved)
     {
         ROS_INFO("OdometryCallback (%d) at least one beacon moved. Invalidate environment history data.", droneNumber_); // TODO: maybe there is a better way than deleting all data?
@@ -332,6 +350,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         random_direction_[1] = 0;
         random_direction_[2] = 0;
     }
+    */
 
     // calculate movement vector based on current ground-truth position and history (TODO: use accelerometer data)
     Vector3f movement;
@@ -356,27 +375,30 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     if(unit_vectors_age_[1] >= 0) unit_vectors_age_[1] ++; // age of -1 means this unit vector is invalid
     if(unit_vectors_age_[2] >= 0) unit_vectors_age_[2] ++; // age of -1 means this unit vector is invalid
 
-    if(unit_vectors_age_[0] > 1500) // delete old unit vectors
+    if(unit_vectors_age_[0] > HISTORY_CNT_MAX*5) // delete old unit vectors
     {
         Vector3f tmp = unit_vectors_[0];
         unit_vectors_[0] = unit_vectors_[2];
         unit_vectors_[2] = tmp;
         unit_vectors_age_[0] = unit_vectors_age_[2];
         unit_vectors_age_[2] = -1;
+        transform_ok_ = 0; // need to do exploration now
         ROS_INFO("OdometryCallback (%d) deleted old unit_vector_0 (moved to 2)", droneNumber_);
     }
-    else if(unit_vectors_age_[1] > 1500) // delete old unit vectors
+    else if(unit_vectors_age_[1] > HISTORY_CNT_MAX*5) // delete old unit vectors
     {
         Vector3f tmp = unit_vectors_[1];
         unit_vectors_[1] = unit_vectors_[2];
         unit_vectors_[2] = tmp;
         unit_vectors_age_[1] = unit_vectors_age_[2];
         unit_vectors_age_[2] = -1;
+        transform_ok_ = 0; // need to do exploration now
         ROS_INFO("OdometryCallback (%d) deleted old unit_vector_1 (moved to 2)", droneNumber_);
     }
-    else if(unit_vectors_age_[2] > 1500) // delete old unit vectors
+    else if(unit_vectors_age_[2] > HISTORY_CNT_MAX*5) // delete old unit vectors
     {
         unit_vectors_age_[2] = -1;
+        transform_ok_ = 0; // need to do exploration now
         ROS_INFO("OdometryCallback (%d) deleted old unit_vector_2", droneNumber_);
     }
 

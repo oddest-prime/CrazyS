@@ -85,6 +85,7 @@ void publish_command(float cmd_x, float cmd_y, float cmd_z, float cmd_enable) {
 
 ros::Publisher trajectory_pub[N_DRONES_MAX];
 ros::Publisher enable_pub[N_DRONES_MAX];
+ros::Publisher update_pub[N_DRONES_MAX];
 ros::Publisher logsave_pub[N_DRONES_MAX];
 ros::Publisher logsave_pub_global;
 ros::Publisher rover_pub;
@@ -424,6 +425,7 @@ int main(int argc, char** argv) {
     trajectory_pub[i] = nhq[i].advertise<trajectory_msgs::MultiDOFJointTrajectory>(
           mav_msgs::default_topics::COMMAND_TRAJECTORY, 10);
     enable_pub[i] = nhq[i].advertise<std_msgs::Int32>("enable", 10);
+    update_pub[i] = nhq[i].advertise<std_msgs::Int32>("update", 10);
     logsave_pub[i] = nhq[i].advertise<std_msgs::Int32>("logsave", 10);
   }
   logsave_pub_global = nh.advertise<std_msgs::Int32>("logsave", 10);
@@ -454,6 +456,8 @@ int main(int argc, char** argv) {
     ros::Time::sleepUntil(ros::Time(5.0));
     trajectory_msgs::MultiDOFJointTrajectory trajectory_msg;
     std_msgs::Int32 enable_msg;
+    std_msgs::Int32 update_msg;
+    update_msg.data = 1;
     std_msgs::Int32 logsave_msg;
     logsave_msg.data = 1;
 
@@ -502,6 +506,7 @@ int main(int argc, char** argv) {
 //    enable_msg.data = SWARM_REYNOLDS;
       ROS_INFO("global_controller: Publishing enable on namespace %s: %d.", nhq[i].getNamespace().c_str(), enable_msg.data);
       enable_pub[i].publish(enable_msg);
+      update_pub[i].publish(update_msg);
     }
 
     /* let rover drive
@@ -692,6 +697,7 @@ int main(int argc, char** argv) {
         ROS_INFO("global_controller: Publishing swarm target on namespace %s: [%f, %f, %f].",
         nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
         trajectory_pub[i].publish(trajectory_msg);
+        update_pub[i].publish(update_msg);
       }
 
       ros::Duration(path_sleep_afterwards).sleep();

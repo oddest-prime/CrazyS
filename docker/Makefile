@@ -311,7 +311,7 @@ Target.png: DistSimTarget.csv Env0.csv Makefile
 		unset colorbox \n\
 		plot     \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title '> explore/exploit' axes x1y2 lc 3, \
 				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/250+0.05) with lines title '< expl. cnt/250' lc 4, \
-				 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'target vel' lc 2 lw 2, \
+				 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title '< target vel' lc 2 lw 2, \
 		   	     0.28 with lines linewidth 2 lt rgb 'light-red' dashtype 2 title 'dist_{thr} (28cm)'" \
 	 | gnuplot
 
@@ -321,7 +321,7 @@ TraceXY.png: State0.csv Makefile
 	echo " \
   		set datafile separator ',' \n\
   		 \n\
-		set term pngcairo size 1820,980 \n\
+		set term pngcairo size 1820,1820 \n\
 		set grid \n\
 		v0 = 0 \n v1 = 0 \n v2 = 0 \n v3 = 0 \n v4 = 0 \n\
 		v5 = 0 \n v6 = 0 \n v7 = 0 \n v8 = 0 \n v9 = 0 \n\
@@ -331,8 +331,8 @@ TraceXY.png: State0.csv Makefile
         set ytics 2 \n\
   		set xlabel \"Position y [m]\" \n\
   		set ylabel \"Position x [m]\" \n\
-		set xrange [-7.0:7.0] \n\
-		set yrange [-7.0:7.0] \n\
+		set xrange [-12.0:12.0] \n\
+		set yrange [-12.0:12.0] \n\
   		set output \"$@\" \n\
   		plot  		    \"State0.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 0', \
 						\"State1.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 1', \
@@ -370,7 +370,7 @@ TraceXZ.png: State0.csv Makefile
         set ytics 2 \n\
   		set xlabel \"Position x [m]\" \n\
   		set ylabel \"Position z [m]\" \n\
-		set xrange [-7.0:7.0] \n\
+		set xrange [-12.0:12.0] \n\
 		set yrange [-0.5:8.0] \n\
   		set output \"$@\" \n\
 	    plot  		    \"State0.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 0', \
@@ -408,7 +408,7 @@ TraceYZ.png: State0.csv Makefile
         set ytics 2 \n\
   		set xlabel \"Position y [m]\" \n\
   		set ylabel \"Position z [m]\" \n\
-		set xrange [-7.0:7.0] \n\
+		set xrange [-12.0:12.0] \n\
 		set yrange [-0.5:8.0] \n\
   		set output \"$@\" \n\
   		plot  		    \"State0.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 0', \

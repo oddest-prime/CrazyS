@@ -384,10 +384,11 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
 void DroneStateWithTime::EnableCallback(const std_msgs::Int32ConstPtr& enable_msg) {
   ROS_INFO("DroneStateWithTime (%d) got enable message: %d", droneNumber_, enable_msg->data);
 
+  enable_swarm_ = enable_msg->data;
+  parentPtr_->enable_swarm_ = enable_msg->data;
+
   if(droneNumber_ == 0 && enable_swarm_ == 0) // call this function only once, per callback (only for drone 0)
     parentPtr_->RecalcTargetSpeed(ros::Time::now());
-
-  enable_swarm_ = enable_msg->data;
 }
 
 void DistanceMeasurementSim::RecalcTargetSpeed(ros::Time timeStamp){
@@ -399,7 +400,8 @@ void DistanceMeasurementSim::RecalcTargetSpeed(ros::Time timeStamp){
 
   float avg_speed = (diff_a_norm - diff_b_norm) / duration;
 
-  if(old_beacon0_gt_.norm() < 100 && beacon_gt_[0].norm() < 100 && timeStamp.sec > 3)
+//  if(old_beacon0_gt_.norm() < 100 && beacon_gt_[0].norm() < 100 && timeStamp.sec > 3)
+  if(enable_swarm_ & SWARM_PHASE_ESTABLISHED && timeStamp.sec > 30)
   {
     ROS_INFO("----------------------------------------------------");
     ROS_INFO("DroneStateWithTime RecalcTargetSpeed.");

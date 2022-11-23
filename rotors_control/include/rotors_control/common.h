@@ -29,6 +29,20 @@
 
 #include "rotors_control/parameters.h"
 
+#define SWARM_DISABLED            0
+#define SWARM_DECLARATIVE_SIMPLE  1
+#define SWARM_REYNOLDS            2
+#define SWARM_REYNOLDS_LIMITED    4
+#define SWARM_REYNOLDS_VELOCITY   8
+#define SWARM_GRADIENT            16
+#define SWARM_GRADIENT_ENUM       32
+#define SWARM_PHASE_ESTABLISHED   64
+#define SWARM_LANDING             32768
+#define SWARM_DECLARATIVE_DISTANCES           1
+#define SWARM_DECLARATIVE_DISTANCES_GROUND    2
+#define SWARM_USE_GROUND_TRUTH                4 // only for debug! it is using grount grouth absolute positions!
+#define SWARM_DECLARATIVE_DISTANCES_GT        (SWARM_DECLARATIVE_DISTANCES|SWARM_USE_GROUND_TRUTH) // only for debug! it is using grount grouth absolute positions!
+
 namespace rotors_control {
 
 // Default values.

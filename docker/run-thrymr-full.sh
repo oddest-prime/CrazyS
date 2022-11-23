@@ -17,30 +17,32 @@ do
 #  for j in 5 7 10 15 20 35 50 70 100 # dyn_eps
 #  for j in 0 1 2 3 5 7 10 15 20 35 50 # dyn_nse
 #  for j in 2 5 7 8 10 12 15 20 35 50 70 100 150 200 # dyn_eps
-for j in 5 7 10 12 15 20 # dyn_eps
+for j in 6 12 # dyn_nmm
   do
     #dyn_nse=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_nse="0.1"
-    dyn_eps=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
-    #dyn_eps="0.1" # "0.05"
+    #dyn_eps=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
+    dyn_eps="0.5" # "0.1" # "0.05"
+    dyn_nmm="$j" # 6
     dyn_sep="1000"
     dyn_thr="0.15" # "0.12"
-    dyn_tar="200" #"200" #"250" # "150"
+    dyn_tar="200" # "200" # "250" # "150"
     #dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_sca="1"
     dyn_cal="5"
-    echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_eps = $dyn_eps, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal"
+    echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_eps = $dyn_eps, dyn_nmm = $dyn_nmm, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal"
 
     cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
+    sed -i "s/__DYN_NSE__/$dyn_nse/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
+    sed -i "s/__DYN_EPS__/$dyn_eps/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
+    sed -i "s/__DYN_NMM__/$dyn_nmm/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
     sed -i "s/__DYN_SEP__/$dyn_sep/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
     sed -i "s/__DYN_THR__/$dyn_thr/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
     sed -i "s/__DYN_TAR__/$dyn_tar/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
     sed -i "s/__DYN_SCA__/$dyn_sca/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
     sed -i "s/__DYN_CAL__/$dyn_cal/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
-    sed -i "s/__DYN_EPS__/$dyn_eps/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
-    sed -i "s/__DYN_NSE__/$dyn_nse/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
 
-    extratext="dyn_tar${dyn_tar}"
+    extratext="dyn_nmm${dyn_nmm}"
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_a 0 5 "${extratext}" &
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 distGT mpc1_dyn_a 0 5 "${extratext}" &
     sleep 150 # delay compilation by 150 seconds in second two docker containers

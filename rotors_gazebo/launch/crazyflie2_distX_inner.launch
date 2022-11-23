@@ -36,10 +36,10 @@
    </node>
    <!--node name="waypoint_publisher_csv" required="true" pkg="rotors_gazebo" type="waypoint_publisher_csv" output="screen" args="/crazyflie_ws/src/crazys/waypoints/waypoints_swarm_5.txt"/>
  /-->
-   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+   <!--node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
    <node name="quaternion_to_rpy" pkg="rotors_gazebo" type="quaternion_to_rpy" output="screen" >
        <remap from="odometry" to="odometry_sensor1/odometry" />
-   </node>
+   </node-->
   </group>
 </launch>

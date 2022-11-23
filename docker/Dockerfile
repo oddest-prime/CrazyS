@@ -16,6 +16,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
     ros-noetic-desktop-full ros-noetic-joy ros-noetic-octomap-ros ros-noetic-mavlink ros-noetic-octomap-mapping \
     ros-noetic-control-toolbox \
+    ros-noetic-jackal-description ros-noetic-jackal-control ros-noetic-jackal-gazebo ros-noetic-jackal-simulator \
     python3-vcstool python3-catkin-tools protobuf-compiler libgoogle-glog-dev \
     python3-rosdep python3-wstool ros-noetic-ros \
     ffmpeg screen xvfb imagemagick gnuplot sqlite3 jq

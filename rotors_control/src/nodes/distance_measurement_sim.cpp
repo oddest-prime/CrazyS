@@ -190,6 +190,7 @@ void DistanceMeasurementSim::ModelstateCallback(const gazebo_msgs::ModelStatesCo
             beacon_gt_[1][0] = modelstates_msg->pose[i].position.x;
             beacon_gt_[1][1] = modelstates_msg->pose[i].position.y;
             beacon_gt_[1][2] = modelstates_msg->pose[i].position.z;
+            beacon_gt_[1][2] = 3.5; // TODO: this is just for testing!
             ROS_INFO_ONCE("model %d: %s (%d) at location %s", (int)i, modelstates_msg->name[i].c_str(), 1, VectorToString(beacon_gt_[b]).c_str());
             b ++;
         }

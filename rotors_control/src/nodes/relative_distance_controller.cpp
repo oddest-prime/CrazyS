@@ -244,6 +244,7 @@ void RelativeDistanceController::FileSaveData(void){
       std::ofstream fileEnv;
       std::ofstream fileState;
       std::ofstream fileCost;
+      std::ofstream fileVectors;
 
       ROS_INFO("RelativeDistanceController FileSaveData. droneNumber: %d", droneNumber_);
 
@@ -255,6 +256,7 @@ void RelativeDistanceController::FileSaveData(void){
       fileEnv.open(std::string("/tmp/log_output/Env") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
       fileState.open(std::string("/tmp/log_output/State") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
       fileCost.open(std::string("/tmp/log_output/Cost") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      fileVectors.open(std::string("/tmp/log_output/Vectors") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
 
       // Saving distances from every to every drone in a file
       for (unsigned n=0; n < listDistance_.size(); ++n) {
@@ -271,6 +273,10 @@ void RelativeDistanceController::FileSaveData(void){
       // Saving cost function values in a file
       for (unsigned n=0; n < listCost_.size(); ++n) {
           fileCost << listCost_.at( n );
+      }
+      // Saving vectors in a file
+      for (unsigned n=0; n < listVectors_.size(); ++n) {
+          fileVectors << listVectors_.at( n );
       }
 
       // Closing all opened files
@@ -323,6 +329,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     std::stringstream tempCost;
     tempCost.precision(24);
     tempCost << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
+    std::stringstream tempVectors;
+    tempVectors.precision(24);
+    tempVectors << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
 
     // distance measurements from previous message (to check for large changes, when target is updated)
     int beacons_moved = 0;
@@ -844,6 +853,10 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             }
             tempCost << best_sum << "," << min_coehesion_term << "," << min_separation_term << "," << min_target_term << "," << min_calm_term << ",";
         }
+
+        tempCost << unit_vectors_[0][0] << "," << unit_vectors_[0][1] << "," << unit_vectors_[0][2] << "," << unit_vectors_age_[0] << ",";
+        tempCost << unit_vectors_[1][0] << "," << unit_vectors_[1][1] << "," << unit_vectors_[1][2] << "," << unit_vectors_age_[1] << ",";
+        tempCost << unit_vectors_[2][0] << "," << unit_vectors_[2][1] << "," << unit_vectors_[2][2] << "," << unit_vectors_age_[2] << ",";
     }
 /*    else if(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES_GROUND)
     {
@@ -1079,6 +1092,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         listState_.push_back(tempState.str());
         tempCost << "\n";
         listCost_.push_back(tempCost.str());
+        tempVectors << "\n";
+        listVectors_.push_back(tempVectors.str());
     }
 
     // move gazebo markers

@@ -185,6 +185,7 @@ namespace rotors_control {
             std::vector<std::string> listEnv_;
             std::vector<std::string> listState_;
             std::vector<std::string> listCost_;
+            std::vector<std::string> listVectors_;
     };
 }
 

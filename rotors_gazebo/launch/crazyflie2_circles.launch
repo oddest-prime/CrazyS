@@ -6,9 +6,10 @@
   <arg name="enable_ground_truth" default="true" />
   <arg name="enable_state_estimator" default="false" />
   <arg name="log_file" default="$(arg mav_name)" />
+  <arg name="droneCount" default="2"/>
+  <arg name="beaconCount" default="0"/>
   <arg name="swarm_params" default="mpc1_params2a"/>
-  <arg name="waypoints" default="step_x"/>
-  <!--arg name="waypoints" default="step_multiple"/-->
+  <arg name="waypoints" default="circles"/>
   <arg name="paused" value="true"/>
   <arg name="debug" default="false"/>
   <arg name="gui" default="true"/>
@@ -40,13 +41,15 @@
       <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
       <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <arg name="log_file" value="$(arg log_file)"/>
+      <arg name="x" value="0"/>
+      <arg name="y" value="0"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
       <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
       <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
       <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
-      <param name="droneCount" value="1"/>
+      <param name="droneCount" value="$(arg droneCount)"/>
       <param name="droneNumber" value="0"/>
       <rosparam unless="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name).yaml" />
       <rosparam if="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name)_with_stateEstimator.yaml" />
@@ -56,21 +59,73 @@
    <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
      <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
      <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
-      <param name="droneCount" value="1"/>
+      <param name="droneCount" value="$(arg droneCount)"/>
       <param name="droneNumber" value="0"/>
       <param name="obstacleScenario" value="0"/>
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
       <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
    </node>
 
-   <node name="waypoint_publisher_csv" pkg="rotors_gazebo" type="waypoint_publisher_csv" required="true" output="screen" args="$(find rotors_gazebo)/waypoints/waypoints_$(arg waypoints).txt"/>
+   <node name="waypoint_publisher_csv" pkg="rotors_gazebo" type="waypoint_publisher_csv" required="true" output="screen" args="$(find rotors_gazebo)/waypoints/waypoints_$(arg waypoints)_0.txt"/>
  />
-
    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
    <node name="quaternion_to_rpy" pkg="rotors_gazebo" type="quaternion_to_rpy" output="screen" >
        <remap from="odometry" to="odometry_sensor1/odometry" />
    </node>
+</group>
 
-  </group>
+ <group ns="$(arg mav_name)_1">
+ <!-- The following lines simulate the Crazyflie dynamics -->
+   <include file="$(find rotors_gazebo)/launch/spawn_mav_crazyflie.launch">
+     <arg name="mav_name" value="$(arg mav_name)" />
+     <arg name="namespace" value="$(arg mav_name)_1" />
+     <arg name="model" value="$(find rotors_description)/urdf/mav_generic_odometry_sensor.gazebo" />
+     <arg name="enable_logging" value="$(arg enable_logging)" />
+     <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
+     <arg name="enable_state_estimator" value="$(arg enable_state_estimator)" />
+     <arg name="log_file" value="$(arg log_file)"/>
+     <arg name="x" value="0"/>
+     <arg name="y" value="2"/>
+   </include>
+  <!-- The Crazyflie position controller -->
+  <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">
+     <param name="enable_state_estimator" value="$(arg enable_state_estimator)" />
+     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
+     <param name="droneCount" value="$(arg droneCount)"/>
+     <param name="droneNumber" value="1"/>
+     <rosparam unless="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name).yaml" />
+     <rosparam if="$(arg enable_state_estimator)" command="load" file="$(find rotors_gazebo)/resource/controller_$(arg mav_name)_with_stateEstimator.yaml" />
+     <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
+     <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
+  </node>
+  <node name="swarm_controller" pkg="rotors_control" type="swarm_controller" output="screen">
+    <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+    <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
+     <param name="droneCount" value="$(arg droneCount)"/>
+     <param name="droneNumber" value="1"/>
+     <param name="obstacleScenario" value="0"/>
+     <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
+     <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
+  </node>
+
+  <node name="waypoint_publisher_csv" pkg="rotors_gazebo" type="waypoint_publisher_csv" required="true" output="screen" args="$(find rotors_gazebo)/waypoints/waypoints_$(arg waypoints)_1.txt"/>
+/>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+  <node name="quaternion_to_rpy" pkg="rotors_gazebo" type="quaternion_to_rpy" output="screen" >
+      <remap from="odometry" to="odometry_sensor1/odometry" />
+  </node>
+</group>
+
+<node name="distance_measurement_sim" pkg="rotors_control" type="distance_measurement_sim" output="screen">
+  <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+  <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
+  <param name="droneCount" value="$(arg droneCount)"/>
+  <param name="beaconCount" value="$(arg beaconCount)"/>
+   <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
+   <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
+</node>
+
 </launch>

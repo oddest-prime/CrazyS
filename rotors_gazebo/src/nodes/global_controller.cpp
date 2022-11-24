@@ -692,7 +692,7 @@ int main(int argc, char** argv) {
       }
       else if(pathScenario == 6) // driving rover, no target needed. just timeout for termination.
       {
-        path_sleep_afterwards = 90.0;
+        path_sleep_afterwards = 120.0;
         if(path_cnt == 0)
         {
           path_sleep_afterwards = 3.0;

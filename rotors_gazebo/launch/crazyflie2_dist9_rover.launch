@@ -135,11 +135,11 @@
     <include file="$(find jackal_control)/launch/control.launch">
       <arg name="enable_ekf" default="false" />
     </include>
-    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" args="-urdf -model jackal -param robot_description -x -1.0 -y 0 -z 0.1" />
+    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" args="-urdf -model jackal -param robot_description -x 7.0 -y 0 -z 0.1" />
 
     <arg name="robot_start_delay" default="5.0" />
     <node pkg="rostopic" type="rostopic" name="arbitrary_name"
-      args="pub -r 10 /rover_0/cmd_vel geometry_msgs/Twist '{linear: {x: 0.5, y: 0.0, z: 0.0}, angular: {x: 0.0,y: 0.0,z: 0.10}}'"
+      args="pub -r 10 /rover_0/cmd_vel geometry_msgs/Twist '{linear: {x: 0.15, y: 0.0, z: 0.0}, angular: {x: 0.0,y: 0.0,z: 0.07}}'"
       output="screen"/>
   </group>
 

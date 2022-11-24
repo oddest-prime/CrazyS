@@ -802,6 +802,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                 total_sum = target_term + calm_term;
 
                             ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) coh=%f sep=%f tar=%f calm=%f total=%f len=%f", droneNumber_, xi, yi, zi, ai, coehesion_term, separation_term, target_term, calm_term, total_sum, potential_movement.norm());
+                            //                            ROS_INFO("dr.%d (%2d/%2d/%2d|%2d) dist0=%f", droneNumber_, xi, yi, zi, ai, dist_beacon0);
 
                                   /*
                             // coehesion term
@@ -1201,6 +1202,15 @@ void RelativeDistanceController::ModelstateCallback(const gazebo_msgs::ModelStat
                 ROS_INFO_ONCE("RelativeDistanceController model %d: %s (%d) at location %s", (int)i, modelstates_msg->name[i].c_str(), b, VectorToString(beacon_gt_[b]).c_str());
                 b ++;
             }
+        }
+        if(modelstates_msg->name[i] == "jackal")
+        {
+            // save jackal position as beacon 1
+            beacon_gt_[1][0] = modelstates_msg->pose[i].position.x;
+            beacon_gt_[1][1] = modelstates_msg->pose[i].position.y;
+            beacon_gt_[1][2] = modelstates_msg->pose[i].position.z;
+            beacon_gt_[1][2] = 3.5; // TODO: this is just for testing!
+            ROS_INFO_ONCE("RelativeDistanceController model %d: %s (%d) at location %s", (int)i, modelstates_msg->name[i].c_str(), 1, VectorToString(beacon_gt_[b]).c_str());
         }
     }
 }

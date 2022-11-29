@@ -650,10 +650,13 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                     exploration_info = 15;
                 }
                 else
-                {
-                    ROS_INFO("RelativeDistanceController %d unit_vectors_[0].dot(unit_vectors_[1]):%f", droneNumber_, unit_vectors_[0].dot(unit_vectors_[1]));
-                    ROS_INFO("RelativeDistanceController %d unit_vectors_[1].dot(unit_vectors_[2]):%f", droneNumber_, unit_vectors_[1].dot(unit_vectors_[2]));
-                    ROS_INFO("RelativeDistanceController %d unit_vectors_[2].dot(unit_vectors_[0]):%f", droneNumber_, unit_vectors_[2].dot(unit_vectors_[0]));
+                { // this should not happen, den all of the three vectors are nearly parallel
+                    direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
+                    if(odometry_gt_.position[2] > 0.1) // only report this, if ground truth position z-axis is above 10cm. otherwise the drone is obviously crashed.
+                        ROS_INFO("RelativeDistanceController %d all unit_vectors_ dot products >= 0.9", droneNumber_);
+                    // ROS_INFO("RelativeDistanceController %d unit_vectors_[0].dot(unit_vectors_[1]):%f", droneNumber_, unit_vectors_[0].dot(unit_vectors_[1]));
+                    // ROS_INFO("RelativeDistanceController %d unit_vectors_[1].dot(unit_vectors_[2]):%f", droneNumber_, unit_vectors_[1].dot(unit_vectors_[2]));
+                    // ROS_INFO("RelativeDistanceController %d unit_vectors_[2].dot(unit_vectors_[0]):%f", droneNumber_, unit_vectors_[2].dot(unit_vectors_[0]));
                     exploration_info = 17;
                 }
             }

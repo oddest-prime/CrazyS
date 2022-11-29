@@ -31,9 +31,9 @@ function wait_until_max_procs_running {
         #  echo "pid $value already done"
         fi;
     done
-    if pidof cmake > /dev/null 2> /dev/null
+    if pidof catkin > /dev/null 2> /dev/null
     then
-      echo "cmake running: should wait 10 sec."
+      echo "$NPROC_RUNNING processed running of $MAX_RUNNING max. catkin running: should wait 10 sec."
       sleep 10;
     elif [ $NPROC_RUNNING -ge $MAX_RUNNING ]
     then
@@ -61,6 +61,7 @@ function wait_until_max_procs_running {
   fi;
 }
 
+rm -f rotors_gazebo/resource/crazyflie2_mpc1_dyn_*.yaml
 # test different separation weights
 for i in a
 do
@@ -77,6 +78,9 @@ do
 #  for j in 200 250 300 500 700 1000 2000 3000 # dyn_tar
 for j in 100 150 200 300 500 1000 # dyn_sca
   do
+    #yamlname=`pwgen -n 4 1`
+    yamlname=`printf "%05d" $j`
+
     #dyn_nse=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_nse="0.1"
     #dyn_eps=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
@@ -90,35 +94,35 @@ for j in 100 150 200 300 500 1000 # dyn_sca
     dyn_cal="5"
     echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_eps = $dyn_eps, dyn_nmm = $dyn_nmm, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal"
 
-    cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
-    sed -i "s/__DYN_NSE__/$dyn_nse/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
-    sed -i "s/__DYN_EPS__/$dyn_eps/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
-    sed -i "s/__DYN_NMM__/$dyn_nmm/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
-    sed -i "s/__DYN_SEP__/$dyn_sep/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
-    sed -i "s/__DYN_THR__/$dyn_thr/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
-    sed -i "s/__DYN_TAR__/$dyn_tar/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
-    sed -i "s/__DYN_SCA__/$dyn_sca/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
-    sed -i "s/__DYN_CAL__/$dyn_cal/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
+    cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+    sed -i "s/__DYN_NSE__/$dyn_nse/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+    sed -i "s/__DYN_EPS__/$dyn_eps/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+    sed -i "s/__DYN_NMM__/$dyn_nmm/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+    sed -i "s/__DYN_SEP__/$dyn_sep/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+    sed -i "s/__DYN_THR__/$dyn_thr/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+    sed -i "s/__DYN_TAR__/$dyn_tar/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+    sed -i "s/__DYN_SCA__/$dyn_sca/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+    sed -i "s/__DYN_CAL__/$dyn_cal/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
 
     #extratext="dyn_nmm${dyn_nmm}"
-    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2_rover dist mpc1_dyn_a 0 6 "${extratext}" &
-    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9_rover dist mpc1_dyn_a 0 6 "${extratext}" &
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2_rover dist mpc1_dyn_${yamlname} 0 6 "${extratext}" &
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9_rover dist mpc1_dyn_${yamlname} 0 6 "${extratext}" &
 
     extratext="dyn_sca${dyn_sca}"
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_a 0 5 "${extratext}" &
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    #wait_until_max_procs_running
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 distGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    #wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     wait_until_max_procs_running
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 distGT mpc1_dyn_a 0 5 "${extratext}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     wait_until_max_procs_running
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_dyn_a 0 5 "${extratext}" &
-    wait_until_max_procs_running
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_dyn_a 0 5 "${extratext}" &
-    wait_until_max_procs_running
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 dist mpc1_dyn_a 0 5 "${extratext}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     wait_until_max_procs_running
 
-    rm -rf rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
   done
 done
+rm -f rotors_gazebo/resource/crazyflie2_mpc1_dyn_*.yaml
 wait_until_max_procs_running 1
 
 RUN_END=`date`

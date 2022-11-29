@@ -660,7 +660,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
             direction = direction / direction.norm(); // calculate unit vector of length 1
 
-            if(transform_available_) // check if opposite direction might be more useful (less collision probability)
+            if(transform_available_) // check if opposite direction might be more useful (less collision probability but still going towards target location)
             {
                 Vector3f potential_movement_transformed_positive = transform_vectors_ * (direction * eps_move_*2);
                 Vector3f potential_movement_transformed_negative = transform_vectors_ * ((direction * -1) * eps_move_*2);
@@ -682,16 +682,35 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                     if(i == droneNumber_) // skip for own quadcopter
                         continue;
 
-                    separation_sum_positive += 1.0/(dist_positive*dist_positive);
-                    separation_sum_negative += 1.0/(dist_negative*dist_negative);
+                    separation_sum_positive += 1.0/pow(fmax(0.000001, dist_positive - drone_radius_), 2);
+                    separation_sum_negative += 1.0/pow(fmax(0.000001, dist_negative - drone_radius_), 2);
                 }
-                if(separation_sum_positive < separation_sum_negative)
+
+                float dist_beacon0_positive = beacons_filtered_[droneNumber_][beaconCount_-1] +
+                             beacons_differences_[0][beaconCount_-1] * potential_movement_transformed_positive[0] +
+                             beacons_differences_[1][beaconCount_-1] * potential_movement_transformed_positive[1] +
+                             beacons_differences_[2][beaconCount_-1] * potential_movement_transformed_positive[2];
+                float dist_beacon0_negative = beacons_filtered_[droneNumber_][beaconCount_-1] +
+                             beacons_differences_[0][beaconCount_-1] * potential_movement_transformed_negative[0] +
+                             beacons_differences_[1][beaconCount_-1] * potential_movement_transformed_negative[1] +
+                             beacons_differences_[2][beaconCount_-1] * potential_movement_transformed_negative[2];
+                float target_term = spc_target_weight_ * fabs(dist_beacon0_positive);
+
+
+                if( spc_separation_weight_ * separation_sum_positive + spc_target_weight_ * dist_beacon0_positive
+                  < spc_separation_weight_ * separation_sum_negative + spc_target_weight_ * dist_beacon0_negative )
                 {
-                    ROS_INFO_ONCE("RelativeDistanceController %d exploration positive better (%f < %f)", droneNumber_, separation_sum_positive, separation_sum_negative);
+                    ROS_INFO_ONCE("RelativeDistanceController %d exploration positive better (%f*%f+%f*%f < %f*%f+%f*%f)", droneNumber_,
+                      spc_separation_weight_, separation_sum_positive, spc_target_weight_, dist_beacon0_positive,
+                      spc_separation_weight_, separation_sum_negative, spc_target_weight_, dist_beacon0_negative
+                    );
                 }
                 else
                 {
-                    ROS_INFO_ONCE("RelativeDistanceController %d exploration negative better (%f > %f)", droneNumber_, separation_sum_positive, separation_sum_negative);
+                    ROS_INFO_ONCE("RelativeDistanceController %d exploration negative better (%f*%f+%f*%f >= %f*%f+%f*%f)", droneNumber_,
+                      spc_separation_weight_, separation_sum_positive, spc_target_weight_, dist_beacon0_positive,
+                      spc_separation_weight_, separation_sum_negative, spc_target_weight_, dist_beacon0_negative
+                    );
                     direction = direction * -1; // invert exploration vector
                 }
             }

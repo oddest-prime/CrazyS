@@ -5,6 +5,62 @@ RUN_START_INT=`date +%s`
 rm -f /tmp/stop
 cd ~/SWARM/crazys
 
+DOCKER_PIDS=()
+function wait_until_max_procs_running {
+  NEWPID=$!
+
+  MAX_RUNNING=5
+  if [ $# -eq 1 ]
+  then
+    MAX_RUNNING=$1
+  fi;
+
+  DOCKER_PIDS+=($NEWPID)
+  echo "New instance started with pid $NEWPID. Wait 5 sec."
+  sleep 5
+
+  while : ; do
+    NPROC_RUNNING=0
+    for value in "${DOCKER_PIDS[@]}"
+    do
+        if kill -0 $value 2> /dev/null
+        then
+          #echo "pid $value still running"
+          NPROC_RUNNING=$(($NPROC_RUNNING + 1))
+        #else
+        #  echo "pid $value already done"
+        fi;
+    done
+    if ps u | grep cmake | grep -q -v grep
+    then
+      echo "cmake running: should wait 10 sec."
+      sleep 10;
+    elif [ $NPROC_RUNNING -ge $MAX_RUNNING ]
+    then
+      echo "$NPROC_RUNNING processed running of $MAX_RUNNING max: should wait 10 sec."
+      sleep 10;
+    else
+      echo "$NPROC_RUNNING processed running of $MAX_RUNNING max: ok, proceed."
+      break;
+    fi;
+  done;
+
+  if test -e /tmp/stop
+  then
+    RUN_END=`date`
+    RUN_END_INT=`date +%s`
+    DURATION=`echo "scale=2;(${RUN_END_INT} - ${RUN_START_INT}) / (60*60)" | bc | awk '{printf "%.2f", $0}'`
+    echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    echo "%   aborted by /tmp/stop - not starting any new instances."
+    echo "% RUN_START:  ${RUN_START}"
+    echo "% RUN_END:    ${RUN_END}"
+    echo "% DURATION:   ${DURATION} hours"
+    echo "%   run-thrymr-full.sh done."
+    echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    exit 7 # stop if flag is present
+  fi;
+}
+
 # test different separation weights
 for i in a
 do
@@ -18,7 +74,8 @@ do
 #  for j in 0 1 2 3 5 7 10 15 20 35 50 # dyn_nse
 #  for j in 2 5 7 8 10 12 15 20 35 50 70 100 150 200 # dyn_eps
 #  for j in 6 12 # dyn_nmm
-for j in 200 250 300 500 700 1000 2000 3000 # dyn_tar
+#  for j in 200 250 300 500 700 1000 2000 3000 # dyn_tar
+for j in 100 150 200 300 500 1000 # dyn_sca
   do
     #dyn_nse=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_nse="0.1"
@@ -27,9 +84,9 @@ for j in 200 250 300 500 700 1000 2000 3000 # dyn_tar
     dyn_nmm="6" # 6
     dyn_sep="1000"
     dyn_thr="0.15" # "0.12"
-    dyn_tar="$j" # "200" # "250" # "150"
-    #dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
-    dyn_sca="1"
+    dyn_tar="500" # "200" # "250" # "150"
+    dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`#
+    #dyn_sca="1"
     dyn_cal="5"
     echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_eps = $dyn_eps, dyn_nmm = $dyn_nmm, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal"
 
@@ -47,20 +104,22 @@ for j in 200 250 300 500 700 1000 2000 3000 # dyn_tar
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2_rover dist mpc1_dyn_a 0 6 "${extratext}" &
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9_rover dist mpc1_dyn_a 0 6 "${extratext}" &
 
-    extratext="dyn_tar${dyn_tar}"
+    extratext="dyn_sca${dyn_sca}"
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_a 0 5 "${extratext}" &
+    wait_until_max_procs_running
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 distGT mpc1_dyn_a 0 5 "${extratext}" &
-    sleep 150 # delay compilation by 150 seconds in second two docker containers
+    wait_until_max_procs_running
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_dyn_a 0 5 "${extratext}" &
+    wait_until_max_procs_running
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_dyn_a 0 5 "${extratext}" &
+    wait_until_max_procs_running
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 dist mpc1_dyn_a 0 5 "${extratext}" &
-    wait
+    wait_until_max_procs_running
 
     rm -rf rotors_gazebo/resource/crazyflie2_mpc1_dyn_a.yaml
-
-    test -e /tmp/stop && exit 7 # stop if flag is present
   done
 done
+wait_until_max_procs_running 1
 
 RUN_END=`date`
 RUN_END_INT=`date +%s`

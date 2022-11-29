@@ -31,7 +31,7 @@ function wait_until_max_procs_running {
         #  echo "pid $value already done"
         fi;
     done
-    if ps u | grep cmake | grep -q -v grep
+    if pidof cmake > /dev/null 2> /dev/null
     then
       echo "cmake running: should wait 10 sec."
       sleep 10;
@@ -85,7 +85,7 @@ for j in 100 150 200 300 500 1000 # dyn_sca
     dyn_sep="1000"
     dyn_thr="0.15" # "0.12"
     dyn_tar="500" # "200" # "250" # "150"
-    dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`#
+    dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`"
     #dyn_sca="1"
     dyn_cal="5"
     echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_eps = $dyn_eps, dyn_nmm = $dyn_nmm, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal"

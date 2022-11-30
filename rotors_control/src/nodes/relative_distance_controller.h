@@ -107,6 +107,7 @@ namespace rotors_control {
             float explore_movement_thr_;
             float velocity_scaling_;
             float distance_iir_filter_;
+            float extra_separation_distance_;
             int inner_controller_;
 
             bool dataStoring_active_;

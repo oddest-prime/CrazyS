@@ -132,6 +132,7 @@ void RelativeDistanceController::InitializeParams() {
     GetRosParameter(pnh, "dist/explore_movement_thr", (float)1.0, &explore_movement_thr_);
     GetRosParameter(pnh, "dist/velocity_scaling", (float)0.1, &velocity_scaling_);
     GetRosParameter(pnh, "dist/distance_iir_filter", (float)0.1, &distance_iir_filter_);
+    GetRosParameter(pnh, "dist/extra_separation_distance", (float)0.0, &extra_separation_distance_);
     GetRosParameter(pnh, "inner/controller", 0, &inner_controller_);
 
     ROS_INFO_ONCE("[RelativeDistanceController] GetRosParameter values:");
@@ -148,6 +149,7 @@ void RelativeDistanceController::InitializeParams() {
     ROS_INFO_ONCE("  dist/explore_movement_thr=%f", explore_movement_thr_);
     ROS_INFO_ONCE("  dist/velocity_scaling=%f", velocity_scaling_);
     ROS_INFO_ONCE("  dist/distance_iir_filter=%f", distance_iir_filter_);
+    ROS_INFO_ONCE("  dist/extra_separation_distance=%f", extra_separation_distance_);
     ROS_INFO_ONCE("  inner/controller=%d", inner_controller_);
 
     //Reading the parameters come from the launch file
@@ -685,8 +687,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                     if(i == droneNumber_) // skip for own quadcopter
                         continue;
 
-                    separation_sum_positive += 1.0/pow(fmax(0.000001, dist_positive - drone_radius_), 2);
-                    separation_sum_negative += 1.0/pow(fmax(0.000001, dist_negative - drone_radius_), 2);
+                    separation_sum_positive += 1.0/pow(fmax(0.000001, dist_positive - 2*drone_radius_ - extra_separation_distance_), 2);
+                    separation_sum_negative += 1.0/pow(fmax(0.000001, dist_negative - 2*drone_radius_ - extra_separation_distance_), 2);
                 }
 
                 float dist_beacon0_positive = beacons_filtered_[droneNumber_][beaconCount_-1] +
@@ -798,7 +800,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                     dist = dist_gt;
 
                                 cohesion_sum += pow(dist, 2);
-                                separation_sum += 1.0/pow(fmax(0.000001, dist - drone_radius_), 2);
+                                separation_sum += 1.0/pow(fmax(0.000001, dist - 2*drone_radius_ - extra_separation_distance_), 2);
                                 ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) i=%d, dist=%f, dist_gt=%f, cohesion_sum=%f, separation_sum=%f", droneNumber_, xi, yi, zi, ai, (int)i, dist, dist_gt, cohesion_sum, separation_sum);
                             }
 

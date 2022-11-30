@@ -77,7 +77,7 @@ do
 #  for j in 6 12 # dyn_nmm
 #  for j in 200 250 300 500 700 1000 2000 3000 # dyn_tar
 # for j in 100 150 200 300 500 1000 # dyn_sca
-for j in 25 50 100 150 200 250 300 350 500 700 1000 1500 2000 # dyn_tar
+for j in 248 249 250 251 252 # dyn_tar
   do
     #yamlname=`pwgen -n 4 1`
     yamlname=`printf "%05d" $j`
@@ -118,8 +118,8 @@ for j in 25 50 100 150 200 250 300 350 500 700 1000 1500 2000 # dyn_tar
     wait_until_max_procs_running
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     wait_until_max_procs_running
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
-    wait_until_max_procs_running
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    #wait_until_max_procs_running
 
   done
 done

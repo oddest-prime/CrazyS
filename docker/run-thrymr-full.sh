@@ -9,7 +9,7 @@ DOCKER_PIDS=()
 function wait_until_max_procs_running {
   NEWPID=$!
 
-  MAX_RUNNING=5
+  MAX_RUNNING=6
   if [ $# -eq 1 ]
   then
     MAX_RUNNING=$1
@@ -77,7 +77,7 @@ do
 #  for j in 6 12 # dyn_nmm
 #  for j in 200 250 300 500 700 1000 2000 3000 # dyn_tar
 # for j in 100 150 200 300 500 1000 # dyn_sca
-for j in 200 300 500 700 # dyn_tar
+for j in 25 50 100 150 200 250 300 350 500 700 1000 1500 2000 # dyn_tar
   do
     #yamlname=`pwgen -n 4 1`
     yamlname=`printf "%05d" $j`
@@ -89,7 +89,7 @@ for j in 200 300 500 700 # dyn_tar
     dyn_nmm="6" # 6
     dyn_sep="1000"
     dyn_thr="0.15" # "0.12"
-    dyn_tar="$i" # "200" # "250" # "150"
+    dyn_tar="$j" # "200" # "250" # "150"
     #dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_sca="2"
     dyn_cal="5"
@@ -123,8 +123,8 @@ for j in 200 300 500 700 # dyn_tar
 
   done
 done
-rm -f rotors_gazebo/resource/crazyflie2_mpc1_dyn_*.yaml
 wait_until_max_procs_running 1
+rm -f rotors_gazebo/resource/crazyflie2_mpc1_dyn_*.yaml
 
 RUN_END=`date`
 RUN_END_INT=`date +%s`

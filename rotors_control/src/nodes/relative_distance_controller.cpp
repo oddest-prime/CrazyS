@@ -551,13 +551,13 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     // ################################################################################
     if(enable_swarm_ == SWARM_DISABLED) // set target point if not in swarm mode
     {
-        ROS_INFO_ONCE("RelativeDistanceController %d swarm disabled x=%f y=%f z=%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2]);
+        ROS_INFO_ONCE("RelativeDistanceController %d swarm disabled target_swarm_=%f/%f/%f odometry_gt_=%f/%f/%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2], odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2]);
         if(inner_controller_ == 3) // velocity controller
         {
           set_point.pose.position.x = 0;
           set_point.pose.position.y = 0;
           if(odometry_gt_.position[2] < target_swarm_.position_W[2])
-              set_point.pose.position.z = 0.5;
+              set_point.pose.position.z = 1.0;
           else
               set_point.pose.position.z = 0;
         }
@@ -581,6 +581,20 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     else if(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES)
     {
         ROS_INFO_ONCE("RelativeDistanceController starting swarm mode (SWARM_DECLARATIVE_DISTANCES)");
+
+        // calculate neighbourhood independently from potential position
+        int neighbourhood_cnt = 0;
+        bool neighbourhood_bool[N_DRONES_MAX];
+        for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+        {
+            if(distances_filtered_[droneNumber_][i] < neighbourhood_distance_ && i != droneNumber_) // distance smaller than threshold and not own quadcopter
+            {
+                neighbourhood_cnt ++;
+                neighbourhood_bool[i] = true;
+            }
+            else
+                neighbourhood_bool[i] = false;
+        }
 
         //if(!transform_ok_) // need to do exploration
         if(!transform_ok_ && !(enable_swarm_ & SWARM_USE_GROUND_TRUTH)) // need to do exploration (no exploration if ground truth data used for debugging)
@@ -672,7 +686,6 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
                 float separation_sum_positive = 0;
                 float separation_sum_negative = 0;
-
                 for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
                 {
                    float dist_positive = distances_filtered_[droneNumber_][i] +
@@ -687,8 +700,11 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                     if(i == droneNumber_) // skip for own quadcopter
                         continue;
 
-                    separation_sum_positive += 1.0/pow(fmax(0.000001, dist_positive - 2*drone_radius_ - extra_separation_distance_), 2);
-                    separation_sum_negative += 1.0/pow(fmax(0.000001, dist_negative - 2*drone_radius_ - extra_separation_distance_), 2);
+                    if(neighbourhood_bool[i]) // separation only calculated for quadcopters in neighbourhood
+                    {
+                        separation_sum_positive += 1.0/pow(fmax(0.000001, dist_positive - 2*drone_radius_ - extra_separation_distance_), 2);
+                        separation_sum_negative += 1.0/pow(fmax(0.000001, dist_negative - 2*drone_radius_ - extra_separation_distance_), 2);
+                    }
                 }
 
                 float dist_beacon0_positive = beacons_filtered_[droneNumber_][beaconCount_-1] +
@@ -699,11 +715,22 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                              beacons_differences_[0][beaconCount_-1] * potential_movement_transformed_negative[0] +
                              beacons_differences_[1][beaconCount_-1] * potential_movement_transformed_negative[1] +
                              beacons_differences_[2][beaconCount_-1] * potential_movement_transformed_negative[2];
-                float target_term = spc_target_weight_ * fabs(dist_beacon0_positive);
+                //float target_term = spc_target_weight_ * fabs(dist_beacon0_positive);
 
+                float total_sum_positive;
+                float total_sum_negative;
+                if(neighbourhood_cnt != 0) // no neighbours means there would be a division by 0
+                {
+                    total_sum_positive = spc_separation_weight_ * separation_sum_positive / ((float)neighbourhood_cnt) + spc_target_weight_ * dist_beacon0_positive;
+                    total_sum_negative = spc_separation_weight_ * separation_sum_negative / ((float)neighbourhood_cnt) + spc_target_weight_ * dist_beacon0_negative;
+                }
+                else
+                {
+                    total_sum_positive = spc_target_weight_ * dist_beacon0_positive;
+                    total_sum_negative = spc_target_weight_ * dist_beacon0_negative;
+                }
 
-                if( spc_separation_weight_ * separation_sum_positive + spc_target_weight_ * dist_beacon0_positive
-                  < spc_separation_weight_ * separation_sum_negative + spc_target_weight_ * dist_beacon0_negative )
+                if( total_sum_positive < total_sum_negative )
                 {
                     ROS_INFO_ONCE("RelativeDistanceController %d exploration positive better (%f*%f+%f*%f < %f*%f+%f*%f)", droneNumber_,
                       spc_separation_weight_, separation_sum_positive, spc_target_weight_, dist_beacon0_positive,
@@ -746,20 +773,6 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         }
         else // possible to do exploitation
         {
-            // calculate neighbourhood independently from potential position
-            int neighbourhood_cnt = 0;
-            bool neighbourhood_bool[N_DRONES_MAX];
-            for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
-            {
-                if(distances_filtered_[droneNumber_][i] < neighbourhood_distance_ && i != droneNumber_) // distance smaller than threshold and not own quadcopter
-                {
-                    neighbourhood_cnt ++;
-                    neighbourhood_bool[i] = true;
-                }
-                else
-                    neighbourhood_bool[i] = false;
-            }
-
             Vector3f best_movement;
             float best_sum = FLT_MAX;
             float min_coehesion_term;
@@ -799,8 +812,11 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                 if(enable_swarm_ & SWARM_USE_GROUND_TRUTH) // only for debug! using ground truth positions to infer distances.
                                     dist = dist_gt;
 
-                                cohesion_sum += pow(dist, 2);
-                                separation_sum += 1.0/pow(fmax(0.000001, dist - 2*drone_radius_ - extra_separation_distance_), 2);
+                                if(neighbourhood_bool[i]) // separation and cohesion only calculated for quadcopters in neighbourhood
+                                {
+                                    cohesion_sum += pow(dist, 2);
+                                    separation_sum += 1.0/pow(fmax(0.000001, dist - 2*drone_radius_ - extra_separation_distance_), 2);
+                                }
                                 ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) i=%d, dist=%f, dist_gt=%f, cohesion_sum=%f, separation_sum=%f", droneNumber_, xi, yi, zi, ai, (int)i, dist, dist_gt, cohesion_sum, separation_sum);
                             }
 
@@ -1101,7 +1117,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     }
     */
 
-    if(enable_swarm_ != SWARM_DISABLED || set_point.pose.position.z > 0.01) // do not enable drone until proper target point received
+    if(enable_swarm_ != SWARM_DISABLED || target_swarm_.position_W[2] > 0.01) // do not enable drone until proper target point received
     {
         setpoint_pub_.publish(set_point);
         ROS_INFO_ONCE("RelativeDistanceController %d set_point x=%f y=%f z=%f", droneNumber_, set_point.pose.position.x, set_point.pose.position.y, set_point.pose.position.z);

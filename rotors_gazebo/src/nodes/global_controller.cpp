@@ -453,7 +453,7 @@ int main(int argc, char** argv) {
       ROS_INFO("global_controller: Unpaused the Gazebo simulation.");
     }
 
-    ros::Time::sleepUntil(ros::Time(5.0));
+    ros::Time::sleepUntil(ros::Time(3.0));
     trajectory_msgs::MultiDOFJointTrajectory trajectory_msg;
     std_msgs::Int32 enable_msg;
     std_msgs::Int32 update_msg;
@@ -496,7 +496,7 @@ int main(int argc, char** argv) {
 
     }
 
-    ros::Duration(2.9).sleep();
+    ros::Duration(4.9).sleep();
     ros::spinOnce();
 
     ROS_INFO("global_controller: Enable swarm mode.");
@@ -654,7 +654,7 @@ int main(int argc, char** argv) {
           path_sleep_afterwards = 3.0;
           desired_position(0) = 0.0; // x
           desired_position(1) = 0.0; // y
-          desired_position(2) = 3.0; // z
+          desired_position(2) = 3.5; // z
         }
         else
           break;
@@ -685,7 +685,7 @@ int main(int argc, char** argv) {
           path_sleep_afterwards = 3.0;
           desired_position(0) = 0.0; // x
           desired_position(1) = 0.0; // y
-          desired_position(2) = 3.0; // z
+          desired_position(2) = 3.5; // z
         }
         else
           break;

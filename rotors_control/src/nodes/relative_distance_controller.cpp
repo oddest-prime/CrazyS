@@ -895,6 +895,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             tempCost << best_sum << "," << min_coehesion_term << "," << min_separation_term << "," << min_target_term << "," << min_calm_term << ",";
         }
 
+        tempEnv << unit_vectors_age_[0] << "," << unit_vectors_age_[1] << "," << unit_vectors_age_[2] << ",";
+
         tempCost << unit_vectors_[0][0] << "," << unit_vectors_[0][1] << "," << unit_vectors_[0][2] << "," << unit_vectors_age_[0] << ",";
         tempCost << unit_vectors_[1][0] << "," << unit_vectors_[1][1] << "," << unit_vectors_[1][2] << "," << unit_vectors_age_[1] << ",";
         tempCost << unit_vectors_[2][0] << "," << unit_vectors_[2][1] << "," << unit_vectors_[2][2] << "," << unit_vectors_age_[2] << ",";

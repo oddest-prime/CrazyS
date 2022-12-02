@@ -104,7 +104,7 @@ cd /tmp/log_output/
 make DistSimMetricsMerged.csv
 make StateMerged.csv
 make MetricsMerged.png 2> Metrics.txt
-make StateMerged.png 2> States.txt
+make StateMerged.png 2>> Metrics.txt
 make Target.png 2>> Metrics.txt
 make all-metrics
 make all-centroid

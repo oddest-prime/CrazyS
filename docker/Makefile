@@ -193,6 +193,22 @@ State%.png: State%.csv Env%.csv Makefile
 	echo " \
  		set datafile separator ',' \n\
 	  \n\
+	    stats \"$<\" using ((column(3)>64) ? column(4) : NaN) \n\
+		print sprintf(\"metric: MEAN of pos x %f\", STATS_mean) \n\
+		print sprintf(\"metric: MEDIAN of pos x %f\", STATS_median) \n\
+		print sprintf(\"metric: MIN of pos x %f\", STATS_min) \n\
+		print sprintf(\"metric: MAX of pos x %f\", STATS_max) \n\
+	    stats \"$<\" using ((column(3)>64) ? column(5) : NaN) \n\
+		print sprintf(\"metric: MEAN of pos y %f\", STATS_mean) \n\
+		print sprintf(\"metric: MEDIAN of pos y %f\", STATS_median) \n\
+		print sprintf(\"metric: MIN of pos y %f\", STATS_min) \n\
+		print sprintf(\"metric: MAX of pos y %f\", STATS_max) \n\
+	    stats \"$<\" using ((column(3)>64) ? column(6) : NaN) \n\
+		print sprintf(\"metric: MEAN of pos z %f\", STATS_mean) \n\
+		print sprintf(\"metric: MEDIAN of pos z %f\", STATS_median) \n\
+		print sprintf(\"metric: MIN of pos z %f\", STATS_min) \n\
+		print sprintf(\"metric: MAX of pos z %f\", STATS_max) \n\
+	  \n\
  		set term pngcairo size 1820,980 \n\
  		set grid \n\
  		set xlabel \"Time [s]\" \n\

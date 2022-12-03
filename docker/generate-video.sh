@@ -12,6 +12,16 @@ then
   then
     rm /tmp/info-*.png -rf
     convert -page 3440x2160+150+100 -pointsize 30 -font Courier text:/tmp/video.info /tmp/info.png
+    if test -e /tmp/info-0.png
+    then
+      rm /tmp/info-*.png -rf
+      convert -page 3440x2160+150+100 -pointsize 25 -font Courier text:/tmp/video.info /tmp/info.png
+      if test -e /tmp/info-0.png
+      then
+        rm /tmp/info-*.png -rf
+        convert -page 3440x2160+150+100 -pointsize 20 -font Courier text:/tmp/video.info /tmp/info.png
+      fi
+    fi
   fi
 fi
 

@@ -483,7 +483,7 @@ int main(int argc, char** argv) {
 
       desired_position(0) = ((float)(i%modulus)) * spacingX + offsetX +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); // * 0.5;
       desired_position(1) = floor((float)(i/modulus)) * spacingY + offsetY +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); // * 0.5;
-      desired_position(2) = 2 + ((float)(i%2)) * spacingZ + offsetZ +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); //* 0.2;
+      desired_position(2) = 5 + ((float)(i%2)) * spacingZ + offsetZ +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); //* 0.2;
       desired_yaw = 0; // not rotated
   //    desired_yaw = ((float)(i%2)) * (3.141592 / 4); // 45 degrees rotated
   //    desired_yaw = ((float)(i%2)) * (3.141592 / 2); // 90 degrees rotated
@@ -529,7 +529,7 @@ int main(int argc, char** argv) {
     {
       desired_position(0) = 0.0; // x
       desired_position(1) = 0.0; // 4.0; // y
-      desired_position(2) = 3.5; // z
+      desired_position(2) = 5.0; // z
     }
 
     move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
@@ -641,20 +641,20 @@ int main(int argc, char** argv) {
         {
           desired_position(0) = 4.0; // x
           desired_position(1) = 0.0; // y
-          desired_position(2) = 3.5; // z
+          desired_position(2) = 5.0; // z
         }
         else if(path_cnt == 1)
         {
           desired_position(0) = 0.0; // x
           desired_position(1) = 4.0; // y
-          desired_position(2) = 3.5; // z
+          desired_position(2) = 5.0; // z
         }
         else if(path_cnt == 2) // no real point, but need to change target, to trigger DistanceMeasurementSim::RecalcTargetSpeed for final position
         {
           path_sleep_afterwards = 3.0;
           desired_position(0) = 0.0; // x
           desired_position(1) = 0.0; // y
-          desired_position(2) = 3.5; // z
+          desired_position(2) = 5.0; // z
         }
         else
           break;
@@ -666,26 +666,26 @@ int main(int argc, char** argv) {
         {
           desired_position(0) = 10.0; // x
           desired_position(1) = 0.0; // y
-          desired_position(2) = 3.5; // z
+          desired_position(2) = 5.0; // z
         }
         else if(path_cnt == 1)
         {
           desired_position(0) = 0.0; // x
           desired_position(1) = 10.0; // y
-          desired_position(2) = 3.5; // z
+          desired_position(2) = 5.0; // z
         }
         else if(path_cnt == 2)
         {
           desired_position(0) = 0.0; // x
           desired_position(1) = -10.0; // y
-          desired_position(2) = 3.5; // z
+          desired_position(2) = 5.0; // z
         }
         else if(path_cnt == 3) // no real point, but need to change target, to trigger DistanceMeasurementSim::RecalcTargetSpeed for final position
         {
           path_sleep_afterwards = 3.0;
           desired_position(0) = 0.0; // x
           desired_position(1) = 0.0; // y
-          desired_position(2) = 3.5; // z
+          desired_position(2) = 5.0; // z
         }
         else
           break;
@@ -697,7 +697,7 @@ int main(int argc, char** argv) {
         {
           desired_position(0) = -5.0; // x
           desired_position(1) = -5.0; // y
-          desired_position(2) = 3.0; // z
+          desired_position(2) = 5.0; // z
         }
         else
           break;

@@ -557,7 +557,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
           set_point.pose.position.x = 0;
           set_point.pose.position.y = 0;
           if(odometry_gt_.position[2] < target_swarm_.position_W[2])
-              set_point.pose.position.z = 1.0;
+              set_point.pose.position.z = 2.0;
           else
               set_point.pose.position.z = 0;
         }

@@ -45,7 +45,7 @@ Distance%.png: Distance%.csv Env%.csv DistSimDistance%.csv Makefile
 		set xlabel \"Time [s]\" \n\
 		set ylabel \"Distance [m]\" \n\
 		set y2label \"Count\" \n\
-		set yrange [0:3] \n\
+		set yrange [0:4] \n\
 		set y2range [0:20] \n\
 		set y2tics 0,1,20 \n\
 		set xtics nomirror \n\
@@ -97,7 +97,7 @@ DistanceGT%.png: DistSimDistance%.csv Env%.csv Makefile
 		set xlabel \"Time [s]\" \n\
 		set ylabel \"Distance [m]\" \n\
 		set y2label \"Count\" \n\
-		set yrange [0:3] \n\
+		set yrange [0:4] \n\
 		set y2range [0:20] \n\
 		set y2tics 0,1,20 \n\
 		set xtics nomirror \n\
@@ -387,7 +387,7 @@ TraceXZ.png: State0.csv Makefile
   		set xlabel \"Position x [m]\" \n\
   		set ylabel \"Position z [m]\" \n\
 		set xrange [-12.0:12.0] \n\
-		set yrange [-0.5:8.0] \n\
+		set yrange [-0.5:9.0] \n\
   		set output \"$@\" \n\
 	    plot  		    \"State0.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 0', \
 						\"State1.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 1', \
@@ -425,7 +425,7 @@ TraceYZ.png: State0.csv Makefile
   		set xlabel \"Position y [m]\" \n\
   		set ylabel \"Position z [m]\" \n\
 		set xrange [-12.0:12.0] \n\
-		set yrange [-0.5:8.0] \n\
+		set yrange [-0.5:9.0] \n\
   		set output \"$@\" \n\
   		plot  		    \"State0.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 0', \
 						\"State1.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 1', \

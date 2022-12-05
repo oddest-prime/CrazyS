@@ -81,22 +81,23 @@ do
 #  for j in 0 1 2 3 4 5 7 10 15 20 30 # dyn_ese
 #  for j in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14
 #  for j in 10 15 17 20 23 25 27 30 33 35 40 45 50 990
-for j in 5 6 7 8 9 10 12 15 20 # dyn_eps
+#  for j in 5 6 7 8 9 10 12 15 20 # dyn_eps
+for j in 0 2 5 7 10 15 22 30 50 75 110 200 # dyn_cal
   do
     #yamlname=`pwgen -n 4 1`
     yamlname=`printf "%05d%s" $j $i`
 
     #dyn_nse=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_nse="0.1"
-    dyn_eps=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
-    #dyn_eps="0.05" # "0.1" # "0.05"
+    #dyn_eps=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
+    dyn_eps="0.05" # "0.1" # "0.05"
     dyn_nmm="6" # 6
     dyn_sep="1000"
     dyn_thr="0.15" # "0.12"
     dyn_tar="250" # "200" # "250" # "150"
     #dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_sca="2"
-    dyn_cal="30" # 5
+    dyn_cal="$j" # 30, 5
     #dyn_ese=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_ese="0.1"
     #dyn_nhd=`echo "scale=1;$j / 10" | bc | awk '{printf "%.1f", $0}'`
@@ -119,7 +120,7 @@ for j in 5 6 7 8 9 10 12 15 20 # dyn_eps
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2_rover dist mpc1_dyn_${yamlname} 0 6 "${extratext}" &
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9_rover dist mpc1_dyn_${yamlname} 0 6 "${extratext}" &
 
-    extratext="dyn_eps${dyn_eps}"
+    extratext="dyn_cal${dyn_cal}"
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     wait_until_max_procs_running
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 distGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &

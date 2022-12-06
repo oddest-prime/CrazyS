@@ -335,7 +335,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     tempVectors.precision(24);
     tempVectors << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
 
-    // distance measurements from previous message (to check for large changes, when target is updated)
+/*
+    // distance measurements from previous message (to check for large changes, when target is updated) -- was replaced by update_sub_ !
     int beacons_moved = 0;
     for (size_t i = 0; i < beaconCount_; i++)
     {
@@ -841,7 +842,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                             else
                                 total_sum = target_term + calm_term;
 
-                            ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) coh=%f sep=%f tar=%f calm=%f total=%f len=%f", droneNumber_, xi, yi, zi, ai, coehesion_term, separation_term, target_term, calm_term, total_sum, potential_movement.norm());
+                            ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) coh=%7.1f sep=%7.1f tar=%7.1f calm=%7.1f total=%7.1f len=%f", droneNumber_, xi, yi, zi, ai, coehesion_term, separation_term, target_term, calm_term, total_sum, potential_movement.norm());
                             //                            ROS_INFO("dr.%d (%2d/%2d/%2d|%2d) dist0=%f", droneNumber_, xi, yi, zi, ai, dist_beacon0);
 
                                   /*

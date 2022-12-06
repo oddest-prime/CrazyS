@@ -128,7 +128,7 @@ namespace rotors_control {
             float beacons_[N_DRONES_MAX][N_BEACONS_MAX]; // received distance measurements
             float beacons_filtered_[N_DRONES_MAX][N_BEACONS_MAX]; // distance measurements filtered
             float beacons_history1_[N_BEACONS_MAX]; // distance measurements to own drone at history point
-            float beacons_last_[N_BEACONS_MAX]; // distance measurements from previous message (to check for large changes, when target is updated)
+            //float beacons_last_[N_BEACONS_MAX]; // distance measurements from previous message (to check for large changes, when target is updated)
             float beacons_history_[N_BEACONS_MAX][HISTORY_CNT_MAX]; // distance measurements to own drone history
 
             Vector3f positions_gt_[N_DRONES_MAX]; // ground-truth positions of all drones, only to be used for verification of estimation

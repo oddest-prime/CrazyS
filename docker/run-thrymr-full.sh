@@ -103,25 +103,25 @@ for j in 10 15 20 30 50 75 120 200 # dyn_ese
     #dyn_nhd=`echo "scale=1;$j / 10" | bc | awk '{printf "%.1f", $0}'`
     dyn_nhd="2.5"
 
-    if [ "j" -eq "15" ]; then
+    if [ "$j" = "15" ]; then
       dyn_sep="950"
     fi;
-    if [ "j" -eq "20" ]; then
+    if [ "$j" = "20" ]; then
       dyn_sep="900"
     fi;
-    if [ "j" -eq "30" ]; then
+    if [ "$j" = "30" ]; then
       dyn_sep="800"
     fi;
-    if [ "j" -eq "50" ]; then
+    if [ "$j" = "50" ]; then
       dyn_sep="610"
     fi;
-    if [ "j" -eq "75" ]; then
+    if [ "$j" = "75" ]; then
       dyn_sep="420"
     fi;
-    if [ "j" -eq "120" ]; then
+    if [ "$j" = "120" ]; then
       dyn_sep="200"
     fi;
-    if [ "j" -eq "200" ]; then
+    if [ "$j" = "200" ]; then
       dyn_sep="25"
     fi;
 

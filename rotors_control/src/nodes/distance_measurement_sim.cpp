@@ -103,9 +103,15 @@ void DistanceMeasurementSim::InitializeParams() {
     ROS_INFO_ONCE("[DistanceMeasurementSim] InitializeParams");
 
     GetRosParameter(pnh, "swarm/distance_noise", (float)0.1, &distance_noise_);
+    GetRosParameter(pnh, "swarm/elevation_noise", (float)0.1, &elevation_noise_);
+    GetRosParameter(pnh, "swarm/distance_max_rate", (float)100, &distance_max_rate_);
+    GetRosParameter(pnh, "swarm/elevation_max_rate", (float)100, &elevation_max_rate_);
 
     ROS_INFO_ONCE("[DistanceMeasurementSim] GetRosParameter values:");
     ROS_INFO_ONCE("  swarm/distance_noise=%f", distance_noise_);
+    ROS_INFO_ONCE("  swarm/elevation_noise=%f", elevation_noise_);
+    ROS_INFO_ONCE("  swarm/distance_max_rate=%f", distance_max_rate_);
+    ROS_INFO_ONCE("  swarm/elevation_max_rate=%f", elevation_max_rate_);
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
@@ -149,7 +155,7 @@ void DistanceMeasurementSim::InitializeParams() {
     }
 
     for (size_t i = 0; i < droneCount_; i++)
-      dronestate[i].SetId(this, (int)i, droneCount_, beaconCount_, distance_noise_, dronestate, &distances_pub_, &positions_pub_, &elevation_pub_, &beacons_pub_, dataStoring_active, beacon_gt_, &swarm_center_gt_);
+      dronestate[i].SetId(this, (int)i, droneCount_, beaconCount_, distance_noise_, elevation_noise_, distance_max_rate_, elevation_max_rate_, dronestate, &distances_pub_, &positions_pub_, &elevation_pub_, &beacons_pub_, dataStoring_active, beacon_gt_, &swarm_center_gt_);
 
     ros::NodeHandle nh;
     timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &DistanceMeasurementSim::CallbackSaveData, this, false, true);
@@ -206,6 +212,8 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     odometry_gt_.position[1] = odometry_msg->pose.pose.position.y;
     odometry_gt_.position[2] = odometry_msg->pose.pose.position.z;
 
+    ros::Time odometry_msg_time(odometry_msg->header.stamp.sec, odometry_msg->header.stamp.nsec);
+
     // for logging into files
     std::stringstream tempDistance;
     tempDistance.precision(24);
@@ -223,7 +231,8 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     ROS_INFO_ONCE("DroneStateWithTime got odometry message: x=%f y=%f z=%f (droneNumber:%d)", odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2], droneNumber_);
 
     // gaussian random number generator
-    std::normal_distribution<float> dist(0.0, distance_noise_);
+    std::normal_distribution<float> dist_distribution(0.0, distance_noise_);
+    std::normal_distribution<float> elev_distribution(0.0, elevation_noise_);
     //rand_cnt_++;
     //if(rand_cnt_ > 10) // reduce frequency of noise
 
@@ -239,6 +248,10 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     }
     (*swarm_center_gt_) /= droneCount_;
 
+    // add elevation noise
+    float rand_value = std::max(-5*elevation_noise_, std::min((float)elev_distribution(generator_), 5*elevation_noise_));
+    elevation_ = odometry_gt_.position[2] + rand_value;
+
     // calculate distance to other drones
     float dist_min_gt = FLT_MAX;
     for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
@@ -247,8 +260,8 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         pow(odometry_gt_.position[0] - dronestate_[i].odometry_gt_.position[0], 2) +
         pow(odometry_gt_.position[1] - dronestate_[i].odometry_gt_.position[1], 2) +
         pow(odometry_gt_.position[2] - dronestate_[i].odometry_gt_.position[2], 2));
-      float rand_value = std::max(-5*distance_noise_, std::min((float)dist(generator_), 5*distance_noise_));
-      distances_[i] = distances_gt_[i] + rand_value;
+      float rand_value = std::max(-5*distance_noise_, std::min((float)dist_distribution(generator_), 5*distance_noise_));
+      distances_[i] = distances_gt_[i] + rand_value; // add distance noise
       if(i != droneNumber_)
           dist_min_gt = std::min(distances_gt_[i], dist_min_gt);
       if(dataStoring_active_) // save data for log files
@@ -265,7 +278,7 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
           pow(odometry_gt_.position[0] - beacon_gt_[i][0], 2) +
           pow(odometry_gt_.position[1] - beacon_gt_[i][1], 2) +
           pow(odometry_gt_.position[2] - beacon_gt_[i][2], 2));
-        float rand_value = std::max(-5*distance_noise_, std::min((float)dist(generator_), 5*distance_noise_));
+        float rand_value = std::max(-5*distance_noise_, std::min((float)dist_distribution(generator_), 5*distance_noise_));
         beacon_distances_[i] = beacon_distances_gt_[i] + rand_value;
         ROS_INFO_ONCE("DroneStateWithTime (%d) beacon %d at location %s distance %f", droneNumber_, (int)i, VectorToString(beacon_gt_[i]).c_str(), beacon_distances_gt_[i]);
     }
@@ -296,6 +309,24 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         //  tempDistance << distances_gt_[i] << "," << distances_[i] << ","; // distance to quadcopter i (first ground truth, then with measurement noise)
     }
 
+    // rate limitation based on time since last published message on that topic
+    int distances_pub_now = false;
+    ros::Duration distances_pub_last_ago = odometry_msg_time - distances_pub_last_time_;
+    if(distances_pub_last_ago.toSec() > 1.0/distance_max_rate_)
+    {
+        ROS_INFO_ONCE("DroneStateWithTime (%d) distances_pub_now %lf sec since last; approx. rate: %.1f; max. rate: %.1f", droneNumber_, distances_pub_last_ago.toSec(), 1.0/distances_pub_last_ago.toSec(), distance_max_rate_);
+        distances_pub_now = true;
+        distances_pub_last_time_ = odometry_msg_time;
+    }
+    int elevation_pub_now = false;
+    ros::Duration elevation_pub_last_ago = odometry_msg_time - elevation_pub_last_time_;
+    if(elevation_pub_last_ago.toSec() > 1.0/elevation_max_rate_)
+    {
+        ROS_INFO_ONCE("DroneStateWithTime (%d) elevation_pub_now %lf sec since last; approx. rate: %.1f; max. rate: %.1f", droneNumber_, elevation_pub_last_ago.toSec(), 1.0/elevation_pub_last_ago.toSec(), elevation_max_rate_);
+        elevation_pub_now = true;
+        elevation_pub_last_time_ = odometry_msg_time;
+    }
+
     // publish distances message
     std_msgs::Float32MultiArray dat;
     dat.layout.dim.push_back(std_msgs::MultiArrayDimension());
@@ -313,9 +344,10 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         vec[i*droneCount_ + j] = dronestate_[i].distances_[j]; // distances with simulated sensor noise
       //vec[i*droneCount_ + j] = dronestate_[i].distances_gt_[j]; // ground-truth only for debugging
     dat.data = vec;
-    distances_pub_->publish(dat);
+    if(distances_pub_now)
+        distances_pub_->publish(dat);
 
-    // publish positions message
+    // publish positions message (ground-truth only for debugging)
     std_msgs::Float32MultiArray pos;
     pos.layout.dim.push_back(std_msgs::MultiArrayDimension());
     pos.layout.dim.push_back(std_msgs::MultiArrayDimension());
@@ -345,9 +377,10 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     el.layout.data_offset = 0;
     std::vector<float> elev(droneCount_, 0);
     for (size_t i = 0; i < droneCount_; i++)
-        elev[i] = dronestate_[i].odometry_gt_.position[2];
+        elev[i] = dronestate_[i].elevation_;
     el.data = elev;
-    elevation_pub_->publish(el);
+    if(elevation_pub_now)
+        elevation_pub_->publish(el);
 
     // publish distances to beacons message
     std_msgs::Float32MultiArray be;
@@ -366,7 +399,8 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         bec[i*beaconCount_ + j] = dronestate_[i].beacon_distances_[j]; // distances with simulated sensor noise
       //bec[i*beaconCount_ + j] = dronestate_[i].beacon_distances_gt_[j]; // ground-truth only for debugging
     be.data = bec;
-    beacons_pub_->publish(be);
+    if(distances_pub_now)
+        beacons_pub_->publish(be);
 
     if(dataStoring_active_) // save data for log files
     {
@@ -520,14 +554,19 @@ void DroneStateWithTime::FileSaveData(void){
       // dataStoring_active_ = false;
 }
 
-void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* swarm_center_gt)
+void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, float elevation_noise, float distance_max_rate, float elevation_max_rate, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* swarm_center_gt)
 {
     parentPtr_ = parentPtr;
 
     droneNumber_ = droneNumber;
     droneCount_ = droneCount;
     beaconCount_ = beaconCount;
+
     distance_noise_ = position_noise;
+    elevation_noise_ = elevation_noise;
+    distance_max_rate_ = distance_max_rate;
+    elevation_max_rate_ = elevation_max_rate;
+
     dataStoring_active_ = dataStoring_active;
 
     dronestate_ = dronestate;

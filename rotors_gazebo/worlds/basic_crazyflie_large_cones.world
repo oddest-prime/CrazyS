@@ -10,17 +10,27 @@
     </include>
 
     <include>
-      <uri>model://construction_cone</uri>
+      <uri>model://flat_marker</uri>
+      <!--uri>model://construction_cone</uri-->
       <name>cone_00</name>
       <!--pose>x y z roll  pitch yaw</pose-->
-      <pose>0.0 4.0 0.0  0 0 0</pose>
+      <pose>10.0 0.0 0.0  0 0 0</pose>
       <static>true</static>
     </include>
     <include>
-      <uri>model://construction_cone</uri>
+      <uri>model://flat_marker</uri>
+      <!--uri>model://construction_cone</uri-->
       <name>cone_01</name>
       <!--pose>x y z roll  pitch yaw</pose-->
-      <pose>4.0 0.0 0.0  0 0 0</pose>
+      <pose>0.0 10.0 0.0  0 0 0</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://flat_marker</uri>
+      <!--uri>model://construction_cone</uri-->
+      <name>cone_02</name>
+      <!--pose>x y z roll  pitch yaw</pose-->
+      <pose>0.0 -10.0 0.0  0 0 0</pose>
       <static>true</static>
     </include>
 

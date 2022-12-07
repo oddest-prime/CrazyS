@@ -82,7 +82,7 @@ do
 #  for j in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14
 #  for j in 10 15 17 20 23 25 27 30 33 35 40 45 50 990
 #  for j in 5 6 7 8 9 10 12 15 20 # dyn_eps
-for j in 10 15 20 30 50 75 120 200 # dyn_ese
+for j in 10 20 30 50 62 75 87 105 120 140 200 # dyn_ese
   do
     #yamlname=`pwgen -n 4 1`
     yamlname=`printf "%05d%s" $j $i`
@@ -115,11 +115,23 @@ for j in 10 15 20 30 50 75 120 200 # dyn_ese
     if [ "$j" = "50" ]; then
       dyn_sep="610"
     fi;
+    if [ "$j" = "62" ]; then
+      dyn_sep="510"
+    fi;
     if [ "$j" = "75" ]; then
       dyn_sep="420"
     fi;
+    if [ "$j" = "87" ]; then
+      dyn_sep="350"
+    fi;
+    if [ "$j" = "105" ]; then
+      dyn_sep="255"
+    fi;
     if [ "$j" = "120" ]; then
       dyn_sep="200"
+    fi;
+    if [ "$j" = "140" ]; then
+      dyn_sep="125"
     fi;
     if [ "$j" = "200" ]; then
       dyn_sep="25"

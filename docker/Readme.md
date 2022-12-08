@@ -30,7 +30,7 @@
 
 	roslaunch rotors_gazebo crazyflie2_dist2.launch gui:=true swarm_params:=mpc1_params2b
 
-	roslaunch rotors_gazebo crazyflie2_dist5.launch gui:=true swarm_mode:=distgnd
+	roslaunch rotors_gazebo crazyflie2_dist5.launch gui:=true swarm_mode:=elev
 
 #### With rover
 	roslaunch rotors_gazebo crazyflie2_dist2_rover.launch gui:=true swarm_params:=mpc1_params2a

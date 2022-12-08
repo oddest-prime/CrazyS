@@ -63,7 +63,7 @@ function wait_until_max_procs_running {
 
 rm -f rotors_gazebo/resource/crazyflie2_mpc1_dyn_*.yaml
 # test different separation weights
-for i in a b c d e f g h i j k l m n
+for i in a b c
 do
 #  for j in 5 7 10 12 15 20 30 50 70 100 150 200 250 300 500 700 1000 2000 3000 # dyn_sep
 #  for j in 600 700 850 1000 1200 1500 1800 2200 # dyn_sep
@@ -78,11 +78,11 @@ do
 #  for j in 200 250 300 500 700 1000 2000 3000 # dyn_tar
 #  for j in 100 150 200 300 500 1000 # dyn_sca
 #  for j in 248 249 250 251 252 # dyn_tar
-#  for j in 0 1 2 3 4 5 7 10 15 20 30 # dyn_ese
+#  for j in 10 20 30 50 62 75 87 105 120 140 200 # dyn_ese
 #  for j in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14
 #  for j in 10 15 17 20 23 25 27 30 33 35 40 45 50 990
 #  for j in 5 6 7 8 9 10 12 15 20 # dyn_eps
-for j in 10 20 30 50 62 75 87 105 120 140 200 # dyn_ese
+for j in 0 5 10 20 40 80 160 320 640 1280  # dyn_hgh
   do
     #yamlname=`pwgen -n 4 1`
     yamlname=`printf "%05d%s" $j $i`
@@ -92,52 +92,19 @@ for j in 10 20 30 50 62 75 87 105 120 140 200 # dyn_ese
     #dyn_eps=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_eps="0.05" # "0.1" # "0.05"
     dyn_nmm="6" # 6
-    dyn_sep="1000"
+    dyn_sep="350"
     dyn_thr="0.15" # "0.12"
     dyn_tar="250" # "200" # "250" # "150"
     #dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_sca="2"
     dyn_cal="0" # 30, 5
-    dyn_ese=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
-    #dyn_ese="0.1"
+    #dyn_ese=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
+    dyn_ese="0.87"
     #dyn_nhd=`echo "scale=1;$j / 10" | bc | awk '{printf "%.1f", $0}'`
     dyn_nhd="2.5"
+    dyn_hgh="$j"
 
-    if [ "$j" = "15" ]; then
-      dyn_sep="950"
-    fi;
-    if [ "$j" = "20" ]; then
-      dyn_sep="900"
-    fi;
-    if [ "$j" = "30" ]; then
-      dyn_sep="800"
-    fi;
-    if [ "$j" = "50" ]; then
-      dyn_sep="610"
-    fi;
-    if [ "$j" = "62" ]; then
-      dyn_sep="510"
-    fi;
-    if [ "$j" = "75" ]; then
-      dyn_sep="420"
-    fi;
-    if [ "$j" = "87" ]; then
-      dyn_sep="350"
-    fi;
-    if [ "$j" = "105" ]; then
-      dyn_sep="255"
-    fi;
-    if [ "$j" = "120" ]; then
-      dyn_sep="200"
-    fi;
-    if [ "$j" = "140" ]; then
-      dyn_sep="125"
-    fi;
-    if [ "$j" = "200" ]; then
-      dyn_sep="25"
-    fi;
-
-    echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_eps = $dyn_eps, dyn_nmm = $dyn_nmm, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal, dyn_ese = $dyn_ese, dyn_nhd = $dyn_nhd"
+    echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_eps = $dyn_eps, dyn_nmm = $dyn_nmm, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal, dyn_ese = $dyn_ese, dyn_nhd = $dyn_nhd, dyn_hgh = $dyn_hgh"
 
     cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
     sed -i "s/__DYN_NSE__/$dyn_nse/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
@@ -150,16 +117,35 @@ for j in 10 20 30 50 62 75 87 105 120 140 200 # dyn_ese
     sed -i "s/__DYN_CAL__/$dyn_cal/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
     sed -i "s/__DYN_ESE__/$dyn_ese/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
     sed -i "s/__DYN_NHD__/$dyn_nhd/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+    sed -i "s/__DYN_HGH__/$dyn_hgh/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
 
     #extratext="dyn_nmm${dyn_nmm}"
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2_rover dist mpc1_dyn_${yamlname} 0 6 "${extratext}" &
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9_rover dist mpc1_dyn_${yamlname} 0 6 "${extratext}" &
 
-    extratext="dyn_ese${dyn_ese}dyn_sep${dyn_sep}"
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    extratext="dyn_hgh${dyn_hgh}"
+
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     wait_until_max_procs_running
-    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 distGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 distGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elev mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elevGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
+
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     #wait_until_max_procs_running
+
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 distGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 elev mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 elevGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
+
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     #wait_until_max_procs_running
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
@@ -182,6 +168,18 @@ echo "% DURATION:   ${DURATION} hours"
 echo "%   run-thrymr-full.sh done."
 echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
 exit 0
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -273,3 +271,38 @@ echo "% RUN_START: ${RUN_START}"
 echo "% RUN_END:   ${RUN_END}"
 echo "%   run-thrymr-full.sh done."
 echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+
+
+if [ "$j" = "15" ]; then
+  dyn_sep="950"
+fi;
+if [ "$j" = "20" ]; then
+  dyn_sep="900"
+fi;
+if [ "$j" = "30" ]; then
+  dyn_sep="800"
+fi;
+if [ "$j" = "50" ]; then
+  dyn_sep="610"
+fi;
+if [ "$j" = "62" ]; then
+  dyn_sep="510"
+fi;
+if [ "$j" = "75" ]; then
+  dyn_sep="420"
+fi;
+if [ "$j" = "87" ]; then
+  dyn_sep="350"
+fi;
+if [ "$j" = "105" ]; then
+  dyn_sep="255"
+fi;
+if [ "$j" = "120" ]; then
+  dyn_sep="200"
+fi;
+if [ "$j" = "140" ]; then
+  dyn_sep="125"
+fi;
+if [ "$j" = "200" ]; then
+  dyn_sep="25"
+fi;

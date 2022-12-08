@@ -20,6 +20,9 @@ allStatePng := $(subst csv,png,$(allStateCsv))
 allCostCsv := $(shell ls Cost*.csv | grep -v Merged)
 allCostPng := $(subst csv,png,$(allCostCsv))
 
+allEnvCsv := $(shell ls Env*.csv | grep -v Merged)
+allEnvPng := $(subst csv,png,$(allEnvCsv))
+
 allNoisePng := $(subst State,Noise,$(allStatePng))
 
 all-distance: $(allDistancePng)
@@ -208,6 +211,11 @@ State%.png: State%.csv Env%.csv Makefile
 		print sprintf(\"metric: MEDIAN of pos z %f\", STATS_median) \n\
 		print sprintf(\"metric: MIN of pos z %f\", STATS_min) \n\
 		print sprintf(\"metric: MAX of pos z %f\", STATS_max) \n\
+			stats \"$(word 2,$^)\" using ((column(3)>64) ? column(10) : NaN) \n\
+		print sprintf(\"metric: MEAN of cnt neighbours %f\", STATS_mean) \n\
+		print sprintf(\"metric: MEDIAN of cnt neighbours %f\", STATS_median) \n\
+		print sprintf(\"metric: MIN of cnt neighbours %f\", STATS_min) \n\
+		print sprintf(\"metric: MAX of cnt neighbours %f\", STATS_max) \n\
 	  \n\
  		set term pngcairo size 1820,980 \n\
  		set grid \n\
@@ -226,6 +234,7 @@ State%.png: State%.csv Env%.csv Makefile
 				\"$<\" using (column(1)+column(2)/1000000000):(column(3)/4) with lines title '> enable/established/4' axes x1y2 lc rgb 'gold', \
 				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(4)) with lines title '> explore/exploit' axes x1y2 lc 3, \
 				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(9)/250+0.05) with lines title '< expl. cnt/250' lc 4, \
+				\"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(10)+0.05) with lines title '< neighbours cnt' lc 5, \
 				\"$<\" using (column(1)+column(2)/1000000000):4 with lines title 'pos_x' lc 1, \
 				\"$<\" using (column(1)+column(2)/1000000000):5 with lines title 'pos_y' lc 2, \
 				\"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'pos_z' lc 3, \
@@ -294,6 +303,7 @@ Cost%.png: Cost%.csv Env%.csv Makefile
 				\"$<\" using (column(1)+column(2)/1000000000):(column(6)/100) with lines title 'cost sep /100', \
 				\"$<\" using (column(1)+column(2)/1000000000):(column(7)/100) with lines title 'cost target /100', \
 				\"$<\" using (column(1)+column(2)/1000000000):(column(8)/100) with lines title 'cost calm /100', \
+				\"$<\" using (column(1)+column(2)/1000000000):(column(9)/100) with lines title 'cost height /100', \
 			    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(5)+6) with lines lc 9 title 'move_x', \
 			    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(6)+7) with lines lc 10 title 'move_y', \
 			    \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(7)+8) with lines lc 11 title 'move_z', \
@@ -463,8 +473,9 @@ StateMerged.csv: $(allStateCsv)
 	rm -rf $@
 	cat $? > $@
 
-EnvMerged.csv:
-	touch $@
+EnvMerged.csv: $(allEnvCsv)
+	rm -rf $@
+	cat $? > $@
 
 
 

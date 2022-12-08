@@ -50,10 +50,11 @@
 #define SWARM_GRADIENT_ENUM       32
 #define SWARM_PHASE_ESTABLISHED   64
 #define SWARM_LANDING             32768
-#define SWARM_DECLARATIVE_DISTANCES           1
-#define SWARM_DECLARATIVE_DISTANCES_GROUND    2
-#define SWARM_USE_GROUND_TRUTH                4 // only for debug! it is using grount grouth absolute positions!
-#define SWARM_DECLARATIVE_DISTANCES_GT        (SWARM_DECLARATIVE_DISTANCES|SWARM_USE_GROUND_TRUTH) // only for debug! it is using grount grouth absolute positions!
+#define SWARM_SPC_DISTANCES_ONLY          1
+#define SWARM_SPC_DISTANCES_ELEV          2
+#define SWARM_USE_GROUND_TRUTH            16 // only for debug! it is using ground grouth absolute positions!
+#define SWARM_SPC_DISTANCES_ONLY_GT       (SWARM_SPC_DISTANCES_ONLY|SWARM_USE_GROUND_TRUTH) // only for debug! it is using grount grouth absolute positions!
+#define SWARM_SPC_DISTANCES_ELEV_GT       (SWARM_SPC_DISTANCES_ELEV|SWARM_USE_GROUND_TRUTH) // only for debug! it is using grount grouth absolute positions!
 
 
 #define OPERATION_MODE_NONE         0
@@ -102,7 +103,7 @@ float offsetY = 0;
 float offsetZ = 0;
 float randNoise = 0.3;
 int swarm_mode = SWARM_DISABLED;
-int operation_mode = OPERATION_MODE_TIMED;
+int operation_mode;
 
 void keyboard_callback(const std_msgs::Int32Ptr& msg) {
   ROS_INFO("global_controller: Got data in keyboard_callback: %d", msg->data);
@@ -379,26 +380,32 @@ int main(int argc, char** argv) {
   }
   else if(swarmMode == "dist")
   {
-    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_DECLARATIVE_DISTANCES");
-    swarm_mode = SWARM_DECLARATIVE_DISTANCES;
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_SPC_DISTANCES_ONLY");
+    swarm_mode = SWARM_SPC_DISTANCES_ONLY;
   }
-  else if(swarmMode == "distgnd")
+  else if(swarmMode == "elev")
   {
-    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_DECLARATIVE_DISTANCES_GROUND");
-    swarm_mode = SWARM_DECLARATIVE_DISTANCES_GROUND;
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_SPC_DISTANCES_ELEV");
+    swarm_mode = SWARM_SPC_DISTANCES_ELEV;
   }
   else if(swarmMode == "distGT")
   {
-    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_DECLARATIVE_DISTANCES_GT");
-    swarm_mode = SWARM_DECLARATIVE_DISTANCES_GT;
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_SPC_DISTANCES_ONLY_GT");
+    swarm_mode = SWARM_SPC_DISTANCES_ONLY_GT;
+  }
+  else if(swarmMode == "elevGT")
+  {
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_SPC_DISTANCES_ELEV_GT");
+    swarm_mode = SWARM_SPC_DISTANCES_ELEV_GT;
   }
   else
     ROS_FATAL("global_controller: 'swarmMode' not recognized (%s)", swarmMode.c_str());
 
 
+  operation_mode = OPERATION_MODE_TIMED;
   std::string operationMode;
   if (pnh.getParam("operationMode", operationMode))
-    ROS_INFO("global_controller: Got param 'operationMode': %s", operationMode.c_str());
+    ROS_INFO("global_controller: Got param 'operationMode' (%s)", operationMode.c_str());
   else
     ROS_INFO("global_controller: Failed to get param 'operationMode', defaulting to OPERATION_MODE_TIMED");
   if(operationMode == "interactive")
@@ -529,7 +536,7 @@ int main(int argc, char** argv) {
     {
       desired_position(0) = 0.0; // x
       desired_position(1) = 0.0; // 4.0; // y
-      desired_position(2) = 5.0; // z
+      desired_position(2) = (swarm_mode & SWARM_SPC_DISTANCES_ELEV) ? 0.0 : 5.0; // z
     }
 
     move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
@@ -637,24 +644,22 @@ int main(int argc, char** argv) {
       else if(pathScenario == 4) // for EEL (dist and distgnd)
       {
         path_sleep_afterwards = 20.0;
+        desired_position(2) = (swarm_mode & SWARM_SPC_DISTANCES_ELEV) ? 0.0 : 5.0; // z
         if(path_cnt == 0)
         {
           desired_position(0) = 4.0; // x
           desired_position(1) = 0.0; // y
-          desired_position(2) = 5.0; // z
         }
         else if(path_cnt == 1)
         {
           desired_position(0) = 0.0; // x
           desired_position(1) = 4.0; // y
-          desired_position(2) = 5.0; // z
         }
         else if(path_cnt == 2) // no real point, but need to change target, to trigger DistanceMeasurementSim::RecalcTargetSpeed for final position
         {
           path_sleep_afterwards = 3.0;
           desired_position(0) = 0.0; // x
           desired_position(1) = 0.0; // y
-          desired_position(2) = 5.0; // z
         }
         else
           break;
@@ -662,30 +667,27 @@ int main(int argc, char** argv) {
       else if(pathScenario == 5) // longer distance for EEL (dist and distgnd)
       {
         path_sleep_afterwards = 30.0;
+        desired_position(2) = (swarm_mode & SWARM_SPC_DISTANCES_ELEV) ? 0.0 : 5.0; // z
         if(path_cnt == 0)
         {
           desired_position(0) = 10.0; // x
           desired_position(1) = 0.0; // y
-          desired_position(2) = 5.0; // z
         }
         else if(path_cnt == 1)
         {
           desired_position(0) = 0.0; // x
           desired_position(1) = 10.0; // y
-          desired_position(2) = 5.0; // z
         }
         else if(path_cnt == 2)
         {
           desired_position(0) = 0.0; // x
           desired_position(1) = -10.0; // y
-          desired_position(2) = 5.0; // z
         }
         else if(path_cnt == 3) // no real point, but need to change target, to trigger DistanceMeasurementSim::RecalcTargetSpeed for final position
         {
           path_sleep_afterwards = 3.0;
           desired_position(0) = 0.0; // x
           desired_position(1) = 0.0; // y
-          desired_position(2) = 5.0; // z
         }
         else
           break;

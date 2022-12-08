@@ -80,6 +80,7 @@ RelativeDistanceController::RelativeDistanceController() {
             distances_[i][j] = 0;
             distances_filtered_[i][j] = 0;
         }
+        elevation_filtered_[i] = 0;
     }
 
     // Topics subscribe
@@ -90,6 +91,7 @@ RelativeDistanceController::RelativeDistanceController() {
     logsave_sub_ = nh.subscribe("logsave", 1, &RelativeDistanceController::SaveLogCallback, this);
     distances_sub_ = nh.subscribe("/drone_distances", 1, &RelativeDistanceController::DistancesCallback, this);
     positions_sub_ = nh.subscribe("/drone_positions", 1, &RelativeDistanceController::PositionsCallback, this);
+    elevation_sub_ = nh.subscribe("/drone_elevation", 1, &RelativeDistanceController::ElevationCallback, this);
     beacons_sub_ = nh.subscribe("/beacon_distances", 1, &RelativeDistanceController::BeaconsCallback, this);
     modelstate_sub_ = nh.subscribe("/gazebo/model_states", 1, &RelativeDistanceController::ModelstateCallback, this);
 
@@ -132,8 +134,11 @@ void RelativeDistanceController::InitializeParams() {
     GetRosParameter(pnh, "dist/explore_movement_thr", (float)1.0, &explore_movement_thr_);
     GetRosParameter(pnh, "dist/velocity_scaling", (float)0.1, &velocity_scaling_);
     GetRosParameter(pnh, "dist/distance_iir_filter", (float)0.1, &distance_iir_filter_);
+    GetRosParameter(pnh, "dist/elevation_iir_filter", (float)0.1, &elevation_iir_filter_);
     GetRosParameter(pnh, "dist/extra_separation_distance", (float)0.0, &extra_separation_distance_);
-    GetRosParameter(pnh, "inner/controller", 0, &inner_controller_);
+    GetRosParameter(pnh, "elevation/target_elevation", (float)0.0, &target_elevation_);
+    GetRosParameter(pnh, "elevation/swarm_elevation", (float)1.0, &swarm_elevation_);
+    GetRosParameter(pnh, "inner/controller", (int)0, &inner_controller_);
 
     ROS_INFO_ONCE("[RelativeDistanceController] GetRosParameter values:");
     ROS_INFO_ONCE("  swarm/drone_radius=%f", drone_radius_);
@@ -149,7 +154,10 @@ void RelativeDistanceController::InitializeParams() {
     ROS_INFO_ONCE("  dist/explore_movement_thr=%f", explore_movement_thr_);
     ROS_INFO_ONCE("  dist/velocity_scaling=%f", velocity_scaling_);
     ROS_INFO_ONCE("  dist/distance_iir_filter=%f", distance_iir_filter_);
+    ROS_INFO_ONCE("  dist/elevation_iir_filter=%f", elevation_iir_filter_);
     ROS_INFO_ONCE("  dist/extra_separation_distance=%f", extra_separation_distance_);
+    ROS_INFO_ONCE("  elevation/target_elevation=%f", target_elevation_);
+    ROS_INFO_ONCE("  elevation/swarm_elevation=%f", swarm_elevation_);
     ROS_INFO_ONCE("  inner/controller=%d", inner_controller_);
 
     //Reading the parameters come from the launch file
@@ -579,9 +587,12 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         set_point.pose.position.y = odometry_.position[1];
         set_point.pose.position.z = max(0.0, min(odometry_.position[2] - 0.05, 0.1));*/
     }
-    else if(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES)
+    else if(enable_swarm_ & SWARM_SPC_DISTANCES_ONLY || enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)
     {
-        ROS_INFO_ONCE("RelativeDistanceController starting swarm mode (SWARM_DECLARATIVE_DISTANCES)");
+        if(enable_swarm_ & SWARM_SPC_DISTANCES_ONLY)
+            ROS_INFO_ONCE("RelativeDistanceController %d starting swarm mode: SWARM_SPC_DISTANCES_ONLY", droneNumber_);
+        else if(enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)
+            ROS_INFO_ONCE("RelativeDistanceController %d starting swarm mode: SWARM_SPC_DISTANCES_ELEV", droneNumber_);
 
         // calculate neighbourhood independently from potential position
         int neighbourhood_cnt = 0;
@@ -716,7 +727,6 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                              beacons_differences_[0][beaconCount_-1] * potential_movement_transformed_negative[0] +
                              beacons_differences_[1][beaconCount_-1] * potential_movement_transformed_negative[1] +
                              beacons_differences_[2][beaconCount_-1] * potential_movement_transformed_negative[2];
-                //float target_term = spc_target_weight_ * fabs(dist_beacon0_positive);
 
                 float total_sum_positive;
                 float total_sum_negative;
@@ -780,6 +790,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             float min_separation_term;
             float min_target_term;
             float min_calm_term;
+            float min_height_term;
 
             for(int ai = 0; ai <= n_move_max_; ai ++) // iterate over all possible next actions in x-, y- and z-dimension; and over length n_move_max_
             {
@@ -821,41 +832,55 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                 ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) i=%d, dist=%f, dist_gt=%f, cohesion_sum=%f, separation_sum=%f", droneNumber_, xi, yi, zi, ai, (int)i, dist, dist_gt, cohesion_sum, separation_sum);
                             }
 
-                            float dist_beacon0 = beacons_filtered_[droneNumber_][beaconCount_-1] +
+                            float dist_beacon0, dist_gt_beacon0;
+                            dist_beacon0 = beacons_filtered_[droneNumber_][beaconCount_-1] +
                                          beacons_differences_[0][beaconCount_-1] * potential_movement_transformed[0] +
                                          beacons_differences_[1][beaconCount_-1] * potential_movement_transformed[1] +
                                          beacons_differences_[2][beaconCount_-1] * potential_movement_transformed[2];
-                            float dist_gt_beacon0 = sqrt(pow(beacon_gt_[beaconCount_-1][0] - (odometry_gt_.position[0] + potential_movement[0]), 2) +
+                            dist_gt_beacon0 = sqrt(pow(beacon_gt_[beaconCount_-1][0] - (odometry_gt_.position[0] + potential_movement[0]), 2) +
                                                          pow(beacon_gt_[beaconCount_-1][1] - (odometry_gt_.position[1] + potential_movement[1]), 2) +
                                                          pow(beacon_gt_[beaconCount_-1][2] - (odometry_gt_.position[2] + potential_movement[2]), 2));
+                            if(enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)
+                            {
+                                float elevation_over_beacon0 = elevation_filtered_[droneNumber_] + potential_movement[2] - target_elevation_;
+                                float dist_projected_beacon0_squared = pow(dist_beacon0, 2) - pow(elevation_over_beacon0, 2);
+                                if(dist_projected_beacon0_squared > 0)
+                                    dist_beacon0 = sqrt(dist_projected_beacon0_squared);
+                                else
+                                    dist_beacon0 = 0;
+
+                                float elevation_gt_over_beacon0 = odometry_gt_.position[2] + potential_movement[2] - target_elevation_;
+                                float dist_gt_projected_beacon0_squared = pow(dist_gt_beacon0, 2) - pow(elevation_gt_over_beacon0, 2);
+                                if(dist_gt_projected_beacon0_squared > 0)
+                                    dist_gt_beacon0 = sqrt(dist_gt_projected_beacon0_squared);
+                                else
+                                    dist_gt_beacon0 = 0;
+
+                                ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) elevation_over_beacon0=%f, dist_beacon0=%f, elevation_gt_over_beacon0=%f, dist_gt_beacon0=%f", droneNumber_, xi, yi, zi, ai, elevation_over_beacon0, dist_beacon0, elevation_gt_over_beacon0, dist_gt_beacon0);
+                            }
                             if(enable_swarm_ & SWARM_USE_GROUND_TRUTH) // only for debug! using ground truth positions to infer distances.
                                dist_beacon0 = dist_gt_beacon0;
                             float target_sum = fabs(dist_beacon0);
+
+                            float height_diff = swarm_elevation_ - (elevation_filtered_[droneNumber_] + potential_movement[2]);
+                            float height_sum = height_diff*height_diff;
 
                             float coehesion_term = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
                             float separation_term = spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
                             float target_term = spc_target_weight_ * target_sum;
                             float calm_term = spc_calm_weight_ * potential_movement.norm();
+                            float height_term = 0;
+                            if(enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)
+                                height_term = total_sum += spc_height_weight_ * height_sum;
 
                             if(neighbourhood_cnt != 0) // no neighbours means there was a division by 0
-                                total_sum = coehesion_term + separation_term + target_term + calm_term;
+                                total_sum = coehesion_term + separation_term + target_term + calm_term + height_term;
                             else
-                                total_sum = target_term + calm_term;
+                                total_sum = target_term + calm_term + height_term;
 
                             ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) coh=%7.1f sep=%7.1f tar=%7.1f calm=%7.1f total=%7.1f len=%f", droneNumber_, xi, yi, zi, ai, coehesion_term, separation_term, target_term, calm_term, total_sum, potential_movement.norm());
-                            //                            ROS_INFO("dr.%d (%2d/%2d/%2d|%2d) dist0=%f", droneNumber_, xi, yi, zi, ai, dist_beacon0);
+                            //ROS_INFO("dr.%d (%2d/%2d/%2d|%2d) dist0=%f", droneNumber_, xi, yi, zi, ai, dist_beacon0);
 
-                                  /*
-                            // coehesion term
-                            total_sum = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
-                            // separation term
-                            total_sum += spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
-                            if(neighbourhood_cnt == 0) total_sum = 0; // division by 0 is not useful
-                            // target-seeking term
-                            total_sum += spc_target_weight_ * target_sum;
-                            // calm term
-                            total_sum += spc_calm_weight_ * potential_movement.norm();
-                                  */
                             if(total_sum < best_sum)
                             {
                                 best_sum = total_sum;
@@ -866,6 +891,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                 min_separation_term = separation_term;
                                 min_target_term = target_term;
                                 min_calm_term = calm_term;
+                                min_height_term = height_term;
                             }
                         }
                     }
@@ -893,10 +919,11 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 set_point_marker[2] = set_point.pose.position.z;
                 tempEnv << exploration_info << "," << best_movement(0) << "," << best_movement(1) << "," << best_movement(2)*1.5 << "," << (float)best_sum << "," << history_cnt_ << ",";
             }
-            tempCost << best_sum << "," << min_coehesion_term << "," << min_separation_term << "," << min_target_term << "," << min_calm_term << ",";
+            tempCost << best_sum << "," << min_coehesion_term << "," << min_separation_term << "," << min_target_term << "," << min_calm_term << "," << min_height_term << ",";
         }
 
-        tempEnv << unit_vectors_age_[0] << "," << unit_vectors_age_[1] << "," << unit_vectors_age_[2] << ",";
+        //tempEnv << unit_vectors_age_[0] << "," << unit_vectors_age_[1] << "," << unit_vectors_age_[2] << ",";
+        tempEnv << neighbourhood_cnt << ",";
 
         tempCost << unit_vectors_[0][0] << "," << unit_vectors_[0][1] << "," << unit_vectors_[0][2] << "," << unit_vectors_age_[0] << ",";
         tempCost << unit_vectors_[1][0] << "," << unit_vectors_[1][1] << "," << unit_vectors_[1][2] << "," << unit_vectors_age_[1] << ",";
@@ -1195,6 +1222,17 @@ void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiA
             distances_filtered_[i][j] = distances_filtered_[i][j]*(1.0-distance_iir_filter_) + distances_[i][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
             ROS_INFO_ONCE("DistancesCallback drone#%d -> drone#%d: distance=%f.", (int)i, (int)j, distances_[i][j]);
         }
+    }
+}
+
+void RelativeDistanceController::ElevationCallback(const std_msgs::Float32MultiArray& elevation_msg) {
+    ROS_INFO_ONCE("DistancesCallback got elevation message.");
+
+    for (size_t i = 0; i < droneCount_; i++)
+    {
+        elevation_[i] = elevation_msg.data[i];
+        elevation_filtered_[i] = elevation_filtered_[i]*(1.0-elevation_iir_filter_) + elevation_[i]*(elevation_iir_filter_); // IIR lowpass filter for distance measurements
+        ROS_INFO_ONCE("DistancesCallback drone#%d: elevation=%f.", (int)i, elevation_[i]);
     }
 }
 

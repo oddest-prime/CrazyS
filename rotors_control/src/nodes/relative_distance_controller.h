@@ -54,14 +54,7 @@
 #define N_BEACONS_MAX  5          /* maximum number of beacons */
 #define N_VECTORS_MAX  3          /* number of saved unit vectors */
 
-#define SWARM_DISABLED                        0
-#define SWARM_DECLARATIVE_DISTANCES           1
-#define SWARM_DECLARATIVE_DISTANCES_GROUND    2
-#define SWARM_USE_GROUND_TRUTH                4 // only for debug! it is using grount grouth absolute positions!
-#define SWARM_DECLARATIVE_DISTANCES_GT        (SWARM_DECLARATIVE_DISTANCES|SWARM_USE_GROUND_TRUTH) // only for debug! it is using grount grouth absolute positions!
-#define SWARM_LANDING                         32768
-
-#define HISTORY_CNT_MAX                       512
+#define HISTORY_CNT_MAX                   512
 
 namespace rotors_control {
     using namespace Eigen;
@@ -107,7 +100,10 @@ namespace rotors_control {
             float explore_movement_thr_;
             float velocity_scaling_;
             float distance_iir_filter_;
+            float elevation_iir_filter_;
             float extra_separation_distance_;
+            float target_elevation_;
+            float swarm_elevation_;
             int inner_controller_;
 
             bool dataStoring_active_;
@@ -131,8 +127,10 @@ namespace rotors_control {
             //float beacons_last_[N_BEACONS_MAX]; // distance measurements from previous message (to check for large changes, when target is updated)
             float beacons_history_[N_BEACONS_MAX][HISTORY_CNT_MAX]; // distance measurements to own drone history
 
-            Vector3f positions_gt_[N_DRONES_MAX]; // ground-truth positions of all drones, only to be used for verification of estimation
             float elevation_[N_DRONES_MAX]; // received elevation measurements
+            float elevation_filtered_[N_DRONES_MAX]; // received elevation measurements
+
+            Vector3f positions_gt_[N_DRONES_MAX]; // ground-truth positions of all drones, only to be used for verification of estimation
 
             Vector3f unit_vectors_[N_VECTORS_MAX]; // directions of unit vectors
             int unit_vectors_age_[N_VECTORS_MAX]; // age of unit vectors
@@ -153,6 +151,7 @@ namespace rotors_control {
             void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
             void DistancesCallback(const std_msgs::Float32MultiArray& distances_msg);
             void PositionsCallback(const std_msgs::Float32MultiArray& positions_msg);
+            void ElevationCallback(const std_msgs::Float32MultiArray& elevation_msg);
             void BeaconsCallback(const std_msgs::Float32MultiArray& distances_msg);
             void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
             void UpdateCallback(const std_msgs::Int32ConstPtr& update_msg);
@@ -168,6 +167,7 @@ namespace rotors_control {
             ros::Subscriber odometry_sub_;
             ros::Subscriber distances_sub_;
             ros::Subscriber positions_sub_;
+            ros::Subscriber elevation_sub_;
             ros::Subscriber beacons_sub_;
             ros::Subscriber enable_sub_;
             ros::Subscriber update_sub_;

@@ -21,7 +21,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     python3-rosdep python3-wstool ros-noetic-ros \
     ffmpeg screen xvfb imagemagick gnuplot sqlite3 jq
 
-RUN useradd -m -s /bin/bash flie && \
+RUN groupadd -g 1001 flie && \
+    useradd -u 1001 -g flie -m -s /bin/bash flie && \
     echo "flie:flie" | chpasswd && \
     adduser flie sudo && \
     adduser flie plugdev && \

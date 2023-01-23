@@ -62,8 +62,6 @@ test -e /crazyflie_ws/devel/setup.bash && source /crazyflie_ws/devel/setup.bash
 catkin clean --yes
 catkin build
 
-source /crazyflie_ws/devel/setup.bash
-
 echo "========================================================="
 echo "build done."
 echo "========================================================="

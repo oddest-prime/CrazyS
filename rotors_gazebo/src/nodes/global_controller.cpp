@@ -486,6 +486,9 @@ int main(int argc, char** argv) {
     ROS_INFO("global_controller (timed): Go to starting position (hovering).");
     for (size_t i = 0; i < droneCount; i++) // go to starting position (hovering)
     {
+      if(pathScenario == 7 && i != 0) // stabilize between static drones. do only start drone 0.
+        continue;
+
       trajectory_msg.header.stamp = ros::Time::now();
 
       desired_position(0) = ((float)(i%modulus)) * spacingX + offsetX +( (float)(rand()) / ((float)(RAND_MAX/randNoise)) - randNoise/2 ); // * 0.5;
@@ -494,13 +497,18 @@ int main(int argc, char** argv) {
       desired_yaw = 0; // not rotated
   //    desired_yaw = ((float)(i%2)) * (3.141592 / 4); // 45 degrees rotated
   //    desired_yaw = ((float)(i%2)) * (3.141592 / 2); // 90 degrees rotated
+      if(pathScenario == 7) // stabilize between static drones. do only start drone 0.
+      {
+        desired_position(0) = 0.0;
+        desired_position(1) = 0.0;
+        desired_position(2) = 1.7;
+      }
       mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
 
       ROS_INFO("global_controller: Publishing waypoint on namespace %s: [x=%f, y=%f, z=%f, yaw=%f].",
       nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z(), desired_yaw);
 
       trajectory_pub[i].publish(trajectory_msg);
-
     }
 
     ros::Duration(4.9).sleep();
@@ -509,6 +517,9 @@ int main(int argc, char** argv) {
     ROS_INFO("global_controller: Enable swarm mode.");
     for (size_t i = 0; i < droneCount; i++) // enable swarm mode
     {
+      if(pathScenario == 7 && i != 0) // stabilize between static drones. do only start drone 0.
+        continue;
+
       enable_msg.data = swarm_mode;
 //    enable_msg.data = SWARM_REYNOLDS;
       ROS_INFO("global_controller: Publishing enable on namespace %s: %d.", nhq[i].getNamespace().c_str(), enable_msg.data);
@@ -538,11 +549,20 @@ int main(int argc, char** argv) {
       desired_position(1) = 0.0; // 4.0; // y
       desired_position(2) = (swarm_mode & SWARM_SPC_DISTANCES_ELEV) ? 0.0 : 5.0; // z
     }
+    if(pathScenario == 7) // stabilize between static drones. do only start drone 0.
+    {
+      desired_position(0) = 0.0; // x
+      desired_position(1) = 0.0; // y
+      desired_position(2) = 0.0; // z
+    }
 
     move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
     for (size_t i = 0; i < droneCount; i++) // send target point to swarm
     {
+      if(pathScenario == 7 && i != 0) // stabilize between static drones. do only start drone 0.
+        continue;
+
       ROS_INFO("global_controller: Publishing swarm target on namespace %s: [%f, %f, %f].",
       nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
       trajectory_pub[i].publish(trajectory_msg);
@@ -704,6 +724,18 @@ int main(int argc, char** argv) {
         else
           break;
       }
+      else if(pathScenario == 7) // stabilize between static drones, no target needed. just timeout for termination.
+      {
+        path_sleep_afterwards = 60.0;
+        if(path_cnt == 0)
+        {
+          desired_position(0) = 0.0; // x
+          desired_position(1) = 0.0; // y
+          desired_position(2) = 2.0; // z
+        }
+        else
+          break;
+      }
       else
         break;
 
@@ -714,6 +746,9 @@ int main(int argc, char** argv) {
       mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
       for (size_t i = 0; i < droneCount; i++) // send target point to swarm
       {
+        if(pathScenario == 7 && i != 0) // stabilize between static drones. do only start drone 0.
+          continue;
+
         ROS_INFO("global_controller: Publishing swarm target on namespace %s: [%f, %f, %f].",
         nhq[i].getNamespace().c_str(), desired_position.x(), desired_position.y(), desired_position.z());
         trajectory_pub[i].publish(trajectory_msg);

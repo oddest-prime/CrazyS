@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <launch>
+  <arg name="spawnX" default="0.0"/>
+  <arg name="spawnY" default="0.0"/>
+  <arg name="spawnZ" default="0.1"/>
+
   <group ns="$(arg mav_name)_$(arg droneNumber)">
   <!-- The following lines simulate the Crazyflie dynamics -->
   <include file="$(find rotors_gazebo)/launch/spawn_mav_crazyflie_with_marker2.launch">
@@ -12,6 +16,7 @@
       <arg name="log_file" value="$(arg log_file)"/>
       <arg name="x" value="$(arg spawnX)"/>
       <arg name="y" value="$(arg spawnY)"/>
+      <arg name="z" value="$(arg spawnZ)"/>
     </include>
    <!-- The Crazyflie position controller -->
    <node name="position_controller_light" pkg="rotors_control" type="position_controller_light" output="screen">

@@ -574,6 +574,9 @@ int main(int argc, char** argv) {
     ROS_INFO("global_controller: Consider swarm as established.");
     for (size_t i = 0; i < droneCount; i++) // enable swarm mode
     {
+      if(pathScenario == 7 && i != 0) // stabilize between static drones. do only start drone 0.
+        continue;
+
       enable_msg.data = swarm_mode + SWARM_PHASE_ESTABLISHED;
       ROS_INFO("global_controller: Publishing enable (established) on namespace %s: %d.", nhq[i].getNamespace().c_str(), enable_msg.data);
       enable_pub[i].publish(enable_msg);
@@ -761,7 +764,7 @@ int main(int argc, char** argv) {
 
     ROS_INFO("global_controller: Save log files.");
     logsave_msg.data = 1;
-    for (size_t i = 0; i < droneCount; i++) // enable swarm mode
+    for (size_t i = 0; i < droneCount; i++) // save log files
     {
       ROS_INFO("global_controller: Publishing logsave on namespace %s: %d.", nhq[i].getNamespace().c_str(), logsave_msg.data);
       logsave_pub[i].publish(logsave_msg);

@@ -2,7 +2,7 @@
 
 TIMEOUT=5000
 #TIMEOUT=3000
-# TIMEOUT=500 # debug, faster runs...
+#TIMEOUT=60 # debug, faster runs...
 
 Xvfb -shmem -screen 0 1280x1024x24 &
 export DISPLAY=:0
@@ -61,6 +61,7 @@ test -e /crazyflie_ws/devel/setup.bash && source /crazyflie_ws/devel/setup.bash
 
 catkin clean --yes
 catkin build
+test -e /crazyflie_ws/devel/setup.bash && source /crazyflie_ws/devel/setup.bash
 
 echo "========================================================="
 echo "build done."

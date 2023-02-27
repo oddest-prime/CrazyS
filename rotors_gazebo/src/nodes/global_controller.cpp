@@ -555,6 +555,12 @@ int main(int argc, char** argv) {
       desired_position(1) = 0.0; // y
       desired_position(2) = 0.0; // z
     }
+    if(pathScenario == 8) // forward and backward, similar to hardware experiments
+    {
+      desired_position(0) = 0.0; // x
+      desired_position(1) = 0.0; // y
+      desired_position(2) = 2.5; // z
+    }
 
     move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
@@ -589,7 +595,7 @@ int main(int argc, char** argv) {
     double path_sleep_afterwards = 0;
     while(1)
     {
-      desired_position(2) = 2.5;
+      desired_position(2) = 2.5; // z
       if(pathScenario == 0) // old triangle
       {
         path_sleep_afterwards = 30.0;
@@ -735,6 +741,22 @@ int main(int argc, char** argv) {
           desired_position(0) = 0.0; // x
           desired_position(1) = 0.0; // y
           desired_position(2) = 2.0; // z
+        }
+        else
+          break;
+      }
+      else if(pathScenario == 8) // forward and backward, similar to hardware experiments
+      {
+        path_sleep_afterwards = 30.0;
+        if(path_cnt == 0)
+        {
+          desired_position(0) = 0;
+          desired_position(1) = 8;
+        }
+        else if(path_cnt == 1)
+        {
+          desired_position(0) = 0;
+          desired_position(1) = 0;
         }
         else
           break;

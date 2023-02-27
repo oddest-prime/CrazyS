@@ -751,7 +751,7 @@ int main(int argc, char** argv) {
         if(path_cnt == 0)
         {
           desired_position(0) = 0;
-          desired_position(1) = 8;
+          desired_position(1) = 7;
         }
         else if(path_cnt == 1)
         {

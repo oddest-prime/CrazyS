@@ -14,7 +14,7 @@
       <!--uri>model://construction_cone</uri-->
       <name>cone_00</name>
       <!--pose>x y z roll  pitch yaw</pose-->
-      <pose>10.0 0.0 0.0  0 0 0</pose>
+      <pose>0.0 8.0 0.0  0 0 0</pose>
       <static>true</static>
     </include>
     <include>
@@ -22,7 +22,7 @@
       <!--uri>model://construction_cone</uri-->
       <name>cone_01</name>
       <!--pose>x y z roll  pitch yaw</pose-->
-      <pose>0.0 10.0 0.0  0 0 0</pose>
+      <pose>0.0 8.0 0.0  0 0 0</pose>
       <static>true</static>
     </include>
     <include>
@@ -30,7 +30,7 @@
       <!--uri>model://construction_cone</uri-->
       <name>cone_02</name>
       <!--pose>x y z roll  pitch yaw</pose-->
-      <pose>0.0 -10.0 0.0  0 0 0</pose>
+      <pose>0.0 0.0 0.0  0 0 0</pose>
       <static>true</static>
     </include>
 
@@ -81,7 +81,7 @@
     <model name="camera2">
     <link name="link">
       <gravity>0</gravity>
-      <pose>0 0 15 0 1.5708 0</pose>
+      <pose>0 3 15 0 1.5708 0</pose>
       <inertial>
         <mass>0.1</mass>
       </inertial>

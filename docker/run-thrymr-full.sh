@@ -84,7 +84,7 @@ do
 #  for j in 5 6 7 8 9 10 12 15 20 # dyn_eps
 #  for j in 0 5 10 20 40 80 160 320 640 1280  # dyn_hgh
 #  for j in 1000 100 50 25 20 15 12 10 7 5 2  # dyn_hzd
-for j in 0 1 3 5 7 10 15 20 35 50 70 100 # dyn_nse
+for j in 0 5 10 20 50 100 # dyn_nse
   do
     #yamlname=`pwgen -n 4 1`
     yamlname=`printf "%05d%s" $j $i`
@@ -105,7 +105,7 @@ for j in 0 1 3 5 7 10 15 20 35 50 70 100 # dyn_nse
     #dyn_nhd=`echo "scale=1;$j / 10" | bc | awk '{printf "%.1f", $0}'`
     dyn_nhd="2.5"
     dyn_hgh="40"
-    dyn_hzd="1000"
+    dyn_hzd="17"
 
     echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_eps = $dyn_eps, dyn_nmm = $dyn_nmm, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal, dyn_ese = $dyn_ese, dyn_nhd = $dyn_nhd, dyn_hgh = $dyn_hgh, dyn_hzd = $dyn_hzd"
 
@@ -158,8 +158,8 @@ for j in 0 1 3 5 7 10 15 20 35 50 70 100 # dyn_nse
 
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist4_hw dist mpc1_dyn_${yamlname} 0 8 "${extratext}" &
     wait_until_max_procs_running
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist4_hw distGT mpc1_dyn_${yamlname} 0 8 "${extratext}" &
-    wait_until_max_procs_running
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist4_hw distGT mpc1_dyn_${yamlname} 0 8 "${extratext}" &
+    #wait_until_max_procs_running
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist4_hw elev mpc1_dyn_${yamlname} 0 8 "${extratext}" &
     #wait_until_max_procs_running
 

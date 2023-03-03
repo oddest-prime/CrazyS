@@ -260,8 +260,14 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         pow(odometry_gt_.position[0] - dronestate_[i].odometry_gt_.position[0], 2) +
         pow(odometry_gt_.position[1] - dronestate_[i].odometry_gt_.position[1], 2) +
         pow(odometry_gt_.position[2] - dronestate_[i].odometry_gt_.position[2], 2));
-      float rand_value = std::max(-5*distance_noise_, std::min((float)dist_distribution(generator_), 5*distance_noise_));
-      distances_[i] = distances_gt_[i] + rand_value; // add distance noise
+      // white noise
+      //float rand_value = std::max(-5*distance_noise_, std::min((float)dist_distribution(generator_), 5*distance_noise_));
+      //distances_[i] = distances_gt_[i] + rand_value; // add distance noise
+      // red noise
+      float rand_value = (float)dist_distribution(generator_);
+      distances_iir_[i] = 0.9 * distances_iir_[i] + 0.1 * rand_value;
+      distances_[i] = distances_gt_[i] + distances_iir_[i]; // add distance noise
+
       if(i != droneNumber_)
           dist_min_gt = std::min(distances_gt_[i], dist_min_gt);
       if(dataStoring_active_) // save data for log files
@@ -278,8 +284,14 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
           pow(odometry_gt_.position[0] - beacon_gt_[i][0], 2) +
           pow(odometry_gt_.position[1] - beacon_gt_[i][1], 2) +
           pow(odometry_gt_.position[2] - beacon_gt_[i][2], 2));
-        float rand_value = std::max(-5*distance_noise_, std::min((float)dist_distribution(generator_), 5*distance_noise_));
-        beacon_distances_[i] = beacon_distances_gt_[i] + rand_value;
+        // white noise
+        //float rand_value = std::max(-5*distance_noise_, std::min((float)dist_distribution(generator_), 5*distance_noise_));
+        //beacon_distances_[i] = beacon_distances_gt_[i] + rand_value;
+        // red noise
+        float rand_value = (float)dist_distribution(generator_);
+        beacon_distances_iir_[i] = 0.9 * beacon_distances_iir_[i] + 0.1 * rand_value;
+        beacon_distances_[i] = distances_gt_[i] + beacon_distances_iir_[i]; // add distance noise
+
         ROS_INFO_ONCE("DroneStateWithTime (%d) beacon %d at location %s distance %f", droneNumber_, (int)i, VectorToString(beacon_gt_[i]).c_str(), beacon_distances_gt_[i]);
     }
 
@@ -579,6 +591,11 @@ void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumbe
     swarm_center_gt_ = swarm_center_gt;
 
     enable_swarm_ = 0; // initial value
+
+    for (size_t i = 0; i < N_DRONES_MAX; i++) // iterate over all quadcopters
+      distances_iir_[i] = 0;
+    for (size_t i = 0; i < N_BEACONS_MAX; i++) // iterate over all beacons
+      beacon_distances_iir_[i] = 0;
 }
 
 }

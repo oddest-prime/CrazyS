@@ -90,11 +90,13 @@ namespace rotors_control {
 
       float distances_[N_DRONES_MAX]; // with simulated sensor noise
       float distances_gt_[N_DRONES_MAX]; // ground-truth
+      float distances_iir_[N_DRONES_MAX]; // lowpass for sensor noise
       EigenOdometry odometry_gt_; // ground-truth
       float elevation_;
 
       float beacon_distances_[N_BEACONS_MAX]; // with simulated sensor noise
       float beacon_distances_gt_[N_BEACONS_MAX]; // ground-truth
+      float beacon_distances_iir_[N_BEACONS_MAX]; // lowpass for sensor noise
 
 
       // Lists for data saving

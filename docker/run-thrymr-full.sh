@@ -84,7 +84,8 @@ do
 #  for j in 5 6 7 8 9 10 12 15 20 # dyn_eps
 #  for j in 0 5 10 20 40 80 160 320 640 1280  # dyn_hgh
 #  for j in 1000 100 50 25 20 15 12 10 7 5 2  # dyn_hzd
-for j in 0 5 10 20 50 100 # dyn_nse
+#for j in 0 5 10 20 50 100 # dyn_nse
+for j in 10 # dyn_nse
   do
     #yamlname=`pwgen -n 4 1`
     yamlname=`printf "%05d%s" $j $i`

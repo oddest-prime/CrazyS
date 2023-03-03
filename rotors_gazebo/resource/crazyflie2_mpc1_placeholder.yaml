@@ -4,6 +4,7 @@
   "position_noise": 0.0, # simulate gaussian sensor noise, sigma = 0 cm
   "distance_noise": __DYN_NSE__, # simulate gaussian sensor noise for distance measurements, sigma = 0 cm
   "elevation_noise": __DYN_NSE__, # simulate gaussian sensor noise for elevation measurements, sigma = 0 cm
+  "noise_color": __DYN_COL__, # NOISE_COLOR_WHITE=0, NOISE_COLOR_RED=1, NOISE_COLOR_PINK=2
   "distance_max_rate": __DYN_HZD__, # max rate for distance measurements [Hz]
   "elevation_max_rate": 1000, # max rate for distance measurements [Hz]
   "neighbourhood_distance": __DYN_NHD__, # 999.0 = global neighbourhood

@@ -84,11 +84,12 @@ do
 #  for j in 5 6 7 8 9 10 12 15 20 # dyn_eps
 #  for j in 0 5 10 20 40 80 160 320 640 1280  # dyn_hgh
 #  for j in 1000 100 50 25 20 15 12 10 7 5 2  # dyn_hzd
-#for j in 0 5 10 20 50 100 # dyn_nse
-for j in 10 # dyn_nse
+for j in 0 5 10 20 50 100 # dyn_nse
   do
+    for c in 0 2 # dyn_col
+      do
     #yamlname=`pwgen -n 4 1`
-    yamlname=`printf "%05d%s" $j $i`
+    yamlname=`printf "%05d%s%s" $j $i %c`
 
     dyn_nse=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     #dyn_nse="0.1"
@@ -108,10 +109,11 @@ for j in 10 # dyn_nse
     dyn_hgh="40"
     dyn_hzd="17"
 
-    echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_eps = $dyn_eps, dyn_nmm = $dyn_nmm, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal, dyn_ese = $dyn_ese, dyn_nhd = $dyn_nhd, dyn_hgh = $dyn_hgh, dyn_hzd = $dyn_hzd"
+    echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_col = $dyn_col, dyn_eps = $dyn_eps, dyn_nmm = $dyn_nmm, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal, dyn_ese = $dyn_ese, dyn_nhd = $dyn_nhd, dyn_hgh = $dyn_hgh, dyn_hzd = $dyn_hzd"
 
     cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
     sed -i "s/__DYN_NSE__/$dyn_nse/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+    sed -i "s/__DYN_COL__/$dyn_col/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
     sed -i "s/__DYN_EPS__/$dyn_eps/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
     sed -i "s/__DYN_NMM__/$dyn_nmm/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
     sed -i "s/__DYN_SEP__/$dyn_sep/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
@@ -128,7 +130,7 @@ for j in 10 # dyn_nse
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2_rover dist mpc1_dyn_${yamlname} 0 6 "${extratext}" &
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9_rover dist mpc1_dyn_${yamlname} 0 6 "${extratext}" &
 
-    extratext="dyn_nse${dyn_nse}"
+    extratext="dyn_nse${dyn_nse}dyn_col${dyn_col}"
 
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     #wait_until_max_procs_running
@@ -165,6 +167,7 @@ for j in 10 # dyn_nse
     #wait_until_max_procs_running
 
   done
+done
 done
 wait_until_max_procs_running 1
 rm -f rotors_gazebo/resource/crazyflie2_mpc1_dyn_*.yaml

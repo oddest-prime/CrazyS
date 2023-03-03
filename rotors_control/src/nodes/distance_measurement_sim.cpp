@@ -104,12 +104,14 @@ void DistanceMeasurementSim::InitializeParams() {
 
     GetRosParameter(pnh, "swarm/distance_noise", (float)0.1, &distance_noise_);
     GetRosParameter(pnh, "swarm/elevation_noise", (float)0.1, &elevation_noise_);
+    GetRosParameter(pnh, "swarm/noise_color", (int)NOISE_COLOR_WHITE, &noise_color_);
     GetRosParameter(pnh, "swarm/distance_max_rate", (float)100, &distance_max_rate_);
     GetRosParameter(pnh, "swarm/elevation_max_rate", (float)100, &elevation_max_rate_);
 
     ROS_INFO_ONCE("[DistanceMeasurementSim] GetRosParameter values:");
     ROS_INFO_ONCE("  swarm/distance_noise=%f", distance_noise_);
     ROS_INFO_ONCE("  swarm/elevation_noise=%f", elevation_noise_);
+    ROS_INFO_ONCE("  swarm/noise_color=%f", noise_color_);
     ROS_INFO_ONCE("  swarm/distance_max_rate=%f", distance_max_rate_);
     ROS_INFO_ONCE("  swarm/elevation_max_rate=%f", elevation_max_rate_);
 
@@ -155,7 +157,7 @@ void DistanceMeasurementSim::InitializeParams() {
     }
 
     for (size_t i = 0; i < droneCount_; i++)
-      dronestate[i].SetId(this, (int)i, droneCount_, beaconCount_, distance_noise_, elevation_noise_, distance_max_rate_, elevation_max_rate_, dronestate, &distances_pub_, &positions_pub_, &elevation_pub_, &beacons_pub_, dataStoring_active, beacon_gt_, &swarm_center_gt_);
+      dronestate[i].SetId(this, (int)i, droneCount_, beaconCount_, distance_noise_, elevation_noise_, noise_color_, distance_max_rate_, elevation_max_rate_, dronestate, &distances_pub_, &positions_pub_, &elevation_pub_, &beacons_pub_, dataStoring_active, beacon_gt_, &swarm_center_gt_);
 
     ros::NodeHandle nh;
     timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &DistanceMeasurementSim::CallbackSaveData, this, false, true);
@@ -260,14 +262,21 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         pow(odometry_gt_.position[0] - dronestate_[i].odometry_gt_.position[0], 2) +
         pow(odometry_gt_.position[1] - dronestate_[i].odometry_gt_.position[1], 2) +
         pow(odometry_gt_.position[2] - dronestate_[i].odometry_gt_.position[2], 2));
-      // white noise
-      //float rand_value = std::max(-5*distance_noise_, std::min((float)dist_distribution(generator_), 5*distance_noise_));
-      //distances_[i] = distances_gt_[i] + rand_value; // add distance noise
-      // red noise
-      float rand_value = (float)dist_distribution(generator_);
-      distances_iir_[i] = 0.99 * distances_iir_[i] + 0.01 * rand_value;
-      rand_value = (float)dist_distribution(generator_);
-      distances_[i] = distances_gt_[i] + (distances_iir_[i] + rand_value / 100) * 10; // add distance noise
+
+      if(noise_color_ == NOISE_COLOR_WHITE) // white noise
+      {
+        float rand_value = std::max(-5*distance_noise_, std::min((float)dist_distribution(generator_), 5*distance_noise_));
+        distances_[i] = distances_gt_[i] + rand_value; // add distance noise
+      }
+      else if(noise_color_ == NOISE_COLOR_PINK) // pink noise
+      {
+        float rand_value = (float)dist_distribution(generator_);
+        distances_iir_[i] = 0.99 * distances_iir_[i] + 0.01 * rand_value;
+        rand_value = (float)dist_distribution(generator_);
+        distances_[i] = distances_gt_[i] + (distances_iir_[i] + rand_value / 100) * 10 * 1.43; // add distance noise
+      }
+      else
+        ROS_FATAL("DroneStateWithTime (%d) invalid noise color: %d", droneNumber_, noise_color_);
 
       if(i != droneNumber_)
           dist_min_gt = std::min(distances_gt_[i], dist_min_gt);
@@ -285,14 +294,21 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
           pow(odometry_gt_.position[0] - beacon_gt_[i][0], 2) +
           pow(odometry_gt_.position[1] - beacon_gt_[i][1], 2) +
           pow(odometry_gt_.position[2] - beacon_gt_[i][2], 2));
-        // white noise
-        //float rand_value = std::max(-5*distance_noise_, std::min((float)dist_distribution(generator_), 5*distance_noise_));
-        //beacon_distances_[i] = beacon_distances_gt_[i] + rand_value;
-        // red noise
-        float rand_value = (float)dist_distribution(generator_);
-        beacon_distances_iir_[i] = 0.99 * beacon_distances_iir_[i] + 0.01 * rand_value;
-        rand_value = (float)dist_distribution(generator_);
-        beacon_distances_[i] = distances_gt_[i] + (beacon_distances_iir_[i] + rand_value / 100) * 10; // add distance noise
+
+        if(noise_color_ == NOISE_COLOR_WHITE) // white noise
+        {
+          float rand_value = std::max(-5*distance_noise_, std::min((float)dist_distribution(generator_), 5*distance_noise_));
+          beacon_distances_[i] = beacon_distances_gt_[i] + rand_value;
+        }
+        else if(noise_color_ == NOISE_COLOR_PINK) // pink noise
+        {
+          float rand_value = (float)dist_distribution(generator_);
+          beacon_distances_iir_[i] = 0.99 * beacon_distances_iir_[i] + 0.01 * rand_value;
+          rand_value = (float)dist_distribution(generator_);
+          beacon_distances_[i] = distances_gt_[i] + (beacon_distances_iir_[i] + rand_value / 100) * 10 * 1.43; // add distance noise
+        }
+        else
+          ROS_FATAL("DroneStateWithTime (%d) invalid noise color: %d", droneNumber_, noise_color_);
 
         ROS_INFO_ONCE("DroneStateWithTime (%d) beacon %d at location %s distance %f", droneNumber_, (int)i, VectorToString(beacon_gt_[i]).c_str(), beacon_distances_gt_[i]);
     }
@@ -568,7 +584,7 @@ void DroneStateWithTime::FileSaveData(void){
       // dataStoring_active_ = false;
 }
 
-void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, float elevation_noise, float distance_max_rate, float elevation_max_rate, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* swarm_center_gt)
+void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, float elevation_noise, int noise_color, float distance_max_rate, float elevation_max_rate, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* swarm_center_gt)
 {
     parentPtr_ = parentPtr;
 
@@ -578,6 +594,7 @@ void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumbe
 
     distance_noise_ = position_noise;
     elevation_noise_ = elevation_noise;
+    noise_color_ = noise_color;
     distance_max_rate_ = distance_max_rate;
     elevation_max_rate_ = elevation_max_rate;
 

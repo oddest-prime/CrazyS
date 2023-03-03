@@ -45,6 +45,11 @@
 #define N_DRONES_MAX  20          /* maximum number of drones */
 #define N_BEACONS_MAX  5          /* maximum number of beacons */
 
+#define NOISE_COLOR_WHITE     0
+#define NOISE_COLOR_RED       1
+#define NOISE_COLOR_PINK      2
+
+
 #define BEACON_MOVED_SMALL_EPS  0.001 /* to compare floats, if beacon moved */
 
 namespace rotors_control {
@@ -55,7 +60,7 @@ namespace rotors_control {
 
     class DroneStateWithTime {
      public:
-      void SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, float elevation_noise, float distance_max_rate, float elevation_max_rate, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* swarm_center_gt);
+      void SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, float elevation_noise, int noise_color, float distance_max_rate, float elevation_max_rate, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* swarm_center_gt);
       void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
       void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
       void FileSaveData(void);
@@ -66,6 +71,7 @@ namespace rotors_control {
       std::default_random_engine generator_;
       float distance_noise_;
       float elevation_noise_;
+      int noise_color_;
       float distance_max_rate_;
       float elevation_max_rate_;
 
@@ -129,6 +135,7 @@ namespace rotors_control {
 
             float distance_noise_;
             float elevation_noise_;
+            int noise_color_;
             float distance_max_rate_;
             float elevation_max_rate_;
 

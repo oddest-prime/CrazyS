@@ -265,7 +265,7 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
       //distances_[i] = distances_gt_[i] + rand_value; // add distance noise
       // red noise
       float rand_value = (float)dist_distribution(generator_);
-      distances_iir_[i] = 0.9 * distances_iir_[i] + 0.1 * rand_value;
+      distances_iir_[i] = 0.99 * distances_iir_[i] + 0.01 * rand_value;
       distances_[i] = distances_gt_[i] + distances_iir_[i]; // add distance noise
 
       if(i != droneNumber_)
@@ -289,7 +289,7 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         //beacon_distances_[i] = beacon_distances_gt_[i] + rand_value;
         // red noise
         float rand_value = (float)dist_distribution(generator_);
-        beacon_distances_iir_[i] = 0.9 * beacon_distances_iir_[i] + 0.1 * rand_value;
+        beacon_distances_iir_[i] = 0.99 * beacon_distances_iir_[i] + 0.01 * rand_value;
         beacon_distances_[i] = distances_gt_[i] + beacon_distances_iir_[i]; // add distance noise
 
         ROS_INFO_ONCE("DroneStateWithTime (%d) beacon %d at location %s distance %f", droneNumber_, (int)i, VectorToString(beacon_gt_[i]).c_str(), beacon_distances_gt_[i]);

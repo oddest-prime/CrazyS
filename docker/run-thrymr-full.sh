@@ -89,7 +89,7 @@ for j in 0 5 10 20 50 100 # dyn_nse
     for c in 0 2 # dyn_col
       do
     #yamlname=`pwgen -n 4 1`
-    yamlname=`printf "%05d%s%s" $j $i %c`
+    yamlname=`printf "%05d%s%s" $j $i $c`
 
     dyn_nse=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     #dyn_nse="0.1"
@@ -108,6 +108,7 @@ for j in 0 5 10 20 50 100 # dyn_nse
     dyn_nhd="2.5"
     dyn_hgh="40"
     dyn_hzd="17"
+    dyn_col="$c"
 
     echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_col = $dyn_col, dyn_eps = $dyn_eps, dyn_nmm = $dyn_nmm, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal, dyn_ese = $dyn_ese, dyn_nhd = $dyn_nhd, dyn_hgh = $dyn_hgh, dyn_hzd = $dyn_hzd"
 

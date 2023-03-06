@@ -96,12 +96,12 @@ for j in 0 2 5 7 10 20 # dyn_nse
     dyn_eps="0.15" # "0.1" # "0.05"
     dyn_nmm="3" # 6
     dyn_sep="100" # 350
-    dyn_thr="0.15" # "0.12"
     dyn_tar="250" # "200" # "250" # "150"
     dyn_hgh="100"
     dyn_cal="0" # 30, 5
     #dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_sca="2"
+    dyn_thr="0.55" # "0.15" # "0.12"
     #dyn_ese=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_ese="0.87"
     #dyn_nhd=`echo "scale=1;$j / 10" | bc | awk '{printf "%.1f", $0}'`

@@ -52,9 +52,11 @@
 #define SWARM_LANDING             32768
 #define SWARM_SPC_DISTANCES_ONLY          1
 #define SWARM_SPC_DISTANCES_ELEV          2
+#define SWARM_SPC_DISTANCES_CHAIN         4
 #define SWARM_USE_GROUND_TRUTH            16 // only for debug! it is using ground grouth absolute positions!
 #define SWARM_SPC_DISTANCES_ONLY_GT       (SWARM_SPC_DISTANCES_ONLY|SWARM_USE_GROUND_TRUTH) // only for debug! it is using grount grouth absolute positions!
 #define SWARM_SPC_DISTANCES_ELEV_GT       (SWARM_SPC_DISTANCES_ELEV|SWARM_USE_GROUND_TRUTH) // only for debug! it is using grount grouth absolute positions!
+#define SWARM_SPC_DISTANCES_CHAIN_GT      (SWARM_SPC_DISTANCES_CHAIN|SWARM_USE_GROUND_TRUTH) // only for debug! it is using grount grouth absolute positions!
 
 
 #define OPERATION_MODE_NONE         0
@@ -388,6 +390,11 @@ int main(int argc, char** argv) {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_SPC_DISTANCES_ELEV");
     swarm_mode = SWARM_SPC_DISTANCES_ELEV;
   }
+  else if(swarmMode == "chain")
+  {
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_SPC_DISTANCES_CHAIN");
+    swarm_mode = SWARM_SPC_DISTANCES_CHAIN;
+  }
   else if(swarmMode == "distGT")
   {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_SPC_DISTANCES_ONLY_GT");
@@ -397,6 +404,11 @@ int main(int argc, char** argv) {
   {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_SPC_DISTANCES_ELEV_GT");
     swarm_mode = SWARM_SPC_DISTANCES_ELEV_GT;
+  }
+  else if(swarmMode == "chainGT")
+  {
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_SPC_DISTANCES_CHAIN_GT");
+    swarm_mode = SWARM_SPC_DISTANCES_CHAIN_GT;
   }
   else
     ROS_FATAL("global_controller: 'swarmMode' not recognized (%s)", swarmMode.c_str());

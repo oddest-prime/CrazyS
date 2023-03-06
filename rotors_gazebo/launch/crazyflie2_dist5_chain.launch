@@ -1,0 +1,110 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="mav_name" default="crazyflie2"/>
+  <arg name="world_name" default="basic"/>
+  <arg name="enable_logging" default="false" />
+  <arg name="enable_ground_truth" default="true" />
+  <arg name="enable_state_estimator" default="false" />
+  <arg name="log_file" default="$(arg mav_name)" />
+  <arg name="paused" value="true"/>
+  <arg name="debug" default="false"/>
+  <arg name="gui" default="true"/>
+  <arg name="obstacleScenario" default="0"/>
+  <arg name="pathScenario" default="8"/>
+  <arg name="droneCount" default="5"/>
+  <arg name="beaconCount" default="2"/>
+  <arg name="swarm_mode" default="dist"/>
+  <arg name="swarm_params" default="mpc1_params2b"/>
+  <arg name="csvFilesStoring" default="distance"/> <!-- possible values: "yes", "no", "distance" -->
+  <arg name="csvFilesStoringTime" default="9999.0"/> <!-- seconds -->
+  <!-- The following line causes gzmsg and gzerr messages to be printed to the console
+      (even when Gazebo is started through roslaunch) -->
+  <arg name="verbose" default="false"/>
+
+  <!-- The following lines simulate the world in Gazebo. The physic engine properties
+        are set up in the file "basic_crazyflie.world" file -->
+  <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find rotors_gazebo)/models"/>
+  <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find rotors_gazebo)/models"/>
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find rotors_gazebo)/worlds/$(arg world_name)_crazyflie_large_cones.world" />
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="verbose" value="$(arg verbose)"/>
+  </include>
+
+  <node name="global_controller" required="true" pkg="rotors_gazebo" type="global_controller" output="screen">
+    <param name="droneCount" value="$(arg droneCount)"/>
+    <param name="beaconCount" value="$(arg beaconCount)"/>
+    <param name="spacingX" value="2.0"/>
+    <param name="spacingY" value="2.0"/>
+    <param name="spacingZ" value="0.3"/>
+    <param name="offsetX" value="-1.0"/>
+    <param name="offsetY" value="-1.0"/>
+    <param name="offsetZ" value="0.5"/>
+    <param name="randNoise" value="0.0"/>
+    <param name="swarmMode" value="$(arg swarm_mode)"/>
+    <param name="obstacleScenario" value="$(arg obstacleScenario)"/>
+    <param name="pathScenario" value="$(arg pathScenario)"/>
+  </node>
+
+  <group ns="beacon_0">
+    <node name="spawn_marker_green_beacon_0" pkg="gazebo_ros" type="spawn_model"
+     args="-file $(find rotors_gazebo)/models/marker/model_green.sdf
+           -sdf
+           -x 0.0
+           -y 0.0
+           -z 0.0
+           -model marker_green_beacon_0"
+     respawn="false" output="screen">
+   </node>
+  </group>
+  <group ns="beacon_1">
+    <node name="spawn_marker_green_beacon_0" pkg="gazebo_ros" type="spawn_model"
+     args="-file $(find rotors_gazebo)/models/marker/model_green.sdf
+           -sdf
+           -x 0.0
+           -y 8.1
+           -z 2.5
+           -model marker_green_beacon_1"
+     respawn="false" output="screen">
+   </node>
+  </group>
+
+  <include file="$(find rotors_gazebo)/launch/crazyflie2_distX_inner.launch" pass_all_args="true">
+    <arg name="droneNumber" value="0" />
+    <arg name="spawnX" value="-1.0" />
+    <arg name="spawnY" value="-1.0" />
+  </include>
+  <include file="$(find rotors_gazebo)/launch/crazyflie2_distX_inner.launch" pass_all_args="true">
+    <arg name="droneNumber" value="1" />
+    <arg name="spawnX" value="1.0" />
+    <arg name="spawnY" value="-1.0" />
+  </include>
+  <include file="$(find rotors_gazebo)/launch/crazyflie2_distX_inner.launch" pass_all_args="true">
+    <arg name="droneNumber" value="2" />
+    <arg name="spawnX" value="-1.0" />
+    <arg name="spawnY" value="1.0" />
+  </include>
+  <include file="$(find rotors_gazebo)/launch/crazyflie2_distX_inner.launch" pass_all_args="true">
+    <arg name="droneNumber" value="3" />
+    <arg name="spawnX" value="1.0" />
+    <arg name="spawnY" value="1.0" />
+  </include>
+  <include file="$(find rotors_gazebo)/launch/crazyflie2_distX_inner.launch" pass_all_args="true">
+    <arg name="droneNumber" value="4" />
+    <arg name="spawnX" value="-1.0" />
+    <arg name="spawnY" value="3.0" />
+  </include>
+
+  <node name="distance_measurement_sim" pkg="rotors_control" type="distance_measurement_sim" output="screen">
+    <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
+    <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
+    <param name="droneCount" value="$(arg droneCount)"/>
+    <param name="beaconCount" value="$(arg beaconCount)"/>
+     <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name).yaml" />
+     <rosparam command="load" file="$(find rotors_gazebo)/resource/$(arg mav_name)_$(arg swarm_params).yaml" />
+  </node>
+
+
+</launch>

@@ -249,9 +249,9 @@ void move_marker_beacon(ros::ServiceClient* gazebo_client, int index, float x, f
   pr2_modelstate.model_name = (std::string) "marker_green_beacon_" + std::to_string(index);
   pr2_modelstate.pose = pr2_pose;
   srv.request.model_state = pr2_modelstate;
+  ROS_INFO("move_marker_beacon: marker %s move to x=%f y=%f z=%f", pr2_modelstate.model_name.c_str(), pr2_position_green.x, pr2_position_green.y, pr2_position_green.z);
   if(!gazebo_client->call(srv))
       ROS_ERROR("Failed to move green marker! Error msg:%s",srv.response.status_message.c_str());
-  ROS_INFO("move_marker_beacon: marker %s moved to x=%f y=%f z=%f", pr2_modelstate.model_name.c_str(), pr2_position_green.x, pr2_position_green.y, pr2_position_green.z);
 }
 
 void callback(const sensor_msgs::ImuPtr& msg) {
@@ -573,6 +573,12 @@ int main(int argc, char** argv) {
       desired_position(1) = 0.0; // y
       desired_position(2) = 2.5; // z
     }
+    if(pathScenario == 9) // keep marker at position
+    {
+      desired_position(0) = 0.0; // x
+      desired_position(1) = 0.0; // y
+      desired_position(2) = 2.5; // z
+    }
 
     move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, 0, &trajectory_msg);
@@ -766,6 +772,17 @@ int main(int argc, char** argv) {
           desired_position(1) = 7;
         }
         else if(path_cnt == 1)
+        {
+          desired_position(0) = 0;
+          desired_position(1) = 0;
+        }
+        else
+          break;
+      }
+      else if(pathScenario == 9) // keep marker 0 at 0,0,2.5
+      {
+        path_sleep_afterwards = 50.0;
+        if(path_cnt == 0)
         {
           desired_position(0) = 0;
           desired_position(1) = 0;

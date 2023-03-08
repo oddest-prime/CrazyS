@@ -111,7 +111,7 @@ void DistanceMeasurementSim::InitializeParams() {
     ROS_INFO_ONCE("[DistanceMeasurementSim] GetRosParameter values:");
     ROS_INFO_ONCE("  swarm/distance_noise=%f", distance_noise_);
     ROS_INFO_ONCE("  swarm/elevation_noise=%f", elevation_noise_);
-    ROS_INFO_ONCE("  swarm/noise_color=%f", noise_color_);
+    ROS_INFO_ONCE("  swarm/noise_color=%d", noise_color_);
     ROS_INFO_ONCE("  swarm/distance_max_rate=%f", distance_max_rate_);
     ROS_INFO_ONCE("  swarm/elevation_max_rate=%f", elevation_max_rate_);
 

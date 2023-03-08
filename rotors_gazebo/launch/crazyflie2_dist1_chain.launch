@@ -11,10 +11,10 @@
   <arg name="gui" default="true"/>
   <arg name="obstacleScenario" default="0"/>
   <arg name="pathScenario" default="9"/>
-  <arg name="droneCount" default="5"/>
+  <arg name="droneCount" default="1"/>
   <arg name="beaconCount" default="2"/>
   <arg name="swarm_mode" default="chainGT"/>
-  <arg name="swarm_params" default="mpc1_params2c"/>
+  <arg name="swarm_params" default="mpc1_params2b"/>
   <arg name="csvFilesStoring" default="distance"/> <!-- possible values: "yes", "no", "distance" -->
   <arg name="csvFilesStoringTime" default="9999.0"/> <!-- seconds -->
   <!-- The following line causes gzmsg and gzerr messages to be printed to the console
@@ -64,7 +64,7 @@
      args="-file $(find rotors_gazebo)/models/marker/model_green.sdf
            -sdf
            -x 0.0
-           -y 8.1
+           -y 8.0
            -z 2.5
            -model marker_green_beacon_1"
      respawn="false" output="screen">
@@ -75,26 +75,6 @@
     <arg name="droneNumber" value="0" />
     <arg name="spawnX" value="-1.0" />
     <arg name="spawnY" value="-1.0" />
-  </include>
-  <include file="$(find rotors_gazebo)/launch/crazyflie2_distX_inner.launch" pass_all_args="true">
-    <arg name="droneNumber" value="1" />
-    <arg name="spawnX" value="1.0" />
-    <arg name="spawnY" value="-1.0" />
-  </include>
-  <include file="$(find rotors_gazebo)/launch/crazyflie2_distX_inner.launch" pass_all_args="true">
-    <arg name="droneNumber" value="2" />
-    <arg name="spawnX" value="-1.0" />
-    <arg name="spawnY" value="1.0" />
-  </include>
-  <include file="$(find rotors_gazebo)/launch/crazyflie2_distX_inner.launch" pass_all_args="true">
-    <arg name="droneNumber" value="3" />
-    <arg name="spawnX" value="1.0" />
-    <arg name="spawnY" value="1.0" />
-  </include>
-  <include file="$(find rotors_gazebo)/launch/crazyflie2_distX_inner.launch" pass_all_args="true">
-    <arg name="droneNumber" value="4" />
-    <arg name="spawnX" value="-1.0" />
-    <arg name="spawnY" value="3.0" />
   </include>
 
   <node name="distance_measurement_sim" pkg="rotors_control" type="distance_measurement_sim" output="screen">

@@ -847,7 +847,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                                              pow(beacon_gt_[j][1] - (odometry_gt_.position[1] + potential_movement[1]), 2) +
                                                              pow(beacon_gt_[j][2] - (odometry_gt_.position[2] + potential_movement[2]), 2));
 
-                                 ROS_INFO_ONCE("dr.%d bc.%d (%2d/%2d/%2d|%2d) dist_beacon=%f, dist_gt_beacon=%f", droneNumber_, (int)j, xi, yi, zi, ai, dist_beacon[j], dist_gt_beacon[j]);
+                                // ROS_INFO("dr.%d bc.%d (%2d/%2d/%2d|%2d) dist_beacon=%f, dist_gt_beacon=%f", droneNumber_, (int)j, xi, yi, zi, ai, dist_beacon[j], dist_gt_beacon[j]);
                             }
 
                             if(enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)
@@ -881,6 +881,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                             if(enable_swarm_ & SWARM_SPC_DISTANCES_CHAIN)
                                 target_sum = fabs(dist_beacon[0]) + fabs(dist_beacon[1]);
 
+                            if(enable_swarm_ & SWARM_SPC_DISTANCES_CHAIN)
+                                ROS_INFO("dr.%d dist_beacon[0]=%f, dist_beacon[1]=%f, cnt=%d", droneNumber_, dist_beacon[0], dist_beacon[1], beaconCount_);
+
                             float height_diff = swarm_elevation_ - (elevation_filtered_[droneNumber_] + potential_movement[2]);
                             float height_sum = height_diff*height_diff;
 
@@ -898,7 +901,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                 total_sum = target_term + calm_term + height_term;
 
                             ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) coh=%7.1f sep=%7.1f tar=%7.1f calm=%7.1f total=%7.1f len=%f", droneNumber_, xi, yi, zi, ai, coehesion_term, separation_term, target_term, calm_term, total_sum, potential_movement.norm());
-                            //ROS_INFO("dr.%d (%2d/%2d/%2d|%2d) dist0=%f", droneNumber_, xi, yi, zi, ai, dist_beacon0);
+                            ROS_INFO("dr.%d (%2d/%2d/%2d|%2d) tar=%f", droneNumber_, xi, yi, zi, ai, target_sum);
 
                             if(total_sum < best_sum)
                             {

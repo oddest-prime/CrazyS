@@ -5,11 +5,11 @@ rm -f /tmp/stop
 cd ~/SWARM/crazys
 
 #                                                                                                                         hash                         launch      mode    params        obs path extra
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5_chain chainGT mpc1_params2c 0 9 "chain1" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5_chain chainGT mpc1_params2c 0 9 "chain2" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2_chain chainGT mpc1_params2c 0 9 "chain1" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2_chain chainGT mpc1_params2c 0 9 "chain2" &
 sleep 150 # delay compilation by 150 seconds in second two docker containers
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5_chain chainGT mpc1_params2c 0 9 "chain3" &
-docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5_chain chainGT mpc1_params2c 0 9 "chain4" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2_chain chainGT mpc1_params2c 0 9 "chain3" &
+docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2_chain chainGT mpc1_params2c 0 9 "chain4" &
 sleep 150 # delay compilation by 150 seconds in second two docker containers
 wait
 test -e /tmp/stop && exit 7 # stop if flag is present

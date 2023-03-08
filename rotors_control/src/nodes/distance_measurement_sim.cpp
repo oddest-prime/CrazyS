@@ -273,7 +273,7 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         float rand_value = (float)dist_distribution(generator_);
         distances_iir_[i] = 0.99 * distances_iir_[i] + 0.01 * rand_value;
         rand_value = (float)dist_distribution(generator_);
-        distances_[i] = distances_gt_[i] + (distances_iir_[i] + rand_value / 100) * 10 * 1.43; // add distance noise
+        distances_[i] = distances_gt_[i] + (distances_iir_[i] + rand_value / 30) * 12; // add distance noise
       }
       else
         ROS_FATAL("DroneStateWithTime (%d) invalid noise color: %d", droneNumber_, noise_color_);
@@ -305,7 +305,7 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
           float rand_value = (float)dist_distribution(generator_);
           beacon_distances_iir_[i] = 0.99 * beacon_distances_iir_[i] + 0.01 * rand_value;
           rand_value = (float)dist_distribution(generator_);
-          beacon_distances_[i] = beacon_distances_gt_[i] + (beacon_distances_iir_[i] + rand_value / 100) * 10 * 1.43; // add distance noise
+          beacon_distances_[i] = beacon_distances_gt_[i] + (beacon_distances_iir_[i] + rand_value / 30) * 12; // add distance noise
         }
         else
           ROS_FATAL("DroneStateWithTime (%d) invalid noise color: %d", droneNumber_, noise_color_);

@@ -844,8 +844,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                              beacons_differences_[1][beaconCount_-1] * potential_movement_transformed[1] +
                                              beacons_differences_[2][beaconCount_-1] * potential_movement_transformed[2];
                                 dist_gt_beacon[j] = sqrt(pow(beacon_gt_[j][0] - (odometry_gt_.position[0] + potential_movement[0]), 2) +
-                                                             pow(beacon_gt_[j][1] - (odometry_gt_.position[1] + potential_movement[1]), 2) +
-                                                             pow(beacon_gt_[j][2] - (odometry_gt_.position[2] + potential_movement[2]), 2));
+                                                         pow(beacon_gt_[j][1] - (odometry_gt_.position[1] + potential_movement[1]), 2) +
+                                                         pow(beacon_gt_[j][2] - (odometry_gt_.position[2] + potential_movement[2]), 2));
 
                                 // ROS_INFO("dr.%d bc.%d (%2d/%2d/%2d|%2d) dist_beacon=%f, dist_gt_beacon=%f", droneNumber_, (int)j, xi, yi, zi, ai, dist_beacon[j], dist_gt_beacon[j]);
                             }
@@ -870,10 +870,10 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
                                     ROS_INFO_ONCE("dr.%d bc.%d (%2d/%2d/%2d|%2d) elevation_over_beacon=%f, dist_beacon=%f, elevation_gt_over_beacon=%f, dist_gt_beacon=%f", droneNumber_, (int)j, xi, yi, zi, ai, elevation_over_beacon, dist_beacon[j], elevation_gt_over_beacon, dist_gt_beacon[j]);
                                 }
-
                             }
                             if(enable_swarm_ & SWARM_USE_GROUND_TRUTH) // only for debug! using ground truth positions to infer distances.
-                               dist_beacon[0] = dist_gt_beacon[0];
+                               for (size_t j = 0; j < beaconCount_; j++) // iterate over all beacons
+                                  dist_beacon[j] = dist_gt_beacon[j];
 
                             float target_sum;
                             if(enable_swarm_ & SWARM_SPC_DISTANCES_ONLY || enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)

@@ -919,6 +919,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                     }
                 }
             }
+
+            ROS_INFO_ONCE("drone%d coh=%7.1f sep=%7.1f tar=%7.1f calm=%7.1f total=%7.1f", droneNumber_, min_coehesion_term, min_separation_term, min_target_term, min_calm_term, best_sum);
+
             if(inner_controller_ == 3) // velocity controller
             {
                 set_point.pose.position.x = best_movement(0) * velocity_scaling_;

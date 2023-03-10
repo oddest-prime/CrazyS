@@ -146,7 +146,6 @@ namespace rotors_control {
             ros::Timer timer_saveData;
 
             ros::ServiceClient gazebo_client_;
-            float visual_cnt_;
 
             void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
             void DistancesCallback(const std_msgs::Float32MultiArray& distances_msg);

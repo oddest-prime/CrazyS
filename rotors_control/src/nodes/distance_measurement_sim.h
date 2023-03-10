@@ -160,10 +160,10 @@ namespace rotors_control {
             ros::Subscriber logsave_sub_;
 
             //publisher
-            ros::Publisher distances_pub_;
+            ros::Publisher distances_pub_[N_DRONES_MAX];
             ros::Publisher positions_pub_;
             ros::Publisher elevation_pub_;
-            ros::Publisher beacons_pub_;
+            ros::Publisher beacons_pub_[N_DRONES_MAX];
 
             // drone states
             DroneStateWithTime dronestate[N_DRONES_MAX];

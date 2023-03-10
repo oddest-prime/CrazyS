@@ -50,13 +50,6 @@ RelativeDistanceController::RelativeDistanceController() {
     generator_.seed(droneNumber_); // make sure random numbers are different for each drone
     ROS_INFO("RelativeDistanceController: Seed random number generator (droneNumber_): %d", droneNumber_);
 
-    // TODO remove DEBUG...
-/*
-    float test[] = {1,2,3,4,5,6,7};
-    float alpha0, alpha1;
-    linearLeastSquaresApproximation(test, 5, &alpha0, &alpha1);
-*/
-
     history_cnt_ = 0;
     random_direction_[0] = 0;
     random_direction_[1] = 0;
@@ -85,15 +78,15 @@ RelativeDistanceController::RelativeDistanceController() {
 
     // Topics subscribe
     cmd_multi_dof_joint_trajectory_sub_ = nh.subscribe(mav_msgs::default_topics::COMMAND_TRAJECTORY, 1, &RelativeDistanceController::MultiDofJointTrajectoryCallback, this);
-    odometry_sub_ = nh.subscribe(mav_msgs::default_topics::ODOMETRY, 1, &RelativeDistanceController::OdometryCallback, this);
+    odometry_sub_ = nh.subscribe("odometry", 1, &RelativeDistanceController::OdometryCallback, this);
     enable_sub_ = nh.subscribe("enable", 1, &RelativeDistanceController::EnableCallback, this);
     update_sub_ = nh.subscribe("update", 1, &RelativeDistanceController::UpdateCallback, this);
     logsave_sub_ = nh.subscribe("logsave", 1, &RelativeDistanceController::SaveLogCallback, this);
     distances_sub_ = nh.subscribe("/drone_distances", 1, &RelativeDistanceController::DistancesCallback, this);
-    positions_sub_ = nh.subscribe("/drone_positions", 1, &RelativeDistanceController::PositionsCallback, this);
-    elevation_sub_ = nh.subscribe("/drone_elevation", 1, &RelativeDistanceController::ElevationCallback, this);
+    // positions_sub_ = nh.subscribe("/drone_positions", 1, &RelativeDistanceController::PositionsCallback, this); // check if system works without this information
+    // elevation_sub_ = nh.subscribe("/drone_elevation", 1, &RelativeDistanceController::ElevationCallback, this); // check if system works without this information
     beacons_sub_ = nh.subscribe("/beacon_distances", 1, &RelativeDistanceController::BeaconsCallback, this);
-    modelstate_sub_ = nh.subscribe("/gazebo/model_states", 1, &RelativeDistanceController::ModelstateCallback, this);
+    // modelstate_sub_ = nh.subscribe("/gazebo/model_states", 1, &RelativeDistanceController::ModelstateCallback, this); // check if system works without this information
 
     // Absolute position of drones, only used for debugging!
     ros::NodeHandle nhq[N_DRONES_MAX];
@@ -103,14 +96,13 @@ RelativeDistanceController::RelativeDistanceController() {
 
       dronestate_[i].SetId(droneNumber_, i);
       ROS_INFO("RelativeDistanceController: Setup subscriber %s/lps_pose.", nhq[i].getNamespace().c_str());
-      pose_other_sub_[i] = nhq[i].subscribe("lps_pose", 1, &DroneStateWithTime::PoseCallback, &dronestate_[i]);
+      // pose_other_sub_[i] = nhq[i].subscribe("lps_pose", 1, &DroneStateWithTime::PoseCallback, &dronestate_[i]); // check if system works without this information
     }
 
     // To publish the set-point
     setpoint_pub_ = nh.advertise<geometry_msgs::PoseStamped>("set_point", 1);
 
     // To publish the current pose for gazebo visual
-    visual_cnt_ = 0;
     gazebo_client_ = nh.serviceClient<gazebo_msgs::SetModelState>("/gazebo/set_model_state");
 }
 
@@ -319,6 +311,10 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     odometry_gt_.position[1] = odometry_msg->pose.pose.position.y;
     odometry_gt_.position[2] = odometry_msg->pose.pose.position.z;
     ROS_INFO_ONCE("RelativeDistanceController (%d) odometry: x=%f y=%f z=%f", droneNumber_, odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2]);
+
+    // this replaces ElevationCallback
+    elevation_[droneNumber_] = odometry_msg->pose.pose.position.z;
+    elevation_filtered_[droneNumber_] = elevation_filtered_[droneNumber_]*(1.0-elevation_iir_filter_) + elevation_[droneNumber_]*(elevation_iir_filter_); // IIR lowpass filter for distance measurements
 
     // for logging into files
     std::stringstream tempDistance;
@@ -954,223 +950,6 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         tempCost << unit_vectors_[1][0] << "," << unit_vectors_[1][1] << "," << unit_vectors_[1][2] << "," << unit_vectors_age_[1] << ",";
         tempCost << unit_vectors_[2][0] << "," << unit_vectors_[2][1] << "," << unit_vectors_[2][2] << "," << unit_vectors_age_[2] << ",";
     }
-/*    else if(enable_swarm_ & SWARM_DECLARATIVE_DISTANCES_GROUND)
-    {
-        ROS_INFO_ONCE("RelativeDistanceController starting swarm mode (SWARM_DECLARATIVE_DISTANCES_GROUND)");
-        ROS_FATAL("should not use SWARM_DECLARATIVE_DISTANCES_GROUND for now!");
-        exit(1);
-
-        if(!transform_ok_) // need to do exploration
-        {
-            if(random_direction_.norm() <= 0.001) // need new random value, if value was cleared
-            {
-                std::normal_distribution<float> dist(0.0, 1); // gaussian random number generator
-                random_direction_[0] = dist(generator_);
-                random_direction_[1] = dist(generator_);
-                random_direction_[2] = dist(generator_);
-            }
-            exploration_info = 80;
-            Vector3f direction = {1, 1, 1};
-            if(unit_vectors_[0].norm() <= 0.02 || unit_vectors_age_[0] < 0) // all unit vectors empty, since they are populated sequentially
-            {
-                direction = random_direction_; // go to random direction
-                exploration_info = 10;
-            }
-            else if(unit_vectors_[1].norm() <= 0.02 || unit_vectors_age_[1] < 0) // only vector 0 is not empty
-            {
-                Vector3f tmp = unit_vectors_[0] + random_direction_;
-                direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                exploration_info = 11;
-            }
-            else if(unit_vectors_[2].norm() <= 0.02 || unit_vectors_age_[2] < 0) // vector 0 and 1 are not empty
-            {
-                if(abs(unit_vectors_[0].dot(unit_vectors_[1])) > 0.99) // dot-procut: same direction = 1; orthogonal = 0
-                { // vectors go into the same direction, need some orthogonal move
-                    Vector3f tmp = unit_vectors_[1] + random_direction_;
-                    direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 12;
-                }
-                else
-                { // vectors go into different directions, use them to calculate orthogonal move
-                    direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 13;
-                }
-            }
-            else // vector 0, 1 and 2 are not empty
-            {
-                if(abs(unit_vectors_[0].dot(unit_vectors_[1])) < 0.5) // dot-procut: same direction = 1; orthogonal = 0
-                { // vectors 0 and 1 are good enough, use to calculate orthogonal move
-                    direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 41;
-                }
-                else if(abs(unit_vectors_[1].dot(unit_vectors_[2])) < 0.5) // dot-procut: same direction = 1; orthogonal = 0
-                { // vectors 1 and 2 are good enough, use to calculate orthogonal move
-                    direction = unit_vectors_[1].cross(unit_vectors_[2]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 42;
-                }
-                else if(abs(unit_vectors_[2].dot(unit_vectors_[0])) < 0.5) // dot-procut: same direction = 1; orthogonal = 0
-                { // vectors 2 and 0 are good enough, use to calculate orthogonal move
-                    direction = unit_vectors_[2].cross(unit_vectors_[0]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 43;
-                }
-                else if(abs(unit_vectors_[0].dot(unit_vectors_[1])) < 0.9) // dot-procut: same direction = 1; orthogonal = 0
-                { // vectors 0 and 1 are good enough, use to calculate orthogonal move
-                    direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 51;
-                }
-                else if(abs(unit_vectors_[1].dot(unit_vectors_[2])) < 0.9) // dot-procut: same direction = 1; orthogonal = 0
-                { // vectors 1 and 2 are good enough, use to calculate orthogonal move
-                    direction = unit_vectors_[1].cross(unit_vectors_[2]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 52;
-                }
-                else if(abs(unit_vectors_[2].dot(unit_vectors_[0])) < 0.9) // dot-procut: same direction = 1; orthogonal = 0
-                { // vectors 2 and 0 are good enough, use to calculate orthogonal move
-                    direction = unit_vectors_[2].cross(unit_vectors_[0]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    exploration_info = 53;
-                }
-                else
-                {
-                    ROS_INFO("RelativeDistanceController %d unit_vectors_[0].dot(unit_vectors_[1]):%f", droneNumber_, unit_vectors_[0].dot(unit_vectors_[1]));
-                    ROS_INFO("RelativeDistanceController %d unit_vectors_[1].dot(unit_vectors_[2]):%f", droneNumber_, unit_vectors_[1].dot(unit_vectors_[2]));
-                    ROS_INFO("RelativeDistanceController %d unit_vectors_[2].dot(unit_vectors_[0]):%f", droneNumber_, unit_vectors_[2].dot(unit_vectors_[0]));
-                    exploration_info = 91;
-                }
-            }
-
-            direction = direction / direction.norm(); // calculate unit vector of length 1
-
-            if(transform_available_) // check if opposite direction might be more useful (less collision probability)
-            {
-                Vector3f potential_movement_transformed_positive = transform_vectors_ * (direction * eps_move_*2);
-                Vector3f potential_movement_transformed_negative = transform_vectors_ * ((direction * -1) * eps_move_*2);
-
-                float separation_sum_positive = 0;
-                float separation_sum_negative = 0;
-
-                for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
-                {
-                   float dist_positive = distances_[droneNumber_][i] +
-                              distances_differences_[0][i] * potential_movement_transformed_positive[0] +
-                              distances_differences_[1][i] * potential_movement_transformed_positive[1] +
-                              distances_differences_[2][i] * potential_movement_transformed_positive[2];
-                   float dist_negative = distances_[droneNumber_][i] +
-                              distances_differences_[0][i] * potential_movement_transformed_negative[0] +
-                              distances_differences_[1][i] * potential_movement_transformed_negative[1] +
-                              distances_differences_[2][i] * potential_movement_transformed_negative[2];
-
-                    if(i == droneNumber_) // skip for own quadcopter
-                        continue;
-
-                    separation_sum_positive += 1.0/(dist_positive*dist_positive);
-                    separation_sum_negative += 1.0/(dist_negative*dist_negative);
-                }
-                if(separation_sum_positive < separation_sum_negative)
-                {
-                    ROS_INFO_ONCE("RelativeDistanceController %d exploration positive better (%f < %f)", droneNumber_, separation_sum_positive, separation_sum_negative);
-                }
-                else
-                {
-                    ROS_INFO_ONCE("RelativeDistanceController %d exploration negative better (%f > %f)", droneNumber_, separation_sum_positive, separation_sum_negative);
-                    direction = direction * -1; // invert exploration vector
-                }
-            }
-
-            direction = direction * explore_command_length_; // length for exploration vector
-            set_point.pose.position.x = odometry_gt_.position[0] + direction[0];
-            set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
-            set_point.pose.position.z = odometry_gt_.position[2] + direction[2];
-            ROS_INFO_ONCE("RelativeDistanceController %d explore:%d direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
-        }
-        else // possible to do exploitation
-        {
-            // calculate neighbourhood independently from potential position
-            int neighbourhood_cnt = 0;
-            bool neighbourhood_bool[N_DRONES_MAX];
-            for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
-            {
-                if(distances_[droneNumber_][i] < neighbourhood_distance_ && i != droneNumber_)
-                {
-                    neighbourhood_cnt ++;
-                    neighbourhood_bool[i] = true;
-                }
-                else
-                    neighbourhood_bool[i] = false;
-            }
-
-            Vector3f best_movement;
-            float best_sum = FLT_MAX;
-
-            for(int xi = 0-n_move_max_; xi <= n_move_max_; xi ++) // iterate over all possible next actions in x-, y- and z-dimension
-            {
-                for(int yi = 0-n_move_max_; yi <= n_move_max_; yi ++)
-                {
-                    for(int zi = 0-n_move_max_; zi <= n_move_max_; zi ++)
-                    {
-                        Vector3f potential_movement = {(float)xi * eps_move_, (float)yi * eps_move_, (float)zi * eps_move_};
-                        Vector3f potential_movement_transformed = transform_vectors_ * potential_movement;
-
-                        float cohesion_sum = 0;
-                        float separation_sum = 0;
-                        float total_sum = 0;
-
-                        for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
-                        {
-                            float dist = distances_[droneNumber_][i] +
-                                         distances_differences_[0][i] * potential_movement_transformed[0] +
-                                         distances_differences_[1][i] * potential_movement_transformed[1] +
-                                         distances_differences_[2][i] * potential_movement_transformed[2];
-
-                            if(i == droneNumber_) // skip for own quadcopter
-                              continue;
-
-                            cohesion_sum += dist*dist;
-                            separation_sum += 1.0/(dist*dist);
-                        }
-
-                        float dist_beacon0 = beacons_[droneNumber_][0] +
-                                     beacons_differences_[0][0] * potential_movement_transformed[0] +
-                                     beacons_differences_[1][0] * potential_movement_transformed[1] +
-                                     beacons_differences_[2][0] * potential_movement_transformed[2];
-
-                        float target_sum = dist_beacon0*dist_beacon0;
-
-                        float intended_height = 2;
-                        float height_diff = intended_height - (odometry_gt_.position[2] + (float)zi * eps_move_);
-                        float height_sum = height_diff*height_diff;
-
-                        // coehesion term
-                        if(neighbourhood_cnt != 0)
-                            total_sum = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
-                        // separation term
-                        if(neighbourhood_cnt != 0)
-                            total_sum += spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
-                        // target-seeking term
-                        total_sum += spc_target_weight_ * target_sum;
-                        // height fixing term
-                        total_sum += spc_height_weight_ * height_sum;
-
-                        if(xi == 0-n_move_max_ && yi == 0-n_move_max_ && zi == 0-n_move_max_)
-                            ROS_INFO_ONCE("---------------------- droneNumber_ = %d (neighbourhood_cnt = %d) ----------------------", droneNumber_, neighbourhood_cnt);
-                        ROS_INFO_ONCE("xi=%2d yi=%2d zi=%2d | target_sum=%f height_sum=%f total_sum=%f", xi, yi , zi, target_sum, height_sum, total_sum);
-
-                        //if(xi == 0 && yi == 0 && zi == 0) // bonus for cost if not moving
-                        //    total_sum /= sticking_bonus_;
-
-                        if(total_sum < best_sum)
-                        {
-                            best_sum = total_sum;
-                            best_movement = potential_movement; // save movement vector
-                        }
-                    }
-                }
-            }
-            ROS_INFO_ONCE("RelativeDistanceController %d exploitation xi=%d yi=%d zi=%d tsum=%f", droneNumber_, 0, 0, 0, best_sum);
-            set_point.pose.position.x = odometry_gt_.position[0] + best_movement(0);
-            set_point.pose.position.y = odometry_gt_.position[1] + best_movement(1);
-            set_point.pose.position.z = odometry_gt_.position[2] + best_movement(2)*1.5; // TODO: proper scaling
-        }
-    }
-    */
 
     if(enable_swarm_ != SWARM_DISABLED || target_swarm_.position_W[2] > 0.01) // do not enable drone until proper target point received
     {
@@ -1239,6 +1018,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiArray& distances_msg) {
     ROS_INFO_ONCE("DistancesCallback got distances message.");
 
+/*
+    // publish distances message (old version, this contains all distances for every drone to every)
     for (size_t i = 0; i < droneCount_; i++)
     {
         for (size_t j = 0; j < droneCount_; j++)
@@ -1248,22 +1029,35 @@ void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiA
             ROS_INFO_ONCE("DistancesCallback drone#%d -> drone#%d: distance=%f.", (int)i, (int)j, distances_[i][j]);
         }
     }
+*/
+    // publish distances message (new version, this only contains the distance from the own drone to all others)
+    for (size_t j = 0; j < droneCount_; j++)
+    {
+        distances_[droneNumber_][j] = distances_msg.data[j];
+        distances_filtered_[droneNumber_][j] = distances_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + distances_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
+        ROS_INFO_ONCE("DistancesCallback drone#%d -> drone#%d: distance=%f.", (int)droneNumber_, (int)j, distances_[droneNumber_][j]);
+    }
 }
 
 void RelativeDistanceController::ElevationCallback(const std_msgs::Float32MultiArray& elevation_msg) {
     ROS_INFO_ONCE("DistancesCallback got elevation message.");
+    // do not use this callback, as we get elevation in z coordinate of odometry anyways
 
+    /*
     for (size_t i = 0; i < droneCount_; i++)
     {
         elevation_[i] = elevation_msg.data[i];
         elevation_filtered_[i] = elevation_filtered_[i]*(1.0-elevation_iir_filter_) + elevation_[i]*(elevation_iir_filter_); // IIR lowpass filter for distance measurements
         ROS_INFO_ONCE("DistancesCallback drone#%d: elevation=%f.", (int)i, elevation_[i]);
     }
+    */
 }
 
 void RelativeDistanceController::BeaconsCallback(const std_msgs::Float32MultiArray& distances_msg) {
     ROS_INFO_ONCE("BeaconsCallback got beacons message.");
 
+/*
+    // publish distances to beacons message (old version, this contains all distances for every drone to every beacon)
     for (size_t i = 0; i < droneCount_; i++)
     {
         for (size_t j = 0; j < beaconCount_; j++)
@@ -1272,6 +1066,14 @@ void RelativeDistanceController::BeaconsCallback(const std_msgs::Float32MultiArr
             beacons_filtered_[i][j] = beacons_filtered_[i][j]*(1.0-distance_iir_filter_) + beacons_[i][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
             ROS_INFO_ONCE("BeaconsCallback drone#%d -> beacon#%d: distance=%f.", (int)i, (int)j, beacons_[i][j]);
         }
+    }
+*/
+    // publish distances to beacons message (new version, this only contains the distance from the own drone to all beacons)
+    for (size_t j = 0; j < beaconCount_; j++)
+    {
+        beacons_[droneNumber_][j] = distances_msg.data[droneNumber_*beaconCount_ + j];
+        beacons_filtered_[droneNumber_][j] = beacons_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + beacons_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
+        ROS_INFO_ONCE("BeaconsCallback drone#%d -> beacon#%d: distance=%f.", (int)droneNumber_, (int)j, beacons_[droneNumber_][j]);
     }
 }
 

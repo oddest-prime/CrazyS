@@ -31,6 +31,8 @@
 #include <mav_msgs/default_topics.h>
 #include <mav_msgs/eigen_mav_msgs.h>
 #include <gazebo_msgs/SetModelState.h>
+#include <gazebo_msgs/SetPhysicsProperties.h>
+#include <gazebo_msgs/GetPhysicsProperties.h>
 #include <ros/ros.h>
 #include <std_srvs/Empty.h>
 #include <sensor_msgs/Imu.h>
@@ -452,6 +454,8 @@ int main(int argc, char** argv) {
 
   if(operation_mode == OPERATION_MODE_TIMED)
   {
+    // wait before unpause physics, s.t. all drones are spawned
+    std::this_thread::sleep_for(std::chrono::seconds(10));
 
     std_srvs::Empty srv;
     bool unpaused = ros::service::call("/gazebo/unpause_physics", srv);
@@ -471,8 +475,17 @@ int main(int argc, char** argv) {
     } else {
       ROS_INFO("global_controller: Unpaused the Gazebo simulation.");
     }
+/*
+    gazebo_msgs::GetPhysicsProperties srv_get;
+    bool get_r = ros::service::call("/gazebo/get_physics_properties", srv_get);
+    ROS_FATAL("srv.response.gravity.z = %f", srv_get.response.gravity.z);
 
-    ros::Time::sleepUntil(ros::Time(3.0));
+    gazebo_msgs::SetPhysicsProperties srv_set;
+    //srv_set.request = srv_get.response;
+    srv_set.request.gravity.z = 0;
+    bool set_r = ros::service::call("/gazebo/set_physics_properties", srv_set);
+*/
+    ros::Time::sleepUntil(ros::Time(0.1));
     trajectory_msgs::MultiDOFJointTrajectory trajectory_msg;
     std_msgs::Int32 enable_msg;
     std_msgs::Int32 update_msg;
@@ -523,7 +536,7 @@ int main(int argc, char** argv) {
       trajectory_pub[i].publish(trajectory_msg);
     }
 
-    ros::Duration(4.9).sleep();
+    ros::Duration(3.8).sleep();
     ros::spinOnce();
 
     ROS_INFO("global_controller: Enable swarm mode.");

@@ -66,7 +66,7 @@
     <arg name="spawnY" value="0.0" />
   </include>
 
-  <node name="distance_measurement_sim" pkg="rotors_control" type="distance_measurement_sim" output="screen">
+  <node name="distance_measurement_sim" pkg="rotors_control" type="distance_measurement_sim" output="screen" required="true">
     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
     <param name="droneCount" value="$(arg droneCount)"/>

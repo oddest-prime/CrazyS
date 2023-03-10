@@ -54,9 +54,9 @@ RelativeDistanceController::RelativeDistanceController() {
     random_direction_[0] = 0;
     random_direction_[1] = 0;
     random_direction_[2] = 0;
-    odometry_gt_history1_.position[0] = 0;
-    odometry_gt_history1_.position[1] = 0;
-    odometry_gt_history1_.position[2] = 0;
+    odometry_history1_.position[0] = 0;
+    odometry_history1_.position[1] = 0;
+    odometry_history1_.position[2] = 0;
     for (size_t i = 0; i < N_VECTORS_MAX; i++)
     {
         unit_vectors_[i][0] = 0;
@@ -73,6 +73,11 @@ RelativeDistanceController::RelativeDistanceController() {
             distances_[i][j] = 0;
             distances_filtered_[i][j] = 0;
         }
+        for (size_t j = 0; j < beaconCount_; j++)
+        {
+            beacons_[i][j] = 0;
+            beacons_filtered_[i][j] = 0;
+        }
         elevation_filtered_[i] = 0;
     }
 
@@ -82,10 +87,10 @@ RelativeDistanceController::RelativeDistanceController() {
     enable_sub_ = nh.subscribe("enable", 1, &RelativeDistanceController::EnableCallback, this);
     update_sub_ = nh.subscribe("update", 1, &RelativeDistanceController::UpdateCallback, this);
     logsave_sub_ = nh.subscribe("logsave", 1, &RelativeDistanceController::SaveLogCallback, this);
-    distances_sub_ = nh.subscribe("/drone_distances", 1, &RelativeDistanceController::DistancesCallback, this);
+    distances_sub_ = nh.subscribe("drone_distances", 1, &RelativeDistanceController::DistancesCallback, this);
     // positions_sub_ = nh.subscribe("/drone_positions", 1, &RelativeDistanceController::PositionsCallback, this); // check if system works without this information
     // elevation_sub_ = nh.subscribe("/drone_elevation", 1, &RelativeDistanceController::ElevationCallback, this); // check if system works without this information
-    beacons_sub_ = nh.subscribe("/beacon_distances", 1, &RelativeDistanceController::BeaconsCallback, this);
+    beacons_sub_ = nh.subscribe("beacon_distances", 1, &RelativeDistanceController::BeaconsCallback, this);
     // modelstate_sub_ = nh.subscribe("/gazebo/model_states", 1, &RelativeDistanceController::ModelstateCallback, this); // check if system works without this information
 
     // Absolute position of drones, only used for debugging!
@@ -216,7 +221,7 @@ void RelativeDistanceController::UpdateCallback(const std_msgs::Int32ConstPtr& u
     unit_vectors_age_[1] = -2;
     unit_vectors_age_[2] = -2;
 
-    odometry_gt_history1_ = odometry_gt_;
+    odometry_history1_ = odometry_;
     history_cnt_ = 0;
     random_direction_[0] = 0;
     random_direction_[1] = 0;
@@ -305,12 +310,12 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     ROS_INFO_ONCE("RelativeDistanceController got first odometry message.");
 
     // received message drone position information, store ground-truth pose
-    odometry_gt_.timeStampSec = odometry_msg->header.stamp.sec;
-    odometry_gt_.timeStampNsec = odometry_msg->header.stamp.nsec;
-    odometry_gt_.position[0] = odometry_msg->pose.pose.position.x;
-    odometry_gt_.position[1] = odometry_msg->pose.pose.position.y;
-    odometry_gt_.position[2] = odometry_msg->pose.pose.position.z;
-    ROS_INFO_ONCE("RelativeDistanceController (%d) odometry: x=%f y=%f z=%f", droneNumber_, odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2]);
+    odometry_.timeStampSec = odometry_msg->header.stamp.sec;
+    odometry_.timeStampNsec = odometry_msg->header.stamp.nsec;
+    odometry_.position[0] = odometry_msg->pose.pose.position.x;
+    odometry_.position[1] = odometry_msg->pose.pose.position.y;
+    odometry_.position[2] = odometry_msg->pose.pose.position.z;
+    ROS_INFO_ONCE("RelativeDistanceController (%d) odometry: x=%f y=%f z=%f", droneNumber_, odometry_.position[0], odometry_.position[1], odometry_.position[2]);
 
     // this replaces ElevationCallback
     elevation_[droneNumber_] = odometry_msg->pose.pose.position.z;
@@ -319,7 +324,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     // for logging into files
     std::stringstream tempDistance;
     tempDistance.precision(24);
-    tempDistance << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
+    tempDistance << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
     for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
     {
         tempDistance << distances_[droneNumber_][i] << ",";
@@ -327,17 +332,17 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     }
     std::stringstream tempEnv;
     tempEnv.precision(24);
-    tempEnv << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
+    tempEnv << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
     std::stringstream tempState;
     tempState.precision(24);
-    tempState << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
-    tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";
+    tempState << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
+    tempState << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ",";
     std::stringstream tempCost;
     tempCost.precision(24);
-    tempCost << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
+    tempCost << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
     std::stringstream tempVectors;
     tempVectors.precision(24);
-    tempVectors << odometry_gt_.timeStampSec << "," << odometry_gt_.timeStampNsec << "," << enable_swarm_ << ",";
+    tempVectors << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
 
 /*
     // distance measurements from previous message (to check for large changes, when target is updated) -- was replaced by update_sub_ !
@@ -360,7 +365,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         unit_vectors_age_[1] = -2;
         unit_vectors_age_[2] = -2;
 
-        odometry_gt_history1_ = odometry_gt_;
+        odometry_history1_ = odometry_;
         history_cnt_ = 0;
         random_direction_[0] = 0;
         random_direction_[1] = 0;
@@ -370,9 +375,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
     // calculate movement vector based on current ground-truth position and history (TODO: use accelerometer data)
     Vector3f movement;
-    movement[0] = odometry_gt_.position[0] - odometry_gt_history1_.position[0];
-    movement[1] = odometry_gt_.position[1] - odometry_gt_history1_.position[1];
-    movement[2] = odometry_gt_.position[2] - odometry_gt_history1_.position[2];
+    movement[0] = odometry_.position[0] - odometry_history1_.position[0];
+    movement[1] = odometry_.position[1] - odometry_history1_.position[1];
+    movement[2] = odometry_.position[2] - odometry_history1_.position[2];
     float movement_norm = movement.norm();
 
     // setpoint for message to be sent to low-level controller
@@ -421,7 +426,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     if(history_cnt_ >= HISTORY_CNT_MAX)
     {
         ROS_INFO("OdometryCallback (%d) Over threshold: %d. Reset history_cnt_: %d.", droneNumber_, HISTORY_CNT_MAX, history_cnt_);
-        odometry_gt_history1_ = odometry_gt_;
+        odometry_history1_ = odometry_;
         history_cnt_ = 0;
         random_direction_[0] = 0;
         random_direction_[1] = 0;
@@ -541,7 +546,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             }
         }
 
-        odometry_gt_history1_ = odometry_gt_;
+        odometry_history1_ = odometry_;
         ROS_INFO_ONCE("OdometryCallback (%d) Reset history_cnt_: %d.", droneNumber_, history_cnt_);
         history_cnt_ = 0;
         random_direction_[0] = 0;
@@ -556,12 +561,12 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     // ################################################################################
     if(enable_swarm_ == SWARM_DISABLED) // set target point if not in swarm mode
     {
-        ROS_INFO_ONCE("RelativeDistanceController %d swarm disabled target_swarm_=%f/%f/%f odometry_gt_=%f/%f/%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2], odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2]);
+        ROS_INFO_ONCE("RelativeDistanceController %d swarm disabled target_swarm_=%f/%f/%f odometry_=%f/%f/%f", droneNumber_, target_swarm_.position_W[0], target_swarm_.position_W[1], target_swarm_.position_W[2], odometry_.position[0], odometry_.position[1], odometry_.position[2]);
         if(inner_controller_ == 3) // velocity controller
         {
           set_point.pose.position.x = 0;
           set_point.pose.position.y = 0;
-          if(odometry_gt_.position[2] < target_swarm_.position_W[2])
+          if(odometry_.position[2] < target_swarm_.position_W[2])
               set_point.pose.position.z = 2.0;
           else
               set_point.pose.position.z = 0;
@@ -680,7 +685,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 else
                 { // this should not happen, den all of the three vectors are nearly parallel
                     direction = unit_vectors_[0].cross(unit_vectors_[1]); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
-                    if(odometry_gt_.position[2] > 0.1) // only report this, if ground truth position z-axis is above 10cm. otherwise the drone is obviously crashed.
+                    if(odometry_.position[2] > 0.1) // only report this, if ground truth position z-axis is above 10cm. otherwise the drone is obviously crashed.
                         ROS_INFO("RelativeDistanceController %d all unit_vectors_ dot products >= 0.9", droneNumber_);
                     // ROS_INFO("RelativeDistanceController %d unit_vectors_[0].dot(unit_vectors_[1]):%f", droneNumber_, unit_vectors_[0].dot(unit_vectors_[1]));
                     // ROS_INFO("RelativeDistanceController %d unit_vectors_[1].dot(unit_vectors_[2]):%f", droneNumber_, unit_vectors_[1].dot(unit_vectors_[2]));
@@ -766,15 +771,15 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 set_point.pose.position.y = direction[1] * velocity_scaling_;
                 set_point.pose.position.z = direction[2] * velocity_scaling_;
                 ROS_INFO_ONCE("RelativeDistanceController %d explore:%d (velocity) direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
-                set_point_marker[0] = odometry_gt_.position[0] + direction[0] * velocity_scaling_;
-                set_point_marker[1] = odometry_gt_.position[1] + direction[1] * velocity_scaling_;
-                set_point_marker[2] = odometry_gt_.position[2] + direction[2] * velocity_scaling_;
+                set_point_marker[0] = odometry_.position[0] + direction[0] * velocity_scaling_;
+                set_point_marker[1] = odometry_.position[1] + direction[1] * velocity_scaling_;
+                set_point_marker[2] = odometry_.position[2] + direction[2] * velocity_scaling_;
             }
             else
             {
-                set_point.pose.position.x = odometry_gt_.position[0] + direction[0];
-                set_point.pose.position.y = odometry_gt_.position[1] + direction[1];
-                set_point.pose.position.z = odometry_gt_.position[2] + direction[2];
+                set_point.pose.position.x = odometry_.position[0] + direction[0];
+                set_point.pose.position.y = odometry_.position[1] + direction[1];
+                set_point.pose.position.z = odometry_.position[2] + direction[2];
                 ROS_INFO_ONCE("RelativeDistanceController %d explore:%d direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
                 set_point_marker[0] = set_point.pose.position.x;
                 set_point_marker[1] = set_point.pose.position.y;
@@ -839,9 +844,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                              beacons_differences_[0][beaconCount_-1] * potential_movement_transformed[0] +
                                              beacons_differences_[1][beaconCount_-1] * potential_movement_transformed[1] +
                                              beacons_differences_[2][beaconCount_-1] * potential_movement_transformed[2];
-                                dist_gt_beacon[j] = sqrt(pow(beacon_gt_[j][0] - (odometry_gt_.position[0] + potential_movement[0]), 2) +
-                                                         pow(beacon_gt_[j][1] - (odometry_gt_.position[1] + potential_movement[1]), 2) +
-                                                         pow(beacon_gt_[j][2] - (odometry_gt_.position[2] + potential_movement[2]), 2));
+                                dist_gt_beacon[j] = sqrt(pow(beacon_gt_[j][0] - (odometry_.position[0] + potential_movement[0]), 2) +
+                                                         pow(beacon_gt_[j][1] - (odometry_.position[1] + potential_movement[1]), 2) +
+                                                         pow(beacon_gt_[j][2] - (odometry_.position[2] + potential_movement[2]), 2));
 
                                 // ROS_INFO("dr.%d bc.%d (%2d/%2d/%2d|%2d) dist_beacon=%f, dist_gt_beacon=%f", droneNumber_, (int)j, xi, yi, zi, ai, dist_beacon[j], dist_gt_beacon[j]);
                             }
@@ -857,7 +862,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                     else
                                         dist_beacon[j] = 0;
 
-                                    float elevation_gt_over_beacon = odometry_gt_.position[2] + potential_movement[2] - target_elevation_;
+                                    float elevation_gt_over_beacon = odometry_.position[2] + potential_movement[2] - target_elevation_;
                                     float dist_gt_projected_beacon_squared = pow(dist_gt_beacon[j], 2) - pow(elevation_gt_over_beacon, 2);
                                     if(dist_gt_projected_beacon_squared > 0)
                                         dist_gt_beacon[j] = sqrt(dist_gt_projected_beacon_squared);
@@ -924,16 +929,16 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 set_point.pose.position.y = best_movement(1) * velocity_scaling_;
                 set_point.pose.position.z = best_movement(2) * velocity_scaling_;
                 ROS_INFO_ONCE("RelativeDistanceController %d exploitation (velocity) tsum=%f scal=%f", droneNumber_, best_sum, velocity_scaling_);
-                set_point_marker[0] = odometry_gt_.position[0] + best_movement(0) * velocity_scaling_;
-                set_point_marker[1] = odometry_gt_.position[1] + best_movement(1) * velocity_scaling_;
-                set_point_marker[2] = odometry_gt_.position[2] + best_movement(2) * velocity_scaling_;
+                set_point_marker[0] = odometry_.position[0] + best_movement(0) * velocity_scaling_;
+                set_point_marker[1] = odometry_.position[1] + best_movement(1) * velocity_scaling_;
+                set_point_marker[2] = odometry_.position[2] + best_movement(2) * velocity_scaling_;
                 tempEnv << exploration_info << "," << best_movement(0) * velocity_scaling_ << "," << best_movement(1) * velocity_scaling_ << "," << best_movement(2) * velocity_scaling_ << "," << (float)best_sum << "," << history_cnt_ << ",";
             }
             else
             {
-                set_point.pose.position.x = odometry_gt_.position[0] + best_movement(0);
-                set_point.pose.position.y = odometry_gt_.position[1] + best_movement(1);
-                set_point.pose.position.z = odometry_gt_.position[2] + best_movement(2)*1.5; // TODO: proper scaling
+                set_point.pose.position.x = odometry_.position[0] + best_movement(0);
+                set_point.pose.position.y = odometry_.position[1] + best_movement(1);
+                set_point.pose.position.z = odometry_.position[2] + best_movement(2)*1.5; // TODO: proper scaling
                 ROS_INFO_ONCE("RelativeDistanceController %d exploitation tsum=%f", droneNumber_, best_sum);
                 set_point_marker[0] = set_point.pose.position.x;
                 set_point_marker[1] = set_point.pose.position.y;
@@ -1016,7 +1021,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 }
 
 void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiArray& distances_msg) {
-    ROS_INFO_ONCE("DistancesCallback got distances message.");
+    ROS_INFO_ONCE("DistancesCallback got first distances message.");
 
 /*
     // publish distances message (old version, this contains all distances for every drone to every)
@@ -1035,12 +1040,12 @@ void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiA
     {
         distances_[droneNumber_][j] = distances_msg.data[j];
         distances_filtered_[droneNumber_][j] = distances_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + distances_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
-        ROS_INFO_ONCE("DistancesCallback drone#%d -> drone#%d: distance=%f.", (int)droneNumber_, (int)j, distances_[droneNumber_][j]);
+        ROS_INFO_ONCE("DistancesCallback drone#%d -> drone#%d: distance=%f filtered=%f.", (int)droneNumber_, (int)j, distances_[droneNumber_][j], distances_filtered_[droneNumber_][j]);
     }
 }
 
 void RelativeDistanceController::ElevationCallback(const std_msgs::Float32MultiArray& elevation_msg) {
-    ROS_INFO_ONCE("DistancesCallback got elevation message.");
+    ROS_INFO_ONCE("DistancesCallback got first elevation message.");
     // do not use this callback, as we get elevation in z coordinate of odometry anyways
 
     /*
@@ -1054,7 +1059,7 @@ void RelativeDistanceController::ElevationCallback(const std_msgs::Float32MultiA
 }
 
 void RelativeDistanceController::BeaconsCallback(const std_msgs::Float32MultiArray& distances_msg) {
-    ROS_INFO_ONCE("BeaconsCallback got beacons message.");
+    ROS_INFO_ONCE("BeaconsCallback got first beacons message.");
 
 /*
     // publish distances to beacons message (old version, this contains all distances for every drone to every beacon)
@@ -1071,9 +1076,9 @@ void RelativeDistanceController::BeaconsCallback(const std_msgs::Float32MultiArr
     // publish distances to beacons message (new version, this only contains the distance from the own drone to all beacons)
     for (size_t j = 0; j < beaconCount_; j++)
     {
-        beacons_[droneNumber_][j] = distances_msg.data[droneNumber_*beaconCount_ + j];
+        beacons_[droneNumber_][j] = distances_msg.data[j];
         beacons_filtered_[droneNumber_][j] = beacons_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + beacons_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
-        ROS_INFO_ONCE("BeaconsCallback drone#%d -> beacon#%d: distance=%f.", (int)droneNumber_, (int)j, beacons_[droneNumber_][j]);
+        ROS_INFO_ONCE("BeaconsCallback drone#%d -> beacon#%d: distance=%f filtered=%f.", (int)droneNumber_, (int)j, beacons_[droneNumber_][j], beacons_filtered_[droneNumber_][j]);
     }
 }
 
@@ -1125,34 +1130,34 @@ void RelativeDistanceController::ModelstateCallback(const gazebo_msgs::ModelStat
 
 // This is only used for debugging. Absolute position of drones are not available for controller!
 void DroneStateWithTime::PoseCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg) {
-    ROS_INFO_ONCE("DroneStateWithTime got first odometry message.");
+    ROS_INFO_ONCE("DroneStateWithTime got first pose message.");
 
     // received message containing other drone position information
-    // odometry_gt_ = EigenOdometry();
-    odometry_gt_.timeStampSec = pose_msg->header.stamp.sec;
-    odometry_gt_.timeStampNsec = pose_msg->header.stamp.nsec;
-    odometry_gt_.position[0] = pose_msg->pose.position.x;
-    odometry_gt_.position[1] = pose_msg->pose.position.y;
-    odometry_gt_.position[2] = pose_msg->pose.position.z;
+    // odometry_ = EigenOdometry();
+    odometry_.timeStampSec = pose_msg->header.stamp.sec;
+    odometry_.timeStampNsec = pose_msg->header.stamp.nsec;
+    odometry_.position[0] = pose_msg->pose.position.x;
+    odometry_.position[1] = pose_msg->pose.position.y;
+    odometry_.position[2] = pose_msg->pose.position.z;
 
-    ROS_INFO_ONCE("DroneStateWithTime got odometry message: x=%f y=%f z=%f (self:%d, other:%d)", odometry_gt_.position[0], odometry_gt_.position[1], odometry_gt_.position[2], self_, other_);
+    ROS_INFO_ONCE("DroneStateWithTime got pose message: x=%f y=%f z=%f (self:%d, other:%d)", odometry_.position[0], odometry_.position[1], odometry_.position[2], self_, other_);
 }
 
 float DroneStateWithTime::GetDistance_gt(EigenOdometry* odometry_gt) {
     if(self_ == other_)
         return 0;
 
-    float distance_x = fabs(odometry_gt_.position[0] - odometry_gt->position[0]);
-    float distance_y = fabs(odometry_gt_.position[1] - odometry_gt->position[1]);
-    float distance_z = fabs(odometry_gt_.position[2] - odometry_gt->position[2]);
+    float distance_x = fabs(odometry_.position[0] - odometry_gt->position[0]);
+    float distance_y = fabs(odometry_.position[1] - odometry_gt->position[1]);
+    float distance_z = fabs(odometry_.position[2] - odometry_gt->position[2]);
     return sqrt(distance_x*distance_x + distance_y*distance_y + distance_z*distance_z);
 }
 
 float DroneStateWithTime::GetDistance_sim_gt(DroneStateWithTime* own_state, Vector3f potential_movement)
 {
-    float distance_x = fabs(odometry_gt_.position[0] - (own_state->odometry_gt_.position[0] + potential_movement[0]));
-    float distance_y = fabs(odometry_gt_.position[1] - (own_state->odometry_gt_.position[1] + potential_movement[1]));
-    float distance_z = fabs(odometry_gt_.position[2] - (own_state->odometry_gt_.position[2] + potential_movement[2]));
+    float distance_x = fabs(odometry_.position[0] - (own_state->odometry_.position[0] + potential_movement[0]));
+    float distance_y = fabs(odometry_.position[1] - (own_state->odometry_.position[1] + potential_movement[1]));
+    float distance_z = fabs(odometry_.position[2] - (own_state->odometry_.position[2] + potential_movement[2]));
     return sqrt(distance_x*distance_x + distance_y*distance_y + distance_z*distance_z);
 }
 

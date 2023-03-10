@@ -70,7 +70,7 @@ namespace rotors_control {
 
       int self_;
       int other_;
-      EigenOdometry odometry_gt_; // ground-truth
+      EigenOdometry odometry_; // ground-truth
     };
 
     class RelativeDistanceController{
@@ -113,8 +113,8 @@ namespace rotors_control {
             bool waypointHasBeenPublished_ = false;
             mav_msgs::EigenTrajectoryPoint target_swarm_;
 
-            EigenOdometry odometry_gt_; // ground-truth
-            EigenOdometry odometry_gt_history1_; // ground-truth at history point
+            EigenOdometry odometry_; // ground-truth
+            EigenOdometry odometry_history1_; // ground-truth at history point
 
             float distances_[N_DRONES_MAX][N_DRONES_MAX]; // received distance measurements
             float distances_filtered_[N_DRONES_MAX][N_DRONES_MAX]; // distance measurements filtered

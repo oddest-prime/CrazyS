@@ -13,7 +13,7 @@
   <arg name="pathScenario" default="9"/>
   <arg name="droneCount" default="2"/>
   <arg name="beaconCount" default="2"/>
-  <arg name="swarm_mode" default="chainGT"/>
+  <arg name="swarm_mode" default="chain"/>
   <arg name="swarm_params" default="mpc1_params2c"/>
   <arg name="csvFilesStoring" default="distance"/> <!-- possible values: "yes", "no", "distance" -->
   <arg name="csvFilesStoringTime" default="9999.0"/> <!-- seconds -->
@@ -82,7 +82,7 @@
     <arg name="spawnY" value="-1.0" />
   </include>
 
-  <node name="distance_measurement_sim" pkg="rotors_control" type="distance_measurement_sim" output="screen">
+  <node name="distance_measurement_sim" pkg="rotors_control" type="distance_measurement_sim" output="screen" required="true">
     <param name="csvFilesStoring" value="$(arg csvFilesStoring)"/>
     <param name="csvFilesStoringTime" value="$(arg csvFilesStoringTime)"/>
     <param name="droneCount" value="$(arg droneCount)"/>

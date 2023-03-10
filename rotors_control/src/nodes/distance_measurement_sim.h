@@ -121,6 +121,7 @@ namespace rotors_control {
 
             Vector3f beacon_gt_[N_BEACONS_MAX]; // beacon positions, ground-truth
             Vector3f swarm_center_gt_; // drone centroid, ground-truth
+            bool dataStoring_active_;
             int enable_swarm_ = 0;
         private:
             void InitializeParams();

@@ -163,6 +163,7 @@ void RelativeDistanceController::InitializeParams() {
     int beaconCount;
     int droneNumber;
     double dataStoringTime;
+    int isSim;
 
     if (pnh.getParam("droneCount", droneCount)){
        ROS_INFO("Got param 'droneCount': %d", droneCount);
@@ -202,6 +203,18 @@ void RelativeDistanceController::InitializeParams() {
     else {
        ROS_ERROR("Failed to get param 'csvFilesStoringTime'");
        dataStoringTime = 9999;
+    }
+
+    if (pnh.getParam("csvFilesStoringTime", dataStoringTime)){
+        ROS_INFO("Got param 'csvFilesStoringTime': %f", dataStoringTime);
+    }
+
+    isSim_ = 1;
+    if (pnh.getParam("isSim", isSim)){
+       ROS_INFO("Got param 'isSim': %d", isSim);
+       isSim_ = isSim;
+       if(isSim_ == 0)
+          enable_swarm_ = SWARM_SPC_DISTANCES_ONLY; // auto-enable, if not in simulation mode.
     }
 
     ros::NodeHandle nh;
@@ -975,6 +988,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         tempVectors << "\n";
         listVectors_.push_back(tempVectors.str());
     }
+
+    if(!isSim_) return; // we are not in simulation, so we should not try to move gazebo markers
 
     // move gazebo markers
     geometry_msgs::Point pr2_position_red;

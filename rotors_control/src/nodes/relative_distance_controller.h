@@ -86,6 +86,7 @@ namespace rotors_control {
             int droneNumber_;
             int droneCount_;
             int beaconCount_;
+            int isSim_;
 
             int n_move_max_;
             float drone_radius_;

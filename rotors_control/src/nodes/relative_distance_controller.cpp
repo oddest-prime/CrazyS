@@ -85,6 +85,7 @@ RelativeDistanceController::RelativeDistanceController() {
     cmd_multi_dof_joint_trajectory_sub_ = nh.subscribe(mav_msgs::default_topics::COMMAND_TRAJECTORY, 1, &RelativeDistanceController::MultiDofJointTrajectoryCallback, this);
     odometry_sub_ = nh.subscribe("odometry", 1, &RelativeDistanceController::OdometryCallback, this);
     enable_sub_ = nh.subscribe("enable", 1, &RelativeDistanceController::EnableCallback, this);
+    target_sub_ = nh.subscribe("target", 1, &RelativeDistanceController::TargetCallback, this);
     update_sub_ = nh.subscribe("update", 1, &RelativeDistanceController::UpdateCallback, this);
     logsave_sub_ = nh.subscribe("logsave", 1, &RelativeDistanceController::SaveLogCallback, this);
     distances_sub_ = nh.subscribe("drone_distances", 1, &RelativeDistanceController::DistancesCallback, this);
@@ -227,6 +228,14 @@ void RelativeDistanceController::EnableCallback(const std_msgs::Int32ConstPtr& e
     enable_swarm_ = enable_msg->data;
 }
 
+void RelativeDistanceController::TargetCallback(const std_msgs::Int32ConstPtr& target_msg) {
+    ROS_INFO("RelativeDistanceController (%d) got target message: %d", droneNumber_, target_msg->data);
+
+    if(target_msg->data >= N_BEACONS_MAX)
+        ROS_FATAL("RelativeDistanceController (%d) target message (%d) exceeds N_BEACONS_MAX (%d)", droneNumber_, target_msg->data, N_BEACONS_MAX);
+    current_target_ = target_msg->data % N_BEACONS_MAX; // make sure to not exceed array bounds
+}
+
 void RelativeDistanceController::UpdateCallback(const std_msgs::Int32ConstPtr& update_msg) {
     ROS_INFO("RelativeDistanceController (%d) got update message: %d. Invalidate environment history data.", droneNumber_, update_msg->data);
 
@@ -249,7 +258,7 @@ void RelativeDistanceController::CallbackSaveData(const ros::TimerEvent& event){
   FileSaveData();
 }
 
-void RelativeDistanceController::SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg) {
+void RelativeDistanceController::SaveLogCallback(const std_msgs::Int32ConstPtr& save_msg) {
   ROS_INFO("RelativeDistanceController (%d) SaveLogCallback.", droneNumber_);
   FileSaveData();
 }
@@ -350,6 +359,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     tempState.precision(24);
     tempState << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
     tempState << odometry_.position[0] << "," << odometry_.position[1] << "," << odometry_.position[2] << ",";
+    tempState << current_target_ << ",";
     std::stringstream tempCost;
     tempCost.precision(24);
     tempCost << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
@@ -737,14 +747,14 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                     }
                 }
 
-                float dist_beacon0_positive = beacons_filtered_[droneNumber_][beaconCount_-1] +
-                             beacons_differences_[0][beaconCount_-1] * potential_movement_transformed_positive[0] +
-                             beacons_differences_[1][beaconCount_-1] * potential_movement_transformed_positive[1] +
-                             beacons_differences_[2][beaconCount_-1] * potential_movement_transformed_positive[2];
-                float dist_beacon0_negative = beacons_filtered_[droneNumber_][beaconCount_-1] +
-                             beacons_differences_[0][beaconCount_-1] * potential_movement_transformed_negative[0] +
-                             beacons_differences_[1][beaconCount_-1] * potential_movement_transformed_negative[1] +
-                             beacons_differences_[2][beaconCount_-1] * potential_movement_transformed_negative[2];
+                float dist_beacon0_positive = beacons_filtered_[droneNumber_][current_target_] +
+                             beacons_differences_[0][current_target_] * potential_movement_transformed_positive[0] +
+                             beacons_differences_[1][current_target_] * potential_movement_transformed_positive[1] +
+                             beacons_differences_[2][current_target_] * potential_movement_transformed_positive[2];
+                float dist_beacon0_negative = beacons_filtered_[droneNumber_][current_target_] +
+                             beacons_differences_[0][current_target_] * potential_movement_transformed_negative[0] +
+                             beacons_differences_[1][current_target_] * potential_movement_transformed_negative[1] +
+                             beacons_differences_[2][current_target_] * potential_movement_transformed_negative[2];
 
                 float total_sum_positive;
                 float total_sum_negative;
@@ -854,9 +864,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                             for (size_t j = 0; j < beaconCount_; j++) // iterate over all beacons
                             {
                                 dist_beacon[j] = beacons_filtered_[droneNumber_][j] +
-                                             beacons_differences_[0][beaconCount_-1] * potential_movement_transformed[0] +
-                                             beacons_differences_[1][beaconCount_-1] * potential_movement_transformed[1] +
-                                             beacons_differences_[2][beaconCount_-1] * potential_movement_transformed[2];
+                                             beacons_differences_[0][current_target_] * potential_movement_transformed[0] +
+                                             beacons_differences_[1][current_target_] * potential_movement_transformed[1] +
+                                             beacons_differences_[2][current_target_] * potential_movement_transformed[2];
                                 dist_gt_beacon[j] = sqrt(pow(beacon_gt_[j][0] - (odometry_.position[0] + potential_movement[0]), 2) +
                                                          pow(beacon_gt_[j][1] - (odometry_.position[1] + potential_movement[1]), 2) +
                                                          pow(beacon_gt_[j][2] - (odometry_.position[2] + potential_movement[2]), 2));
@@ -891,7 +901,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
                             float target_sum;
                             if(enable_swarm_ & SWARM_SPC_DISTANCES_ONLY || enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)
-                                target_sum = fabs(dist_beacon[0]);
+                                target_sum = fabs(dist_beacon[current_target_]);
                             if(enable_swarm_ & SWARM_SPC_DISTANCES_CHAIN)
                                 target_sum = fabs(dist_beacon[0]) + fabs(dist_beacon[1]);
 

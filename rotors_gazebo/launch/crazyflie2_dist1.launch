@@ -13,7 +13,7 @@
   <arg name="pathScenario" default="9"/>
   <arg name="droneCount" default="1"/>
   <arg name="beaconCount" default="1"/>
-  <arg name="swarm_mode" default="dist"/>
+  <arg name="swarm_mode" default="elev"/>
   <arg name="swarm_params" default="mpc1_params2b"/>
   <arg name="csvFilesStoring" default="distance"/> <!-- possible values: "yes", "no", "distance" -->
   <arg name="csvFilesStoringTime" default="30.0"/> <!-- seconds -->

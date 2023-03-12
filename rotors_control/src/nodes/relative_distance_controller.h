@@ -109,6 +109,7 @@ namespace rotors_control {
 
             bool dataStoring_active_;
             int enable_swarm_ = SWARM_DISABLED;
+            int current_target_ = 0;
             int history_cnt_;
             Vector3f random_direction_; // save random exploration direction
             bool waypointHasBeenPublished_ = false;
@@ -154,8 +155,9 @@ namespace rotors_control {
             void ElevationCallback(const std_msgs::Float32MultiArray& elevation_msg);
             void BeaconsCallback(const std_msgs::Float32MultiArray& distances_msg);
             void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
+            void TargetCallback(const std_msgs::Int32ConstPtr& target_msg);
             void UpdateCallback(const std_msgs::Int32ConstPtr& update_msg);
-            void SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg);
+            void SaveLogCallback(const std_msgs::Int32ConstPtr& save_msg);
             void MultiDofJointTrajectoryCallback(const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& msg);
             void CallbackSaveData(const ros::TimerEvent& event);
             void ModelstateCallback(const gazebo_msgs::ModelStatesConstPtr& modelstates_msg);
@@ -170,6 +172,7 @@ namespace rotors_control {
             ros::Subscriber elevation_sub_;
             ros::Subscriber beacons_sub_;
             ros::Subscriber enable_sub_;
+            ros::Subscriber target_sub_;
             ros::Subscriber update_sub_;
             ros::Subscriber logsave_sub_;
             ros::Subscriber pose_other_sub_[N_DRONES_MAX];

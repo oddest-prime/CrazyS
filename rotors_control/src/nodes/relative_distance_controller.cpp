@@ -127,6 +127,7 @@ void RelativeDistanceController::InitializeParams() {
     GetRosParameter(pnh, "dist/spc_separation_weight", (float)1.0, &spc_separation_weight_);
     GetRosParameter(pnh, "dist/spc_target_weight", (float)1.0, &spc_target_weight_);
     GetRosParameter(pnh, "dist/spc_height_weight", (float)1.0, &spc_height_weight_);
+    GetRosParameter(pnh, "dist/spc_liimit_weight", (float)0.0, &spc_limit_weight_);
     GetRosParameter(pnh, "dist/spc_calm_weight", (float)1.0, &spc_calm_weight_);
     GetRosParameter(pnh, "dist/explore_command_length", (float)1.0, &explore_command_length_);
     GetRosParameter(pnh, "dist/explore_movement_thr", (float)1.0, &explore_movement_thr_);
@@ -147,6 +148,7 @@ void RelativeDistanceController::InitializeParams() {
     ROS_INFO_ONCE("  dist/spc_separation_weight=%f", spc_separation_weight_);
     ROS_INFO_ONCE("  dist/spc_target_weight=%f", spc_target_weight_);
     ROS_INFO_ONCE("  dist/spc_height_weight=%f", spc_height_weight_);
+    ROS_INFO_ONCE("  dist/spc_limit_weight=%f", spc_limit_weight_);
     ROS_INFO_ONCE("  dist/spc_cohesion_weight=%f", spc_cohesion_weight_);
     ROS_INFO_ONCE("  dist/explore_command_length=%f", explore_command_length_);
     ROS_INFO_ONCE("  dist/explore_movement_thr=%f", explore_movement_thr_);
@@ -214,8 +216,8 @@ void RelativeDistanceController::InitializeParams() {
     if (pnh.getParam("isSim", isSim)){
        ROS_INFO("Got param 'isSim': %d", isSim);
        isSim_ = isSim;
-       if(isSim_ == 0)
-          enable_swarm_ = SWARM_SPC_DISTANCES_ONLY; // auto-enable, if not in simulation mode.
+//       if(isSim_ == 0)
+//          enable_swarm_ = SWARM_SPC_DISTANCES_ONLY; // auto-enable, if not in simulation mode.
     }
 
     ros::NodeHandle nh;
@@ -275,7 +277,7 @@ void RelativeDistanceController::FileSaveData(void){
       std::ofstream fileCost;
       std::ofstream fileVectors;
 
-      ROS_INFO("RelativeDistanceController FileSaveData. droneNumber: %d", droneNumber_);
+      ROS_INFO("RelativeDistanceController %d FileSaveData.", droneNumber_);
 
       if(mkdir("/tmp/log_output/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
           if(errno != EEXIST)
@@ -316,6 +318,8 @@ void RelativeDistanceController::FileSaveData(void){
 
       // To have a one shot storing
       dataStoring_active_ = false;
+
+      ROS_INFO("RelativeDistanceController %d FileSaveData. Done.", droneNumber_);
 }
 
 void RelativeDistanceController::MultiDofJointTrajectoryCallback(const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& msg) {
@@ -916,6 +920,15 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                             float target_term = spc_target_weight_ * target_sum;
                             float calm_term = spc_calm_weight_ * potential_movement.norm();
                             float height_term = 0;
+
+                            if(spc_limit_weight_ > 0.5)
+                            {
+                                if((odometry_.position[2] + potential_movement[2]) > (float)2.0) // limit max height
+                                  height_term += spc_limit_weight_ * potential_movement[2];
+                                if((odometry_.position[2] + potential_movement[2]) < (float)0.5) // limit min height
+                                  height_term += spc_limit_weight_ * (-1.0) * potential_movement[2];
+                            }
+
                             if(enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)
                                 height_term = total_sum += spc_height_weight_ * height_sum;
 

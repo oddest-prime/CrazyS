@@ -27,6 +27,7 @@
   "spc_separation_weight": 10.0,
   "spc_target_weight": 200.0,
   "spc_height_weight": 50.0,
+  "spc_limit_weight": 5000000.0,
   "spc_calm_weight": 0.0,
   "velocity_scaling": 1.0,
   "distance_iir_filter": 0.05,

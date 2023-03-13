@@ -283,11 +283,22 @@ void RelativeDistanceController::FileSaveData(void){
           if(errno != EEXIST)
              ROS_ERROR("Cannot create directory /tmp/log_output/");
 
-      fileDistance.open(std::string("/tmp/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
-      fileEnv.open(std::string("/tmp/log_output/Env") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
-      fileState.open(std::string("/tmp/log_output/State") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
-      fileCost.open(std::string("/tmp/log_output/Cost") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
-      fileVectors.open(std::string("/tmp/log_output/Vectors") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      if(droneNumber_ < 10)
+      {
+           fileDistance.open(std::string("/tmp/log_output/Distance0") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+           fileEnv.open(std::string("/tmp/log_output/Env0") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+           fileState.open(std::string("/tmp/log_output/State0") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+           fileCost.open(std::string("/tmp/log_output/Cost0") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+           fileVectors.open(std::string("/tmp/log_output/Vectors0") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      }
+      else
+      {
+           fileDistance.open(std::string("/tmp/log_output/Distance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+           fileEnv.open(std::string("/tmp/log_output/Env") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+           fileState.open(std::string("/tmp/log_output/State") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+           fileCost.open(std::string("/tmp/log_output/Cost") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+           fileVectors.open(std::string("/tmp/log_output/Vectors") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      }
 
       // Saving distances from every to every drone in a file
       for (unsigned n=0; n < listDistance_.size(); ++n) {

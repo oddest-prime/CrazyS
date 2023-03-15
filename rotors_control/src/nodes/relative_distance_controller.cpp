@@ -844,7 +844,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             {
                 set_point.pose.position.x = direction[0] * velocity_scaling_;
                 set_point.pose.position.y = direction[1] * velocity_scaling_;
-                set_point.pose.position.z = odometry_.position[2] + direction[2]*0.15;
+                set_point.pose.position.z = odometry_.position[2] + direction[2]*0.05;
                 ROS_INFO_ONCE("RelativeDistanceController %d explore:%d (velocity) direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
                 set_point_marker[0] = odometry_.position[0] + direction[0] * velocity_scaling_;
                 set_point_marker[1] = odometry_.position[1] + direction[1] * velocity_scaling_;
@@ -932,7 +932,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
                                 // ROS_INFO("dr.%d bc.%d (%2d/%2d/%2d|%2d) dist_beacon=%f, dist_gt_beacon=%f", droneNumber_, (int)j, xi, yi, zi, ai, dist_beacon[j], dist_gt_beacon[j]);
                             }
-/*
+
                             if(enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)
                             {
                                 for (size_t j = 0; j < beaconCount_; j++) // iterate over all beacons
@@ -954,7 +954,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                     ROS_INFO_ONCE("dr.%d bc.%d (%2d/%2d/%2d|%2d) elevation_over_beacon=%f, dist_beacon=%f, elevation_gt_over_beacon=%f, dist_gt_beacon=%f", droneNumber_, (int)j, xi, yi, zi, ai, elevation_over_beacon, dist_beacon[j], elevation_gt_over_beacon, dist_gt_beacon[j]);
                                 }
                             }
-                            */
+
                             if(enable_swarm_ & SWARM_USE_GROUND_TRUTH) // only for debug! using ground truth positions to infer distances.
                                for (size_t j = 0; j < beaconCount_; j++) // iterate over all beacons
                                   dist_beacon[j] = dist_gt_beacon[j];
@@ -1048,7 +1048,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             {
                 set_point.pose.position.x = best_movement(0) * velocity_scaling_;
                 set_point.pose.position.y = best_movement(1) * velocity_scaling_;
-                set_point.pose.position.z = odometry_.position[2] + best_movement(2)*1.0; // TODO: proper scaling
+                set_point.pose.position.z = odometry_.position[2] + best_movement(2)*0.5; // TODO: proper scaling
                 ROS_INFO_ONCE("RelativeDistanceController %d exploitation (velocity) tsum=%f scal=%f", droneNumber_, best_sum, velocity_scaling_);
                 set_point_marker[0] = odometry_.position[0] + best_movement(0) * velocity_scaling_;
                 set_point_marker[1] = odometry_.position[1] + best_movement(1) * velocity_scaling_;

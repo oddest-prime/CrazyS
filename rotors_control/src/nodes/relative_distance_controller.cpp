@@ -47,7 +47,7 @@ RelativeDistanceController::RelativeDistanceController() {
 
     InitializeParams();
 
-    generator_.seed(droneNumber_); // make sure random numbers are different for each drone
+    generator_.seed(droneNumber_ * 7); // make sure random numbers are different for each drone
     ROS_INFO("RelativeDistanceController: Seed random number generator (droneNumber_): %d", droneNumber_);
 
     history_cnt_ = 0;
@@ -127,7 +127,7 @@ void RelativeDistanceController::InitializeParams() {
     GetRosParameter(pnh, "dist/spc_separation_weight", (float)1.0, &spc_separation_weight_);
     GetRosParameter(pnh, "dist/spc_target_weight", (float)1.0, &spc_target_weight_);
     GetRosParameter(pnh, "dist/spc_height_weight", (float)1.0, &spc_height_weight_);
-    GetRosParameter(pnh, "dist/spc_liimit_weight", (float)0.0, &spc_limit_weight_);
+    GetRosParameter(pnh, "dist/spc_limit_weight", (float)0.0, &spc_limit_weight_);
     GetRosParameter(pnh, "dist/spc_calm_weight", (float)1.0, &spc_calm_weight_);
     GetRosParameter(pnh, "dist/explore_command_length", (float)1.0, &explore_command_length_);
     GetRosParameter(pnh, "dist/explore_movement_thr", (float)1.0, &explore_movement_thr_);
@@ -356,7 +356,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
     // this replaces ElevationCallback
     elevation_[droneNumber_] = odometry_msg->pose.pose.position.z;
-    elevation_filtered_[droneNumber_] = elevation_filtered_[droneNumber_]*(1.0-elevation_iir_filter_) + elevation_[droneNumber_]*(elevation_iir_filter_); // IIR lowpass filter for distance measurements
+    elevation_filtered_[droneNumber_] = elevation_[droneNumber_]; // do not filter elevation for Hardware (testing)
+    //elevation_filtered_[droneNumber_] = elevation_filtered_[droneNumber_]*(1.0-elevation_iir_filter_) + elevation_[droneNumber_]*(elevation_iir_filter_); // IIR lowpass filter for distance measurements
 
     // for logging into files
     std::stringstream tempDistance;
@@ -366,6 +367,11 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     {
         tempDistance << distances_[droneNumber_][i] << ",";
         tempDistance << distances_filtered_[droneNumber_][i] << ",";
+    }
+    for (size_t i = 0; i < beaconCount_; i++) // iterate over all quadcopters
+    {
+        tempDistance << beacons_[droneNumber_][i] << ",";
+        tempDistance << beacons_filtered_[droneNumber_][i] << ",";
     }
     std::stringstream tempEnv;
     tempEnv.precision(24);
@@ -813,6 +819,16 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 set_point_marker[1] = odometry_.position[1] + direction[1] * velocity_scaling_;
                 set_point_marker[2] = odometry_.position[2] + direction[2] * velocity_scaling_;
             }
+            else if(inner_controller_ == 4) // HW controller
+            {
+                set_point.pose.position.x = direction[0] * velocity_scaling_;
+                set_point.pose.position.y = direction[1] * velocity_scaling_;
+                set_point.pose.position.z = odometry_.position[2] + direction[2]*0.15;
+                ROS_INFO_ONCE("RelativeDistanceController %d explore:%d (velocity) direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
+                set_point_marker[0] = odometry_.position[0] + direction[0] * velocity_scaling_;
+                set_point_marker[1] = odometry_.position[1] + direction[1] * velocity_scaling_;
+                set_point_marker[2] = odometry_.position[2] + direction[2] * velocity_scaling_;
+            }
             else
             {
                 set_point.pose.position.x = odometry_.position[0] + direction[0];
@@ -879,9 +895,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                             for (size_t j = 0; j < beaconCount_; j++) // iterate over all beacons
                             {
                                 dist_beacon[j] = beacons_filtered_[droneNumber_][j] +
-                                             beacons_differences_[0][current_target_] * potential_movement_transformed[0] +
-                                             beacons_differences_[1][current_target_] * potential_movement_transformed[1] +
-                                             beacons_differences_[2][current_target_] * potential_movement_transformed[2];
+                                             beacons_differences_[0][j] * potential_movement_transformed[0] +
+                                             beacons_differences_[1][j] * potential_movement_transformed[1] +
+                                             beacons_differences_[2][j] * potential_movement_transformed[2];
                                 dist_gt_beacon[j] = sqrt(pow(beacon_gt_[j][0] - (odometry_.position[0] + potential_movement[0]), 2) +
                                                          pow(beacon_gt_[j][1] - (odometry_.position[1] + potential_movement[1]), 2) +
                                                          pow(beacon_gt_[j][2] - (odometry_.position[2] + potential_movement[2]), 2));
@@ -932,16 +948,22 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                             float calm_term = spc_calm_weight_ * potential_movement.norm();
                             float height_term = 0;
 
+                            if(enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)
+                                height_term += spc_height_weight_ * height_sum;
+
                             if(spc_limit_weight_ > 0.5)
                             {
-                                if((odometry_.position[2] + potential_movement[2]) > (float)2.0) // limit max height
+                                if((elevation_filtered_[droneNumber_] + potential_movement[2]) > (float)2.0) // limit max height
+                                {
                                   height_term += spc_limit_weight_ * potential_movement[2];
-                                if((odometry_.position[2] + potential_movement[2]) < (float)0.5) // limit min height
+                                  //ROS_INFO("dr.%d (%2d/%2d/%2d|%2d) limit max plus=%f (z=%f)", droneNumber_, xi, yi, zi, ai, spc_limit_weight_ * potential_movement[2], elevation_filtered_[droneNumber_]);
+                                }
+                                if((elevation_filtered_[droneNumber_] + potential_movement[2]) < (float)0.5) // limit min height
+                                {
+                                  //ROS_INFO("dr.%d (%2d/%2d/%2d|%2d) limit min plus=%f (z=%f)", droneNumber_, xi, yi, zi, ai, spc_limit_weight_ * potential_movement[2], elevation_filtered_[droneNumber_]);
                                   height_term += spc_limit_weight_ * (-1.0) * potential_movement[2];
+                                }
                             }
-
-                            if(enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)
-                                height_term = total_sum += spc_height_weight_ * height_sum;
 
                             if(neighbourhood_cnt != 0) // no neighbours means there was a division by 0
                                 total_sum = coehesion_term + separation_term + target_term + calm_term + height_term;
@@ -975,6 +997,17 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 set_point.pose.position.x = best_movement(0) * velocity_scaling_;
                 set_point.pose.position.y = best_movement(1) * velocity_scaling_;
                 set_point.pose.position.z = best_movement(2) * velocity_scaling_;
+                ROS_INFO_ONCE("RelativeDistanceController %d exploitation (velocity) tsum=%f scal=%f", droneNumber_, best_sum, velocity_scaling_);
+                set_point_marker[0] = odometry_.position[0] + best_movement(0) * velocity_scaling_;
+                set_point_marker[1] = odometry_.position[1] + best_movement(1) * velocity_scaling_;
+                set_point_marker[2] = odometry_.position[2] + best_movement(2) * velocity_scaling_;
+                tempEnv << exploration_info << "," << best_movement(0) * velocity_scaling_ << "," << best_movement(1) * velocity_scaling_ << "," << best_movement(2) * velocity_scaling_ << "," << (float)best_sum << "," << history_cnt_ << ",";
+            }
+            else if(inner_controller_ == 4) // HW controller
+            {
+                set_point.pose.position.x = best_movement(0) * velocity_scaling_;
+                set_point.pose.position.y = best_movement(1) * velocity_scaling_;
+                set_point.pose.position.z = odometry_.position[2] + best_movement(2)*1.0; // TODO: proper scaling
                 ROS_INFO_ONCE("RelativeDistanceController %d exploitation (velocity) tsum=%f scal=%f", droneNumber_, best_sum, velocity_scaling_);
                 set_point_marker[0] = odometry_.position[0] + best_movement(0) * velocity_scaling_;
                 set_point_marker[1] = odometry_.position[1] + best_movement(1) * velocity_scaling_;
@@ -1088,7 +1121,8 @@ void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiA
     for (size_t j = 0; j < droneCount_; j++)
     {
         distances_[droneNumber_][j] = distances_msg.data[j];
-        distances_filtered_[droneNumber_][j] = distances_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + distances_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
+        if(distances_[droneNumber_][j] < 10.0 && distances_[droneNumber_][j] > 0.25) // reject completely incorrect measurements
+            distances_filtered_[droneNumber_][j] = distances_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + distances_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
         ROS_INFO_ONCE("DistancesCallback drone#%d -> drone#%d: distance=%f filtered=%f.", (int)droneNumber_, (int)j, distances_[droneNumber_][j], distances_filtered_[droneNumber_][j]);
     }
 }
@@ -1126,7 +1160,8 @@ void RelativeDistanceController::BeaconsCallback(const std_msgs::Float32MultiArr
     for (size_t j = 0; j < beaconCount_; j++)
     {
         beacons_[droneNumber_][j] = distances_msg.data[j];
-        beacons_filtered_[droneNumber_][j] = beacons_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + beacons_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
+        if(beacons_[droneNumber_][j] < 10.0 && beacons_[droneNumber_][j] > 0.25) // reject completely incorrect measurements
+            beacons_filtered_[droneNumber_][j] = beacons_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + beacons_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
         ROS_INFO_ONCE("BeaconsCallback drone#%d -> beacon#%d: distance=%f filtered=%f.", (int)droneNumber_, (int)j, beacons_[droneNumber_][j], beacons_filtered_[droneNumber_][j]);
     }
 }

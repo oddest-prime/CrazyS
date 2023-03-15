@@ -21,27 +21,27 @@
 "dist": {
   "eps_move": 0.07,
   "n_move_max": 6,
-  "explore_command_length": 0.5, # length for exploration vector in meters
-  "explore_movement_thr": 0.35, # 0.55 threshold for movement in meters, s.t. it is considered as new measurement
-  "spc_cohesion_weight": 0.0,
-  "spc_separation_weight": 10.0,
-  "spc_target_weight": 200.0,
-  "spc_height_weight": 50.0,
-  "spc_limit_weight": 5000000.0,
-  "spc_calm_weight": 5.0,
+  "explore_command_length": 0.35, # length for exploration vector in meters
+  "explore_movement_thr": 0.55, # 0.55 threshold for movement in meters, s.t. it is considered as new measurement
+  "spc_cohesion_weight": 30.0,
+  "spc_separation_weight": 500.0,
+  "spc_target_weight": 35000.0,
+  "spc_height_weight": 700.0,
+  "spc_limit_weight": 9000000.0,
+  "spc_calm_weight": 0.0,
   "velocity_scaling": 1.2,
-  "distance_iir_filter": 0.05,
-  "elevation_iir_filter": 0.05,
-  "extra_separation_distance": 0.87
+  "distance_iir_filter": 0.2,
+  "elevation_iir_filter": 0.2,
+  "extra_separation_distance": 0.80
   },
 "elevation": {
-  "target_elevation": 0.0, # target is located on ground [m]
-  "swarm_elevation": 1.2 # swarm should stay at this altitude [m]
+  "target_elevation": 0.35, # target is located on ground [m]
+  "swarm_elevation": 1.5 # swarm should stay at this altitude [m]
   },
 "gradient": {
   "scale_factor": 0.005
   },
 "inner": {
-  "controller": 3 # 1 -> PID (A), 2 -> explicit (B), 3 -> velocity (C)
+  "controller": 4 # 1 -> PID (A), 2 -> explicit (B), 3 -> velocity (C), 4 -> velocity/altitude (D)
   }
 }

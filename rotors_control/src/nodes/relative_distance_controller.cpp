@@ -384,9 +384,20 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     std::stringstream tempCost;
     tempCost.precision(24);
     tempCost << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
+
     std::stringstream tempVectors;
-    tempVectors.precision(24);
+    tempVectors.precision(6);
     tempVectors << odometry_.timeStampSec << "," << odometry_.timeStampNsec << "," << enable_swarm_ << ",";
+
+    tempVectors << unit_vectors_[0][0] << "," << unit_vectors_[0][1] << "," << unit_vectors_[0][2] << ","; // vector 0; x,y,z
+    tempVectors << unit_vectors_[1][0] << "," << unit_vectors_[1][1] << "," << unit_vectors_[1][2] << ","; // vector 1; x,y,z
+    tempVectors << unit_vectors_[2][0] << "," << unit_vectors_[2][1] << "," << unit_vectors_[2][2] << ","; // vector 2; x,y,z
+
+    for (size_t i = 0; i < droneCount_; i++)
+        tempVectors << distances_differences_[0][i] << "," << distances_differences_[1][i] << "," << distances_differences_[2][i] << ","; // vector 0; x,y,z
+    for (size_t i = 0; i < beaconCount_; i++)
+        tempVectors << beacons_differences_[0][i] << "," << beacons_differences_[1][i] << "," << beacons_differences_[2][i] << ","; // vector 0; x,y,z
+
 
 /*
     // distance measurements from previous message (to check for large changes, when target is updated) -- was replaced by update_sub_ !
@@ -432,9 +443,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     if(history_cnt_ < HISTORY_CNT_MAX)
     {
         for (size_t i = 0; i < droneCount_; i++)
-            distances_history_[i][history_cnt_] = distances_[droneNumber_][i];
+            distances_history_[i][history_cnt_] = distances_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
         for (size_t i = 0; i < beaconCount_; i++)
-            beacons_history_[i][history_cnt_] = beacons_[droneNumber_][i];
+            beacons_history_[i][history_cnt_] = beacons_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
     }
     if(unit_vectors_age_[0] >= 0) unit_vectors_age_[0] ++; // age of -1 means this unit vector is invalid
     if(unit_vectors_age_[1] >= 0) unit_vectors_age_[1] ++; // age of -1 means this unit vector is invalid
@@ -533,6 +544,11 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 float alpha0, alpha1;
                 linearLeastSquaresApproximation(distances_history_[i], (size_t)history_cnt_, &alpha0, &alpha1);
                 distances_differences_[index_dot_product][i] = (alpha1 * history_cnt_) / movement_norm;
+                // cap by +/- 1, as the change should not be larger than the movement-norm
+                if(distances_differences_[index_dot_product][i] < -1.0)
+                    distances_differences_[index_dot_product][i] = -1.0;
+                if(distances_differences_[index_dot_product][i] > 1.0)
+                    distances_differences_[index_dot_product][i] = 1.0;
                 /*float distances_differences_diff = (distances_[droneNumber_][i] - distances_history_[i][0]) / movement_norm;
                 ROS_INFO("OdometryCallback distances_=%f distances_history_=%f", distances_[droneNumber_][i], distances_history_[i][0]);
                 ROS_INFO("OdometryCallback (%d) to %d (history_cnt_=%d) LSQApr=%f, diff=%f ", droneNumber_, (int)i, history_cnt_, distances_differences_[index_dot_product][i], distances_differences_diff);
@@ -543,6 +559,11 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 float alpha0, alpha1;
                 linearLeastSquaresApproximation(beacons_history_[i], (size_t)history_cnt_, &alpha0, &alpha1);
                 beacons_differences_[index_dot_product][i] = (alpha1 * history_cnt_) / movement_norm;
+                // cap by +/- 1, as the change should not be larger than the movement-norm
+                if(beacons_differences_[index_dot_product][i] < -1.0)
+                    beacons_differences_[index_dot_product][i] = -1.0;
+                if(beacons_differences_[index_dot_product][i] > 1.0)
+                    beacons_differences_[index_dot_product][i] = 1.0;
             }
 
             ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_0 (age:%d): %s", droneNumber_, unit_vectors_age_[0], VectorToString(unit_vectors_[0]).c_str());
@@ -851,6 +872,13 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             float min_calm_term;
             float min_height_term;
 
+            float still_sum = FLT_MAX;
+            float still_coehesion_term;
+            float still_separation_term;
+            float still_target_term;
+            float still_calm_term;
+            float still_height_term;
+
             for(int ai = 0; ai <= n_move_max_; ai ++) // iterate over all possible next actions in x-, y- and z-dimension; and over length n_move_max_
             {
                 for(int xi = -1; xi <= 1; xi ++)
@@ -904,7 +932,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
                                 // ROS_INFO("dr.%d bc.%d (%2d/%2d/%2d|%2d) dist_beacon=%f, dist_gt_beacon=%f", droneNumber_, (int)j, xi, yi, zi, ai, dist_beacon[j], dist_gt_beacon[j]);
                             }
-
+/*
                             if(enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)
                             {
                                 for (size_t j = 0; j < beaconCount_; j++) // iterate over all beacons
@@ -926,6 +954,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                     ROS_INFO_ONCE("dr.%d bc.%d (%2d/%2d/%2d|%2d) elevation_over_beacon=%f, dist_beacon=%f, elevation_gt_over_beacon=%f, dist_gt_beacon=%f", droneNumber_, (int)j, xi, yi, zi, ai, elevation_over_beacon, dist_beacon[j], elevation_gt_over_beacon, dist_gt_beacon[j]);
                                 }
                             }
+                            */
                             if(enable_swarm_ & SWARM_USE_GROUND_TRUTH) // only for debug! using ground truth positions to infer distances.
                                for (size_t j = 0; j < beaconCount_; j++) // iterate over all beacons
                                   dist_beacon[j] = dist_gt_beacon[j];
@@ -985,6 +1014,18 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                 min_calm_term = calm_term;
                                 min_height_term = height_term;
                             }
+
+                            if(xi == 0 && yi == 0 && zi == 0)
+                            {
+                                still_sum = total_sum;
+
+                                still_coehesion_term = coehesion_term;
+                                still_separation_term = separation_term;
+                                still_target_term = target_term;
+                                still_calm_term = calm_term;
+                                still_height_term = height_term;
+                            }
+
                         }
                     }
                 }
@@ -1026,14 +1067,15 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 tempEnv << exploration_info << "," << best_movement(0) << "," << best_movement(1) << "," << best_movement(2)*1.5 << "," << (float)best_sum << "," << history_cnt_ << ",";
             }
             tempCost << best_sum << "," << min_coehesion_term << "," << min_separation_term << "," << min_target_term << "," << min_calm_term << "," << min_height_term << ",";
+            tempCost << still_sum << "," << still_coehesion_term << "," << still_separation_term << "," << still_target_term << "," << still_calm_term << "," << still_height_term << ",";
         }
 
         //tempEnv << unit_vectors_age_[0] << "," << unit_vectors_age_[1] << "," << unit_vectors_age_[2] << ",";
         tempEnv << neighbourhood_cnt << ",";
 
-        tempCost << unit_vectors_[0][0] << "," << unit_vectors_[0][1] << "," << unit_vectors_[0][2] << "," << unit_vectors_age_[0] << ",";
-        tempCost << unit_vectors_[1][0] << "," << unit_vectors_[1][1] << "," << unit_vectors_[1][2] << "," << unit_vectors_age_[1] << ",";
-        tempCost << unit_vectors_[2][0] << "," << unit_vectors_[2][1] << "," << unit_vectors_[2][2] << "," << unit_vectors_age_[2] << ",";
+        //tempCost << unit_vectors_[0][0] << "," << unit_vectors_[0][1] << "," << unit_vectors_[0][2] << "," << unit_vectors_age_[0] << ",";
+        //tempCost << unit_vectors_[1][0] << "," << unit_vectors_[1][1] << "," << unit_vectors_[1][2] << "," << unit_vectors_age_[1] << ",";
+        //tempCost << unit_vectors_[2][0] << "," << unit_vectors_[2][1] << "," << unit_vectors_[2][2] << "," << unit_vectors_age_[2] << ",";
     }
 
     if(enable_swarm_ != SWARM_DISABLED || target_swarm_.position_W[2] > 0.01) // do not enable drone until proper target point received

@@ -115,7 +115,7 @@ for j in 10 # dyn_nse
     echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_col = $dyn_col, dyn_eps = $dyn_eps, dyn_nmm = $dyn_nmm, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal, dyn_ese = $dyn_ese, dyn_nhd = $dyn_nhd, dyn_hgh = $dyn_hgh, dyn_hzd = $dyn_hzd"
 
     #cp rotors_gazebo/resource/crazyflie2_mpc1_placeholder.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
-    cp rotors_gazebo/resource/crazyflie2_mpc1_params2c.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+    cp rotors_gazebo/resource/crazyflie2_mpc1_params2d.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
     sed -i "s/__DYN_NSE__/$dyn_nse/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
     sed -i "s/__DYN_COL__/$dyn_col/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
     sed -i "s/__DYN_EPS__/$dyn_eps/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml

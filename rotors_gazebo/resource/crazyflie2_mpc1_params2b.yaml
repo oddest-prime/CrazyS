@@ -43,6 +43,6 @@
   "scale_factor": 0.005
   },
 "inner": {
-  "controller": 3 # 1 -> PID (A), 2 -> explicit (B), 3 -> velocity (C)
+  "controller": 3 # 1 -> PID (A), 2 -> explicit (B), 3 -> velocity (C), 4 -> velocity/altitude (D)
   }
 }

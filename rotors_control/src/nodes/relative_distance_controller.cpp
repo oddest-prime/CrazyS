@@ -89,10 +89,10 @@ RelativeDistanceController::RelativeDistanceController() {
     update_sub_ = nh.subscribe("update", 1, &RelativeDistanceController::UpdateCallback, this);
     logsave_sub_ = nh.subscribe("logsave", 1, &RelativeDistanceController::SaveLogCallback, this);
     distances_sub_ = nh.subscribe("drone_distances", 1, &RelativeDistanceController::DistancesCallback, this);
-    // positions_sub_ = nh.subscribe("/drone_positions", 1, &RelativeDistanceController::PositionsCallback, this); // check if system works without this information
-    // elevation_sub_ = nh.subscribe("/drone_elevation", 1, &RelativeDistanceController::ElevationCallback, this); // check if system works without this information
+    positions_sub_ = nh.subscribe("/drone_positions", 1, &RelativeDistanceController::PositionsCallback, this); // ground truth information needed for metric calculation
+    elevation_sub_ = nh.subscribe("/drone_elevation", 1, &RelativeDistanceController::ElevationCallback, this); // ground truth information needed for metric calculation
     beacons_sub_ = nh.subscribe("beacon_distances", 1, &RelativeDistanceController::BeaconsCallback, this);
-    // modelstate_sub_ = nh.subscribe("/gazebo/model_states", 1, &RelativeDistanceController::ModelstateCallback, this); // check if system works without this information
+    modelstate_sub_ = nh.subscribe("/gazebo/model_states", 1, &RelativeDistanceController::ModelstateCallback, this); // ground truth information needed for metric calculation
 
     // Absolute position of drones, only used for debugging!
     ros::NodeHandle nhq[N_DRONES_MAX];
@@ -102,7 +102,7 @@ RelativeDistanceController::RelativeDistanceController() {
 
       dronestate_[i].SetId(droneNumber_, i);
       ROS_INFO("RelativeDistanceController: Setup subscriber %s/lps_pose.", nhq[i].getNamespace().c_str());
-      // pose_other_sub_[i] = nhq[i].subscribe("lps_pose", 1, &DroneStateWithTime::PoseCallback, &dronestate_[i]); // check if system works without this information
+      pose_other_sub_[i] = nhq[i].subscribe("lps_pose", 1, &DroneStateWithTime::PoseCallback, &dronestate_[i]); // ground truth information needed for metric calculation
     }
 
     // To publish the set-point

@@ -1163,7 +1163,7 @@ void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiA
     for (size_t j = 0; j < droneCount_; j++)
     {
         distances_[droneNumber_][j] = distances_msg.data[j];
-        if(distances_[droneNumber_][j] < 10.0 && distances_[droneNumber_][j] > 0.25) // reject completely incorrect measurements
+        //if(distances_[droneNumber_][j] < 10.0 && distances_[droneNumber_][j] > 0.25) // reject completely incorrect measurements
             distances_filtered_[droneNumber_][j] = distances_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + distances_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
         ROS_INFO_ONCE("DistancesCallback drone#%d -> drone#%d: distance=%f filtered=%f.", (int)droneNumber_, (int)j, distances_[droneNumber_][j], distances_filtered_[droneNumber_][j]);
     }
@@ -1202,7 +1202,7 @@ void RelativeDistanceController::BeaconsCallback(const std_msgs::Float32MultiArr
     for (size_t j = 0; j < beaconCount_; j++)
     {
         beacons_[droneNumber_][j] = distances_msg.data[j];
-        if(beacons_[droneNumber_][j] < 10.0 && beacons_[droneNumber_][j] > 0.25) // reject completely incorrect measurements
+        //if(beacons_[droneNumber_][j] < 10.0 && beacons_[droneNumber_][j] > 0.25) // reject completely incorrect measurements
             beacons_filtered_[droneNumber_][j] = beacons_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + beacons_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
         ROS_INFO_ONCE("BeaconsCallback drone#%d -> beacon#%d: distance=%f filtered=%f.", (int)droneNumber_, (int)j, beacons_[droneNumber_][j], beacons_filtered_[droneNumber_][j]);
     }

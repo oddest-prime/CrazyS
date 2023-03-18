@@ -638,7 +638,7 @@ void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumbe
     distance_max_rate_ = distance_max_rate;
     elevation_max_rate_ = elevation_max_rate;
 
-    dataStoring_active_ = dataStoring_active;
+    dataStoring_active_ = true; // dataStoring_active;
 
     dronestate_ = dronestate;
     distances_pub_ = distances_pub;

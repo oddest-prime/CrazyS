@@ -312,7 +312,7 @@ Cost%.png: Cost%.csv Env%.csv Makefile
 	       	    8 with lines linewidth 1 lc 11 dashtype 3 title ''" \
  	 | gnuplot
 
-Target.png: DistSimTarget.csv Env0.csv Makefile
+Target.png: DistSimTarget.csv Env00.csv Makefile
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -343,7 +343,7 @@ Target.png: DistSimTarget.csv Env0.csv Makefile
 
 
 
-TraceXY.png: State0.csv Makefile
+TraceXY.png: State00.csv Makefile
 	echo " \
   		set datafile separator ',' \n\
   		 \n\
@@ -360,16 +360,16 @@ TraceXY.png: State0.csv Makefile
 		set xrange [-12.0:12.0] \n\
 		set yrange [-12.0:12.0] \n\
   		set output \"$@\" \n\
-  		plot  		    \"State0.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 0', \
-						\"State1.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 1', \
-						\"State2.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 2', \
-						\"State3.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 3', \
-						\"State4.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 4', \
-						\"State5.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 5', \
-						\"State6.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 6', \
-						\"State7.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 7', \
-						\"State8.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 8', \
-						\"State9.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 9', \
+  		plot  		    \"State00.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 0', \
+						\"State01.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 1', \
+						\"State02.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 2', \
+						\"State03.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 3', \
+						\"State04.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 4', \
+						\"State05.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 5', \
+						\"State06.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 6', \
+						\"State07.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 7', \
+						\"State08.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 8', \
+						\"State09.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 9', \
 						\"State10.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 10', \
 						\"State11.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 11', \
 						\"State13.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 13', \
@@ -377,12 +377,12 @@ TraceXY.png: State0.csv Makefile
 						\"State14.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 14', \
 						\"State15.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 15', \
 						\"State16.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(4) : NaN) : NaN) with lines linewidth 1 title 'drone 16', \
-						\"State0.csv\" using 8:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(7) : NaN) : NaN) with lines linecolor rgb \"light-red\" linewidth 1 title 'TARGET'" \
+						\"State00.csv\" using 8:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(7) : NaN) : NaN) with lines linecolor rgb \"light-red\" linewidth 1 title 'TARGET'" \
   	 | gnuplot
 
 
 
-TraceXZ.png: State0.csv Makefile
+TraceXZ.png: State00.csv Makefile
 	echo " \
   		set datafile separator ',' \n\
   		 \n\
@@ -399,16 +399,16 @@ TraceXZ.png: State0.csv Makefile
 		set xrange [-12.0:12.0] \n\
 		set yrange [-0.5:9.0] \n\
   		set output \"$@\" \n\
-	    plot  		    \"State0.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 0', \
-						\"State1.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 1', \
-						\"State2.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 2', \
-						\"State3.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 3', \
-						\"State4.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 4', \
-						\"State5.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 5', \
-						\"State6.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 6', \
-						\"State7.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 7', \
-						\"State8.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 8', \
-						\"State9.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 9', \
+	    plot  		    \"State00.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 0', \
+						\"State01.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 1', \
+						\"State02.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 2', \
+						\"State03.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 3', \
+						\"State04.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 4', \
+						\"State05.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 5', \
+						\"State06.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 6', \
+						\"State07.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 7', \
+						\"State08.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 8', \
+						\"State09.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 9', \
 						\"State10.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 10', \
 						\"State11.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 11', \
 						\"State12.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 12', \
@@ -416,11 +416,11 @@ TraceXZ.png: State0.csv Makefile
 						\"State14.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 14', \
 						\"State15.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 15', \
 						\"State16.csv\" using 4:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 16', \
-						\"State0.csv\" using 7:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(9) : NaN) : NaN) with lines linecolor rgb \"light-red\" linewidth 1 title 'TARGET'" \
+						\"State00.csv\" using 7:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(9) : NaN) : NaN) with lines linecolor rgb \"light-red\" linewidth 1 title 'TARGET'" \
   	 | gnuplot
 
 
-TraceYZ.png: State0.csv Makefile
+TraceYZ.png: State00.csv Makefile
 	echo " \
   		set datafile separator ',' \n\
   		 \n\
@@ -437,16 +437,16 @@ TraceYZ.png: State0.csv Makefile
 		set xrange [-12.0:12.0] \n\
 		set yrange [-0.5:9.0] \n\
   		set output \"$@\" \n\
-  		plot  		    \"State0.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 0', \
-						\"State1.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 1', \
-						\"State2.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 2', \
-						\"State3.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 3', \
-						\"State4.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 4', \
-						\"State5.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 5', \
-						\"State6.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 6', \
-						\"State7.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 7', \
-						\"State8.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 8', \
-						\"State9.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 9', \
+  		plot  		    \"State00.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 0', \
+						\"State01.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 1', \
+						\"State02.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 2', \
+						\"State03.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 3', \
+						\"State04.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 4', \
+						\"State05.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 5', \
+						\"State06.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 6', \
+						\"State07.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 7', \
+						\"State08.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 8', \
+						\"State09.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 9', \
 						\"State10.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 10', \
 						\"State11.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 11', \
 						\"State12.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 12', \
@@ -454,7 +454,7 @@ TraceYZ.png: State0.csv Makefile
 						\"State14.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 14', \
 						\"State15.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 15', \
 						\"State16.csv\" using 5:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(6) : NaN) : NaN) with lines linewidth 1 title 'drone 16', \
-						\"State0.csv\" using 8:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(9) : NaN) : NaN) with lines linecolor rgb \"light-red\" linewidth 1 title 'TARGET'" \
+						\"State00.csv\" using 8:(((column(1)+column(2)/1000000000)>$(plot_start_val)) ? (((column(1)+column(2)/1000000000)<$(plot_end_val)) ? column(9) : NaN) : NaN) with lines linecolor rgb \"light-red\" linewidth 1 title 'TARGET'" \
   	 | gnuplot
 
 

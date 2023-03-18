@@ -592,10 +592,20 @@ void DroneStateWithTime::FileSaveData(void){
           if(errno != EEXIST)
              ROS_ERROR("Cannot create directory /tmp/log_output/");
 
-      fileDistance.open(std::string("/tmp/log_output/DistSimDistance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
-      fileMetrics.open(std::string("/tmp/log_output/DistSimMetrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
-      fileState.open(std::string("/tmp/log_output/DistSimState") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
-      fileCentroid.open(std::string("/tmp/log_output/DistSimCentroid") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      if(droneNumber_ < 10)
+      {
+          fileDistance.open(std::string("/tmp/log_output/DistSimDistance0") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+          fileMetrics.open(std::string("/tmp/log_output/DistSimMetrics0") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+          fileState.open(std::string("/tmp/log_output/DistSimState0") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+          fileCentroid.open(std::string("/tmp/log_output/DistSimCentroid0") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      }
+      else
+      {
+          fileDistance.open(std::string("/tmp/log_output/DistSimDistance") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+          fileMetrics.open(std::string("/tmp/log_output/DistSimMetrics") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+          fileState.open(std::string("/tmp/log_output/DistSimState") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+          fileCentroid.open(std::string("/tmp/log_output/DistSimCentroid") + std::to_string(droneNumber_) + std::string(".csv"), std::ios_base::trunc);
+      }
 
       // Saving distances from every to every drone in a file
       for (unsigned n=0; n < listDistance_.size(); ++n) {

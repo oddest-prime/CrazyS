@@ -356,8 +356,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
     // this replaces ElevationCallback
     elevation_[droneNumber_] = odometry_msg->pose.pose.position.z;
-    elevation_filtered_[droneNumber_] = elevation_[droneNumber_]; // do not filter elevation for Hardware (testing)
-    //elevation_filtered_[droneNumber_] = elevation_filtered_[droneNumber_]*(1.0-elevation_iir_filter_) + elevation_[droneNumber_]*(elevation_iir_filter_); // IIR lowpass filter for distance measurements
+    //elevation_filtered_[droneNumber_] = elevation_[droneNumber_]; // do not filter elevation for Hardware (testing)
+    elevation_filtered_[droneNumber_] = elevation_filtered_[droneNumber_]*(1.0-elevation_iir_filter_) + elevation_[droneNumber_]*(elevation_iir_filter_); // IIR lowpass filter for distance measurements
 
     // for logging into files
     std::stringstream tempDistance;
@@ -443,9 +443,11 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     if(history_cnt_ < HISTORY_CNT_MAX)
     {
         for (size_t i = 0; i < droneCount_; i++)
-            distances_history_[i][history_cnt_] = distances_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
+            distances_history_[i][history_cnt_] = distances_[droneNumber_][i];
+//            distances_history_[i][history_cnt_] = distances_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
         for (size_t i = 0; i < beaconCount_; i++)
-            beacons_history_[i][history_cnt_] = beacons_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
+            beacons_history_[i][history_cnt_] = beacons_[droneNumber_][i];
+//            beacons_history_[i][history_cnt_] = beacons_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
     }
     if(unit_vectors_age_[0] >= 0) unit_vectors_age_[0] ++; // age of -1 means this unit vector is invalid
     if(unit_vectors_age_[1] >= 0) unit_vectors_age_[1] ++; // age of -1 means this unit vector is invalid
@@ -545,10 +547,11 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 linearLeastSquaresApproximation(distances_history_[i], (size_t)history_cnt_, &alpha0, &alpha1);
                 distances_differences_[index_dot_product][i] = (alpha1 * history_cnt_) / movement_norm;
                 // cap by +/- 1, as the change should not be larger than the movement-norm
-                if(distances_differences_[index_dot_product][i] < -1.0)
-                    distances_differences_[index_dot_product][i] = -1.0;
-                if(distances_differences_[index_dot_product][i] > 1.0)
-                    distances_differences_[index_dot_product][i] = 1.0;
+                //if(distances_differences_[index_dot_product][i] < -1.0)
+                //    distances_differences_[index_dot_product][i] = -1.0;
+                //if(distances_differences_[index_dot_product][i] > 1.0)
+                //    distances_differences_[index_dot_product][i] = 1.0;
+
                 /*float distances_differences_diff = (distances_[droneNumber_][i] - distances_history_[i][0]) / movement_norm;
                 ROS_INFO("OdometryCallback distances_=%f distances_history_=%f", distances_[droneNumber_][i], distances_history_[i][0]);
                 ROS_INFO("OdometryCallback (%d) to %d (history_cnt_=%d) LSQApr=%f, diff=%f ", droneNumber_, (int)i, history_cnt_, distances_differences_[index_dot_product][i], distances_differences_diff);
@@ -560,10 +563,10 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 linearLeastSquaresApproximation(beacons_history_[i], (size_t)history_cnt_, &alpha0, &alpha1);
                 beacons_differences_[index_dot_product][i] = (alpha1 * history_cnt_) / movement_norm;
                 // cap by +/- 1, as the change should not be larger than the movement-norm
-                if(beacons_differences_[index_dot_product][i] < -1.0)
-                    beacons_differences_[index_dot_product][i] = -1.0;
-                if(beacons_differences_[index_dot_product][i] > 1.0)
-                    beacons_differences_[index_dot_product][i] = 1.0;
+                //if(beacons_differences_[index_dot_product][i] < -1.0)
+                //    beacons_differences_[index_dot_product][i] = -1.0;
+                //if(beacons_differences_[index_dot_product][i] > 1.0)
+                //    beacons_differences_[index_dot_product][i] = 1.0;
             }
 
             ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_0 (age:%d): %s", droneNumber_, unit_vectors_age_[0], VectorToString(unit_vectors_[0]).c_str());

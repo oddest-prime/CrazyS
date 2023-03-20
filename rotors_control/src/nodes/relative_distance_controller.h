@@ -100,9 +100,12 @@ namespace rotors_control {
             float neighbourhood_distance_;
             float explore_command_length_;
             float explore_movement_thr_;
+            float explore_distance_cap_;
             float velocity_scaling_;
             float distance_iir_filter_;
             float elevation_iir_filter_;
+            float distance_min_filter_;
+            float distance_max_filter_;
             float extra_separation_distance_;
             float target_elevation_;
             float swarm_elevation_;

@@ -47,7 +47,8 @@
 
 #define NOISE_COLOR_WHITE     0
 #define NOISE_COLOR_RED       1
-#define NOISE_COLOR_PINK      2
+#define NOISE_COLOR_PINK_A    2
+#define NOISE_COLOR_PINK_B    3
 
 
 #define BEACON_MOVED_SMALL_EPS  0.001 /* to compare floats, if beacon moved */

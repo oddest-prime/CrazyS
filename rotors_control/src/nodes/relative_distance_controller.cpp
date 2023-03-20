@@ -131,9 +131,12 @@ void RelativeDistanceController::InitializeParams() {
     GetRosParameter(pnh, "dist/spc_calm_weight", (float)1.0, &spc_calm_weight_);
     GetRosParameter(pnh, "dist/explore_command_length", (float)1.0, &explore_command_length_);
     GetRosParameter(pnh, "dist/explore_movement_thr", (float)1.0, &explore_movement_thr_);
+    GetRosParameter(pnh, "dist/explore_distance_cap", (float)100.0, &explore_distance_cap_);
     GetRosParameter(pnh, "dist/velocity_scaling", (float)0.1, &velocity_scaling_);
     GetRosParameter(pnh, "dist/distance_iir_filter", (float)0.1, &distance_iir_filter_);
     GetRosParameter(pnh, "dist/elevation_iir_filter", (float)0.1, &elevation_iir_filter_);
+    GetRosParameter(pnh, "dist/distance_min_filter", (float)0.01, &distance_min_filter_);
+    GetRosParameter(pnh, "dist/distance_max_filter", (float)100.0, &distance_max_filter_);
     GetRosParameter(pnh, "dist/extra_separation_distance", (float)0.0, &extra_separation_distance_);
     GetRosParameter(pnh, "elevation/target_elevation", (float)0.0, &target_elevation_);
     GetRosParameter(pnh, "elevation/swarm_elevation", (float)1.0, &swarm_elevation_);
@@ -152,9 +155,12 @@ void RelativeDistanceController::InitializeParams() {
     ROS_INFO_ONCE("  dist/spc_cohesion_weight=%f", spc_cohesion_weight_);
     ROS_INFO_ONCE("  dist/explore_command_length=%f", explore_command_length_);
     ROS_INFO_ONCE("  dist/explore_movement_thr=%f", explore_movement_thr_);
+    ROS_INFO_ONCE("  dist/explore_distance_cap=%f", explore_distance_cap_);
     ROS_INFO_ONCE("  dist/velocity_scaling=%f", velocity_scaling_);
     ROS_INFO_ONCE("  dist/distance_iir_filter=%f", distance_iir_filter_);
     ROS_INFO_ONCE("  dist/elevation_iir_filter=%f", elevation_iir_filter_);
+    ROS_INFO_ONCE("  dist/distance_min_filter=%f", distance_min_filter_);
+    ROS_INFO_ONCE("  dist/distance_max_filter=%f", distance_max_filter_);
     ROS_INFO_ONCE("  dist/extra_separation_distance=%f", extra_separation_distance_);
     ROS_INFO_ONCE("  elevation/target_elevation=%f", target_elevation_);
     ROS_INFO_ONCE("  elevation/swarm_elevation=%f", swarm_elevation_);
@@ -443,11 +449,11 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     if(history_cnt_ < HISTORY_CNT_MAX)
     {
         for (size_t i = 0; i < droneCount_; i++)
-            distances_history_[i][history_cnt_] = distances_[droneNumber_][i];
-//            distances_history_[i][history_cnt_] = distances_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
+//            distances_history_[i][history_cnt_] = distances_[droneNumber_][i];
+            distances_history_[i][history_cnt_] = distances_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
         for (size_t i = 0; i < beaconCount_; i++)
-            beacons_history_[i][history_cnt_] = beacons_[droneNumber_][i];
-//            beacons_history_[i][history_cnt_] = beacons_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
+//            beacons_history_[i][history_cnt_] = beacons_[droneNumber_][i];
+            beacons_history_[i][history_cnt_] = beacons_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
     }
     if(unit_vectors_age_[0] >= 0) unit_vectors_age_[0] ++; // age of -1 means this unit vector is invalid
     if(unit_vectors_age_[1] >= 0) unit_vectors_age_[1] ++; // age of -1 means this unit vector is invalid
@@ -547,10 +553,10 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 linearLeastSquaresApproximation(distances_history_[i], (size_t)history_cnt_, &alpha0, &alpha1);
                 distances_differences_[index_dot_product][i] = (alpha1 * history_cnt_) / movement_norm;
                 // cap by +/- 1, as the change should not be larger than the movement-norm
-                //if(distances_differences_[index_dot_product][i] < -1.0)
-                //    distances_differences_[index_dot_product][i] = -1.0;
-                //if(distances_differences_[index_dot_product][i] > 1.0)
-                //    distances_differences_[index_dot_product][i] = 1.0;
+                if(distances_differences_[index_dot_product][i] < 0-explore_distance_cap_)
+                    distances_differences_[index_dot_product][i] = 0-explore_distance_cap_;
+                if(distances_differences_[index_dot_product][i] > explore_distance_cap_)
+                    distances_differences_[index_dot_product][i] = explore_distance_cap_;
 
                 /*float distances_differences_diff = (distances_[droneNumber_][i] - distances_history_[i][0]) / movement_norm;
                 ROS_INFO("OdometryCallback distances_=%f distances_history_=%f", distances_[droneNumber_][i], distances_history_[i][0]);
@@ -563,10 +569,10 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 linearLeastSquaresApproximation(beacons_history_[i], (size_t)history_cnt_, &alpha0, &alpha1);
                 beacons_differences_[index_dot_product][i] = (alpha1 * history_cnt_) / movement_norm;
                 // cap by +/- 1, as the change should not be larger than the movement-norm
-                //if(beacons_differences_[index_dot_product][i] < -1.0)
-                //    beacons_differences_[index_dot_product][i] = -1.0;
-                //if(beacons_differences_[index_dot_product][i] > 1.0)
-                //    beacons_differences_[index_dot_product][i] = 1.0;
+                if(beacons_differences_[index_dot_product][i] < 0-explore_distance_cap_)
+                    beacons_differences_[index_dot_product][i] = 0-explore_distance_cap_;
+                if(beacons_differences_[index_dot_product][i] > explore_distance_cap_)
+                    beacons_differences_[index_dot_product][i] = explore_distance_cap_;
             }
 
             ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_0 (age:%d): %s", droneNumber_, unit_vectors_age_[0], VectorToString(unit_vectors_[0]).c_str());
@@ -1166,7 +1172,7 @@ void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiA
     for (size_t j = 0; j < droneCount_; j++)
     {
         distances_[droneNumber_][j] = distances_msg.data[j];
-        //if(distances_[droneNumber_][j] < 10.0 && distances_[droneNumber_][j] > 0.25) // reject completely incorrect measurements
+        if(distances_[droneNumber_][j] < distance_max_filter_ && distances_[droneNumber_][j] > distance_min_filter_) // reject completely incorrect measurements
             distances_filtered_[droneNumber_][j] = distances_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + distances_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
         ROS_INFO_ONCE("DistancesCallback drone#%d -> drone#%d: distance=%f filtered=%f.", (int)droneNumber_, (int)j, distances_[droneNumber_][j], distances_filtered_[droneNumber_][j]);
     }
@@ -1205,7 +1211,7 @@ void RelativeDistanceController::BeaconsCallback(const std_msgs::Float32MultiArr
     for (size_t j = 0; j < beaconCount_; j++)
     {
         beacons_[droneNumber_][j] = distances_msg.data[j];
-        //if(beacons_[droneNumber_][j] < 10.0 && beacons_[droneNumber_][j] > 0.25) // reject completely incorrect measurements
+        if(beacons_[droneNumber_][j] < distance_max_filter_ && beacons_[droneNumber_][j] > distance_min_filter_) // reject completely incorrect measurements
             beacons_filtered_[droneNumber_][j] = beacons_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + beacons_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
         ROS_INFO_ONCE("BeaconsCallback drone#%d -> beacon#%d: distance=%f filtered=%f.", (int)droneNumber_, (int)j, beacons_[droneNumber_][j], beacons_filtered_[droneNumber_][j]);
     }

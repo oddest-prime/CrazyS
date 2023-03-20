@@ -142,7 +142,6 @@ void DistanceMeasurementSim::InitializeParams() {
     else
        ROS_ERROR("Failed to get param 'beaconCount'");
 
-    bool dataStoring_active_;
     if (pnh.getParam("csvFilesStoring", dataStoringActive)){
         ROS_INFO("Got param 'csvFilesStoring': %s", dataStoringActive.c_str());
 
@@ -275,14 +274,19 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         float rand_value = std::max(-5*distance_noise_, std::min((float)dist_distribution(generator_), 5*distance_noise_));
         distances_[i] = distances_gt_[i] + rand_value; // add distance noise
       }
-      else if(noise_color_ == NOISE_COLOR_PINK) // pink noise
+      else if(noise_color_ == NOISE_COLOR_PINK_A) // pink noise
       {
         float rand_value = (float)dist_distribution(generator_);
-        //distances_iir_[i] = 0.995 * distances_iir_[i] + 0.005 * rand_value;
         distances_iir_[i] = 0.99 * distances_iir_[i] + 0.01 * rand_value;
         rand_value = (float)dist_distribution(generator_);
-        //distances_[i] = distances_gt_[i] + (distances_iir_[i] + rand_value / 50) * 19.7; // add distance noise
         distances_[i] = distances_gt_[i] + (distances_iir_[i] + rand_value / 30) * 12.0; // add distance noise
+      }
+      else if(noise_color_ == NOISE_COLOR_PINK_B) // pink noise
+      {
+        float rand_value = (float)dist_distribution(generator_);
+        distances_iir_[i] = 0.995 * distances_iir_[i] + 0.005 * rand_value;
+        rand_value = (float)dist_distribution(generator_);
+        distances_[i] = distances_gt_[i] + (distances_iir_[i] + rand_value / 50) * 19.7; // add distance noise
       }
       else
         ROS_FATAL("DroneStateWithTime (%d) invalid noise color: %d", droneNumber_, noise_color_);
@@ -309,7 +313,7 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
           float rand_value = std::max(-5*distance_noise_, std::min((float)dist_distribution(generator_), 5*distance_noise_));
           beacon_distances_[i] = beacon_distances_gt_[i] + rand_value;
         }
-        else if(noise_color_ == NOISE_COLOR_PINK) // pink noise
+        else if(noise_color_ == NOISE_COLOR_PINK_A) // pink noise
         {
           float rand_value = (float)dist_distribution(generator_);
           //beacon_distances_iir_[i] = 0.995 * beacon_distances_iir_[i] + 0.005 * rand_value;
@@ -317,6 +321,13 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
           rand_value = (float)dist_distribution(generator_);
           //beacon_distances_[i] = beacon_distances_gt_[i] + (beacon_distances_iir_[i] + rand_value / 50) * 19.7; // add distance noise
           beacon_distances_[i] = beacon_distances_gt_[i] + (beacon_distances_iir_[i] + rand_value / 30) * 12.0; // add distance noise
+        }
+        else if(noise_color_ == NOISE_COLOR_PINK_B) // pink noise
+        {
+          float rand_value = (float)dist_distribution(generator_);
+          beacon_distances_iir_[i] = 0.995 * beacon_distances_iir_[i] + 0.005 * rand_value;
+          rand_value = (float)dist_distribution(generator_);
+          beacon_distances_[i] = beacon_distances_gt_[i] + (beacon_distances_iir_[i] + rand_value / 50) * 19.7; // add distance noise
         }
         else
           ROS_FATAL("DroneStateWithTime (%d) invalid noise color: %d", droneNumber_, noise_color_);
@@ -652,7 +663,7 @@ void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumbe
     distance_max_rate_ = distance_max_rate;
     elevation_max_rate_ = elevation_max_rate;
 
-    dataStoring_active_ = true; // dataStoring_active;
+    dataStoring_active_ = dataStoring_active;
 
     dronestate_ = dronestate;
     distances_pub_ = distances_pub;

@@ -67,7 +67,7 @@ for i in a b c
 do
 #  for j in 5 7 10 12 15 20 30 50 70 100 150 200 250 300 500 700 1000 2000 3000 # dyn_sep
 #  for j in 600 700 850 1000 1200 1500 1800 2200 # dyn_sep
-for j in 5 10 15 20 25 30 40 50 60 75 100 # dyn_thr
+#  for j in 5 10 15 20 25 30 40 50 60 75 100 # dyn_thr
 #  for j in 70 100 150 250 350 500 700 1000 1500 2500 3500 # dyn_tar
 #  for j in 5 10 20 50 100 200 250 500 1000 # dyn_sca
 #  for j in 0 2 5 7 10 15 22 30 50 75 110 200 # dyn_cal
@@ -86,9 +86,10 @@ for j in 5 10 15 20 25 30 40 50 60 75 100 # dyn_thr
 #  for j in 1000 100 50 25 20 15 12 10 7 5 2  # dyn_hzd
 #  for j in 0 2 3 5 6 7 8 10 12 15 20 25 30 # dyn_nse
 #  for j in 50 100 150 200 350 500 1000 # dyn_sep
+for j in 15 # dyn_thr
 do
     #for c in 0 2 # dyn_col
-    for c in 2 # dyn_col
+    for c in 2 3 # dyn_col
     do
     yamlname=`printf "%05d%s%s" $j $i $c`
 

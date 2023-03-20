@@ -1134,16 +1134,6 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                                 potential_movement = (potential_movement / potential_movement_norm) * eps_move_ * ai; // normalize movement vector to get length 1 and then scale by desired length
                             Vector3f potential_movement_transformed = transform_vectors_ * potential_movement;
 
-                            torch::Tensor tensor = torch::tensor({{(float)(potential_movement[0]),
-                                                                   (float)(potential_movement[1]),
-                                                                   (float)(potential_movement[2]),
-                                                                   distances_filtered_[droneNumber_][1]}}, {torch::kFloat32});
-                            auto ret = distances_model_[1].forward({tensor, distances_hx_[1]}).toTuple();
-                            torch::Tensor outputs = ret->elements()[0].toTensor();
-
-                            if(droneNumber_ == 0)
-                                ROS_INFO("dr.%d (%2d/%2d/%2d|%2d) cur=%f est=%f", droneNumber_, xi, yi, zi, ai, distances_filtered_[droneNumber_][1], outputs[0].item<float>());
-
                             float cohesion_sum = 0;
                             float separation_sum = 0;
                             float total_sum = 0;
@@ -1418,14 +1408,17 @@ void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiA
             distances_filtered_[droneNumber_][j] = distances_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + distances_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
         ROS_INFO_ONCE("DistancesCallback drone#%d -> drone#%d: distance=%f filtered=%f.", (int)droneNumber_, (int)j, distances_[droneNumber_][j], distances_filtered_[droneNumber_][j]);
 
-        torch::Tensor tensor = torch::tensor({{(float)(odometry_.position[0] - odometry_last_distances_measurement_.position[0]),
-                                               (float)(odometry_.position[1] - odometry_last_distances_measurement_.position[1]),
-                                               (float)(odometry_.position[2] - odometry_last_distances_measurement_.position[2]),
-                                               distances_filtered_[droneNumber_][j]}}, {torch::kFloat32});
-        auto ret = distances_model_[j].forward({tensor, distances_hx_[j]}).toTuple();
-        distances_hx_[j] = ret->elements()[1];
-        torch::Tensor outputs = ret->elements()[0].toTensor();
-        //ROS_INFO("DistancesCallback drone#%d -> drone#%d output=%f.", (int)droneNumber_, (int)j, outputs[0].item<float>());
+        if(enable_swarm_ & SWARM_USE_ML)
+        {
+            torch::Tensor tensor = torch::tensor({{(float)(odometry_.position[0] - odometry_last_distances_measurement_.position[0]),
+                                                   (float)(odometry_.position[1] - odometry_last_distances_measurement_.position[1]),
+                                                   (float)(odometry_.position[2] - odometry_last_distances_measurement_.position[2]),
+                                                   distances_filtered_[droneNumber_][j]}}, {torch::kFloat32});
+            auto ret = distances_model_[j].forward({tensor, distances_hx_[j]}).toTuple();
+            distances_hx_[j] = ret->elements()[1];
+            torch::Tensor outputs = ret->elements()[0].toTensor();
+            //ROS_INFO("DistancesCallback drone#%d -> drone#%d output=%f.", (int)droneNumber_, (int)j, outputs[0].item<float>());
+        }
     }
     odometry_last_distances_measurement_ = odometry_;
 }
@@ -1467,13 +1460,16 @@ void RelativeDistanceController::BeaconsCallback(const std_msgs::Float32MultiArr
             beacons_filtered_[droneNumber_][j] = beacons_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + beacons_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
         ROS_INFO_ONCE("BeaconsCallback drone#%d -> beacon#%d: distance=%f filtered=%f.", (int)droneNumber_, (int)j, beacons_[droneNumber_][j], beacons_filtered_[droneNumber_][j]);
 
-        torch::Tensor tensor = torch::tensor({{(float)(odometry_.position[0] - odometry_last_beacons_measurement_.position[0]),
-                                               (float)(odometry_.position[1] - odometry_last_beacons_measurement_.position[1]),
-                                               (float)(odometry_.position[2] - odometry_last_beacons_measurement_.position[2]),
-                                               beacons_filtered_[droneNumber_][j]}}, {torch::kFloat32});
-        auto ret = beacons_model_[j].forward({tensor, beacons_hx_[j]}).toTuple();
-        beacons_hx_[j] = ret->elements()[1];
-        torch::Tensor outputs = ret->elements()[0].toTensor();
+        if(enable_swarm_ & SWARM_USE_ML)
+        {
+            torch::Tensor tensor = torch::tensor({{(float)(odometry_.position[0] - odometry_last_beacons_measurement_.position[0]),
+                                                   (float)(odometry_.position[1] - odometry_last_beacons_measurement_.position[1]),
+                                                   (float)(odometry_.position[2] - odometry_last_beacons_measurement_.position[2]),
+                                                   beacons_filtered_[droneNumber_][j]}}, {torch::kFloat32});
+            auto ret = beacons_model_[j].forward({tensor, beacons_hx_[j]}).toTuple();
+            beacons_hx_[j] = ret->elements()[1];
+            torch::Tensor outputs = ret->elements()[0].toTensor();
+        }
     }
     odometry_last_beacons_measurement_ = odometry_;
 }

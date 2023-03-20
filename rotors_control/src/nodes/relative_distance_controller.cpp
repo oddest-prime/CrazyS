@@ -449,11 +449,11 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     if(history_cnt_ < HISTORY_CNT_MAX)
     {
         for (size_t i = 0; i < droneCount_; i++)
-//            distances_history_[i][history_cnt_] = distances_[droneNumber_][i];
-            distances_history_[i][history_cnt_] = distances_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
+            distances_history_[i][history_cnt_] = distances_[droneNumber_][i];
+            //distances_history_[i][history_cnt_] = distances_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
         for (size_t i = 0; i < beaconCount_; i++)
-//            beacons_history_[i][history_cnt_] = beacons_[droneNumber_][i];
-            beacons_history_[i][history_cnt_] = beacons_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
+            beacons_history_[i][history_cnt_] = beacons_[droneNumber_][i];
+            //beacons_history_[i][history_cnt_] = beacons_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
     }
     if(unit_vectors_age_[0] >= 0) unit_vectors_age_[0] ++; // age of -1 means this unit vector is invalid
     if(unit_vectors_age_[1] >= 0) unit_vectors_age_[1] ++; // age of -1 means this unit vector is invalid

@@ -46,6 +46,7 @@ RelativeDistanceController::RelativeDistanceController() {
     ros::NodeHandle pnh_node("~");
 
     InitializeParams();
+    InitializeML();
 
     generator_.seed(droneNumber_ * 7); // make sure random numbers are different for each drone
     ROS_INFO("RelativeDistanceController: Seed random number generator (droneNumber_): %d", droneNumber_);
@@ -228,6 +229,47 @@ void RelativeDistanceController::InitializeParams() {
 
     ros::NodeHandle nh;
     timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &RelativeDistanceController::CallbackSaveData, this, false, true);
+}
+
+void RelativeDistanceController::InitializeML() {
+    try
+    {
+      torch::Tensor tensor = torch::tensor({{(float)0.0, (float)0.0, (float)0.0, (float)0.0}}, {torch::kFloat32});
+      // Deserialize the ScriptModule from a file using torch::jit::load().
+      for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+      {
+          distances_model_[i] = torch::jit::load("/crazyflie_ws/src/crazys/rotors_control/resource/model_scripted.pt");
+          auto ret = distances_model_[i].forward({tensor}).toTuple();
+          distances_hx_[i] = ret->elements()[1];
+      }
+      for (size_t i = 0; i < beaconCount_; i++) // iterate over all quadcopters
+      {
+          beacons_model_[i] = torch::jit::load("/crazyflie_ws/src/crazys/rotors_control/resource/model_scripted.pt");
+          auto ret = beacons_model_[i].forward({tensor}).toTuple();
+          beacons_hx_[i] = ret->elements()[1];
+      }
+
+/*      torch::Tensor tensor = torch::tensor({{1, 2, 3, 4}}, {torch::kFloat32});
+
+      auto ret = model_.forward({tensor}).toTuple();
+      torch::Tensor outputs = ret->elements()[0].toTensor();
+      c10::IValue hx = ret->elements()[1];
+
+      torch::jit::script::Module distances_model_[N_DRONES_MAX];
+      c10::IValue distances_hx_[N_DRONES_MAX];
+      torch::jit::script::Module beacons_model_[N_DRONES_MAX];
+      c10::IValue beacons_hx_[N_DRONES_MAX];
+
+      ROS_INFO("RelativeDistanceController output=%f.", outputs[0].item<float>());
+      ret = model_.forward({tensor, hx}).toTuple();
+
+*/
+    }
+    catch (const c10::Error& e)
+    {
+      ROS_FATAL("RelativeDistanceController (%d) error loading the ML model: %s", droneNumber_, e.msg().c_str());
+    }
+    ROS_INFO("RelativeDistanceController (%d) InitializeML done.", droneNumber_);
 }
 
 void RelativeDistanceController::EnableCallback(const std_msgs::Int32ConstPtr& enable_msg) {
@@ -871,6 +913,196 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             }
             tempEnv << exploration_info << "," << direction[0] << "," << direction[1] << "," << direction[2] << "," << -1 << "," << history_cnt_ << ",";
         }
+        else if(true) // use n-step prediction
+        {
+            Vector3f best_movement;
+            float best_sum = FLT_MAX;
+            float min_coehesion_term;
+            float min_separation_term;
+            float min_target_term;
+            float min_calm_term;
+            float min_height_term;
+
+            float still_sum = FLT_MAX;
+            float still_coehesion_term;
+            float still_separation_term;
+            float still_target_term;
+            float still_calm_term;
+            float still_height_term;
+
+            for(int ai = 0; ai <= n_move_max_; ai ++) // iterate over all possible next actions in x-, y- and z-dimension; and over length n_move_max_
+            {
+                for(int xi = -1; xi <= 1; xi ++)
+                {
+                    for(int yi = -1; yi <= 1; yi ++)
+                    {
+                        for(int zi = -1; zi <= 1; zi ++)
+                        {
+                            Vector3f potential_movement = {(float)xi, (float)yi, (float)zi}; // 3-dimensional vector of movement
+                            float potential_movement_norm = potential_movement.norm();
+                            if(xi != 0 || yi != 0 || zi != 0)
+                                potential_movement = (potential_movement / potential_movement_norm) * eps_move_ * ai; // normalize movement vector to get length 1 and then scale by desired length
+
+                            float cohesion_sum = 0;
+                            float separation_sum = 0;
+                            float total_sum = 0;
+
+                            for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+                            {
+                                if(i == droneNumber_) // skip for own quadcopter
+                                    continue;
+
+                                float dist = distances_filtered_[droneNumber_][i];
+                                c10::IValue hx = distances_hx_[i];
+
+                                for (size_t k = 0; k < N_STEPS; k++) // predict for N steps
+                                {
+                                    torch::Tensor tensor = torch::tensor({{(float)(potential_movement[0] / (float)1),
+                                                                           (float)(potential_movement[1] / (float)1),
+                                                                           (float)(potential_movement[2] / (float)1),
+                                                                           dist}}, {torch::kFloat32});
+                                    auto ret = distances_model_[i].forward({tensor, hx}).toTuple();
+                                    torch::Tensor outputs = ret->elements()[0].toTensor();
+                                    dist = outputs[0].item<float>();
+                                    hx = ret->elements()[1];
+                                }
+
+                                float dist_gt = dronestate_[i].GetDistance_sim_gt(&dronestate_[droneNumber_], potential_movement);
+                                if(enable_swarm_ & SWARM_USE_GROUND_TRUTH) // only for debug! using ground truth positions to infer distances.
+                                    dist = dist_gt;
+
+//                                    ROS_INFO("dr.%d (%2d/%2d/%2d|%2d) cur=%f est=%f gt=%f", droneNumber_, xi, yi, zi, ai, distances_filtered_[droneNumber_][i], dist, dist_gt);
+
+                                if(neighbourhood_bool[i]) // separation and cohesion only calculated for quadcopters in neighbourhood
+                                {
+                                    cohesion_sum += pow(dist, 2);
+                                    separation_sum += 1.0/pow(fmax(0.000001, dist - 2*drone_radius_ - extra_separation_distance_), 2);
+                                }
+                                ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) i=%d, dist=%f, dist_gt=%f, cohesion_sum=%f, separation_sum=%f", droneNumber_, xi, yi, zi, ai, (int)i, dist, dist_gt, cohesion_sum, separation_sum);
+                            }
+
+                            float dist_beacon[N_BEACONS_MAX], dist_gt_beacon[N_BEACONS_MAX];
+                            for (size_t j = 0; j < beaconCount_; j++) // iterate over all beacons
+                            {
+                                dist_beacon[j] = beacons_filtered_[droneNumber_][j];
+                                c10::IValue hx = beacons_hx_[j];
+
+                                for (size_t k = 0; k < N_STEPS; k++) // predict for N steps
+                                {
+                                    torch::Tensor tensor = torch::tensor({{(float)(potential_movement[0] / (float)1),
+                                                                           (float)(potential_movement[1] / (float)1),
+                                                                           (float)(potential_movement[2] / (float)1),
+                                                                           dist_beacon[j]}}, {torch::kFloat32});
+                                    auto ret = beacons_model_[j].forward({tensor, hx}).toTuple();
+                                    torch::Tensor outputs = ret->elements()[0].toTensor();
+                                    dist_beacon[j] = outputs[0].item<float>();
+                                    hx = ret->elements()[1];
+                                }
+
+                                dist_gt_beacon[j] = sqrt(pow(beacon_gt_[j][0] - (odometry_.position[0] + potential_movement[0]), 2) +
+                                                         pow(beacon_gt_[j][1] - (odometry_.position[1] + potential_movement[1]), 2) +
+                                                         pow(beacon_gt_[j][2] - (odometry_.position[2] + potential_movement[2]), 2));
+
+                                // ROS_INFO("dr.%d bc.%d (%2d/%2d/%2d|%2d) dist_beacon=%f, dist_gt_beacon=%f", droneNumber_, (int)j, xi, yi, zi, ai, dist_beacon[j], dist_gt_beacon[j]);
+                            }
+
+                            if(enable_swarm_ & SWARM_USE_GROUND_TRUTH) // only for debug! using ground truth positions to infer distances.
+                               for (size_t j = 0; j < beaconCount_; j++) // iterate over all beacons
+                                  dist_beacon[j] = dist_gt_beacon[j];
+
+                            float target_sum;
+                            if(enable_swarm_ & SWARM_SPC_DISTANCES_ONLY || enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)
+                                target_sum = fabs(dist_beacon[current_target_]);
+                            if(enable_swarm_ & SWARM_SPC_DISTANCES_CHAIN)
+                                target_sum = fabs(dist_beacon[0]) + fabs(dist_beacon[1]);
+
+                            float height_diff = swarm_elevation_ - (elevation_filtered_[droneNumber_] + potential_movement[2]);
+                            float height_sum = height_diff*height_diff;
+
+                            float coehesion_term = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
+                            float separation_term = spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
+                            float target_term = spc_target_weight_ * target_sum;
+                            float calm_term = spc_calm_weight_ * potential_movement.norm();
+                            float height_term = 0;
+
+                            if(enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)
+                                height_term += spc_height_weight_ * height_sum;
+
+                            if(neighbourhood_cnt != 0) // no neighbours means there was a division by 0
+                                total_sum = coehesion_term + separation_term + target_term + calm_term + height_term;
+                            else
+                                total_sum = target_term + calm_term + height_term;
+
+                            ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) coh=%7.1f sep=%7.1f tar=%7.1f calm=%7.1f total=%7.1f len=%f", droneNumber_, xi, yi, zi, ai, coehesion_term, separation_term, target_term, calm_term, total_sum, potential_movement.norm());
+                            //ROS_INFO("dr.%d (%2d/%2d/%2d|%2d) tar=%f", droneNumber_, xi, yi, zi, ai, target_sum);
+
+                            if(total_sum < best_sum)
+                            {
+                                best_sum = total_sum;
+
+                                best_movement = potential_movement; // save movement vector
+
+                                min_coehesion_term = coehesion_term;
+                                min_separation_term = separation_term;
+                                min_target_term = target_term;
+                                min_calm_term = calm_term;
+                                min_height_term = height_term;
+                            }
+
+                            if(xi == 0 && yi == 0 && zi == 0)
+                            {
+                                still_sum = total_sum;
+
+                                still_coehesion_term = coehesion_term;
+                                still_separation_term = separation_term;
+                                still_target_term = target_term;
+                                still_calm_term = calm_term;
+                                still_height_term = height_term;
+                            }
+
+                        }
+                    }
+                }
+            }
+
+            ROS_INFO_ONCE("drone%d coh=%7.1f sep=%7.1f tar=%7.1f calm=%7.1f total=%7.1f", droneNumber_, min_coehesion_term, min_separation_term, min_target_term, min_calm_term, best_sum);
+
+            if(inner_controller_ == 3) // velocity controller
+            {
+                set_point.pose.position.x = best_movement(0) * velocity_scaling_;
+                set_point.pose.position.y = best_movement(1) * velocity_scaling_;
+                set_point.pose.position.z = best_movement(2) * velocity_scaling_;
+                ROS_INFO_ONCE("RelativeDistanceController %d exploitation (velocity) tsum=%f scal=%f", droneNumber_, best_sum, velocity_scaling_);
+                set_point_marker[0] = odometry_.position[0] + best_movement(0) * velocity_scaling_;
+                set_point_marker[1] = odometry_.position[1] + best_movement(1) * velocity_scaling_;
+                set_point_marker[2] = odometry_.position[2] + best_movement(2) * velocity_scaling_;
+                tempEnv << exploration_info << "," << best_movement(0) * velocity_scaling_ << "," << best_movement(1) * velocity_scaling_ << "," << best_movement(2) * velocity_scaling_ << "," << (float)best_sum << "," << history_cnt_ << ",";
+            }
+            else if(inner_controller_ == 4) // HW controller
+            {
+                set_point.pose.position.x = best_movement(0) * velocity_scaling_;
+                set_point.pose.position.y = best_movement(1) * velocity_scaling_;
+                set_point.pose.position.z = odometry_.position[2] + best_movement(2)*0.5; // TODO: proper scaling
+                ROS_INFO_ONCE("RelativeDistanceController %d exploitation (velocity) tsum=%f scal=%f", droneNumber_, best_sum, velocity_scaling_);
+                set_point_marker[0] = odometry_.position[0] + best_movement(0) * velocity_scaling_;
+                set_point_marker[1] = odometry_.position[1] + best_movement(1) * velocity_scaling_;
+                set_point_marker[2] = odometry_.position[2] + best_movement(2) * velocity_scaling_;
+                tempEnv << exploration_info << "," << best_movement(0) * velocity_scaling_ << "," << best_movement(1) * velocity_scaling_ << "," << best_movement(2) * velocity_scaling_ << "," << (float)best_sum << "," << history_cnt_ << ",";
+            }
+            else
+            {
+                set_point.pose.position.x = odometry_.position[0] + best_movement(0);
+                set_point.pose.position.y = odometry_.position[1] + best_movement(1);
+                set_point.pose.position.z = odometry_.position[2] + best_movement(2)*1.5; // TODO: proper scaling
+                ROS_INFO_ONCE("RelativeDistanceController %d exploitation tsum=%f", droneNumber_, best_sum);
+                set_point_marker[0] = set_point.pose.position.x;
+                set_point_marker[1] = set_point.pose.position.y;
+                set_point_marker[2] = set_point.pose.position.z;
+                tempEnv << exploration_info << "," << best_movement(0) << "," << best_movement(1) << "," << best_movement(2)*1.5 << "," << (float)best_sum << "," << history_cnt_ << ",";
+            }
+            tempCost << best_sum << "," << min_coehesion_term << "," << min_separation_term << "," << min_target_term << "," << min_calm_term << "," << min_height_term << ",";
+            tempCost << still_sum << "," << still_coehesion_term << "," << still_separation_term << "," << still_target_term << "," << still_calm_term << "," << still_height_term << ",";
+        }
         else // possible to do exploitation
         {
             Vector3f best_movement;
@@ -901,6 +1133,16 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                             if(xi != 0 || yi != 0 || zi != 0)
                                 potential_movement = (potential_movement / potential_movement_norm) * eps_move_ * ai; // normalize movement vector to get length 1 and then scale by desired length
                             Vector3f potential_movement_transformed = transform_vectors_ * potential_movement;
+
+                            torch::Tensor tensor = torch::tensor({{(float)(potential_movement[0]),
+                                                                   (float)(potential_movement[1]),
+                                                                   (float)(potential_movement[2]),
+                                                                   distances_filtered_[droneNumber_][1]}}, {torch::kFloat32});
+                            auto ret = distances_model_[1].forward({tensor, distances_hx_[1]}).toTuple();
+                            torch::Tensor outputs = ret->elements()[0].toTensor();
+
+                            if(droneNumber_ == 0)
+                                ROS_INFO("dr.%d (%2d/%2d/%2d|%2d) cur=%f est=%f", droneNumber_, xi, yi, zi, ai, distances_filtered_[droneNumber_][1], outputs[0].item<float>());
 
                             float cohesion_sum = 0;
                             float separation_sum = 0;
@@ -1175,7 +1417,17 @@ void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiA
         if(distances_[droneNumber_][j] < distance_max_filter_ && distances_[droneNumber_][j] > distance_min_filter_) // reject completely incorrect measurements
             distances_filtered_[droneNumber_][j] = distances_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + distances_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
         ROS_INFO_ONCE("DistancesCallback drone#%d -> drone#%d: distance=%f filtered=%f.", (int)droneNumber_, (int)j, distances_[droneNumber_][j], distances_filtered_[droneNumber_][j]);
+
+        torch::Tensor tensor = torch::tensor({{(float)(odometry_.position[0] - odometry_last_distances_measurement_.position[0]),
+                                               (float)(odometry_.position[1] - odometry_last_distances_measurement_.position[1]),
+                                               (float)(odometry_.position[2] - odometry_last_distances_measurement_.position[2]),
+                                               distances_filtered_[droneNumber_][j]}}, {torch::kFloat32});
+        auto ret = distances_model_[j].forward({tensor, distances_hx_[j]}).toTuple();
+        distances_hx_[j] = ret->elements()[1];
+        torch::Tensor outputs = ret->elements()[0].toTensor();
+        //ROS_INFO("DistancesCallback drone#%d -> drone#%d output=%f.", (int)droneNumber_, (int)j, outputs[0].item<float>());
     }
+    odometry_last_distances_measurement_ = odometry_;
 }
 
 void RelativeDistanceController::ElevationCallback(const std_msgs::Float32MultiArray& elevation_msg) {
@@ -1214,7 +1466,16 @@ void RelativeDistanceController::BeaconsCallback(const std_msgs::Float32MultiArr
         if(beacons_[droneNumber_][j] < distance_max_filter_ && beacons_[droneNumber_][j] > distance_min_filter_) // reject completely incorrect measurements
             beacons_filtered_[droneNumber_][j] = beacons_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + beacons_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
         ROS_INFO_ONCE("BeaconsCallback drone#%d -> beacon#%d: distance=%f filtered=%f.", (int)droneNumber_, (int)j, beacons_[droneNumber_][j], beacons_filtered_[droneNumber_][j]);
+
+        torch::Tensor tensor = torch::tensor({{(float)(odometry_.position[0] - odometry_last_beacons_measurement_.position[0]),
+                                               (float)(odometry_.position[1] - odometry_last_beacons_measurement_.position[1]),
+                                               (float)(odometry_.position[2] - odometry_last_beacons_measurement_.position[2]),
+                                               beacons_filtered_[droneNumber_][j]}}, {torch::kFloat32});
+        auto ret = beacons_model_[j].forward({tensor, beacons_hx_[j]}).toTuple();
+        beacons_hx_[j] = ret->elements()[1];
+        torch::Tensor outputs = ret->elements()[0].toTensor();
     }
+    odometry_last_beacons_measurement_ = odometry_;
 }
 
 void RelativeDistanceController::PositionsCallback(const std_msgs::Float32MultiArray& positions_msg) {

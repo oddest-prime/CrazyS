@@ -11,6 +11,11 @@ find_package(catkin REQUIRED COMPONENTS
   cmake_modules
 )
 
+set(Torch_DIR "/home/flie/libtorch/share/cmake/Torch")
+find_package(
+  Torch REQUIRED
+)
+
 find_package(
   Eigen3 REQUIRED
 )
@@ -141,7 +146,9 @@ add_executable(relative_distance_controller src/nodes/relative_distance_controll
 add_dependencies(relative_distance_controller ${catkin_EXPORTED_TARGETS})
 target_link_libraries(relative_distance_controller
   eigen_helpers
-  ${catkin_LIBRARIES})
+  ${catkin_LIBRARIES}
+  "${TORCH_LIBRARIES}")
+set_property(TARGET relative_distance_controller PROPERTY CXX_STANDARD 14)
 
 add_executable(distance_measurement_sim src/nodes/distance_measurement_sim.cpp)
 add_dependencies(distance_measurement_sim ${catkin_EXPORTED_TARGETS})

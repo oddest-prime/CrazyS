@@ -19,7 +19,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     ros-noetic-jackal-description ros-noetic-jackal-control ros-noetic-jackal-gazebo ros-noetic-jackal-simulator \
     python3-vcstool python3-catkin-tools protobuf-compiler libgoogle-glog-dev \
     python3-rosdep python3-wstool ros-noetic-ros \
-    ffmpeg screen xvfb imagemagick gnuplot sqlite3 jq
+    ffmpeg screen xvfb imagemagick gnuplot sqlite3 jq \
+    wget
 
 RUN groupadd -g 1001 flie && \
     useradd -u 1001 -g flie -m -s /bin/bash flie && \
@@ -38,6 +39,8 @@ RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc && \
     echo "test -e /crazyflie_ws/devel/setup.bash && source /crazyflie_ws/devel/setup.bash" >> ~/.bashrc && \
     echo "echo -e \"you are in a screen session, use CTRL+A,C to create new tab, CTRL+A,space to change to next tab\n\nalias for initial build:\n  crazys_init\nthen you might try:\n  roslaunch rotors_gazebo crazyflie2_hovering_example.launch\n  roslaunch rotors_gazebo crazyflie2_swarm4.launch\n  roslaunch crazyflie_demo dist2.launch\n\n\"" >> ~/.bashrc && \
     echo "shell \"/bin/bash\"" >> ~/.screenrc
+
+RUN cd /home/flie && wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.0.0%2Bcpu.zip && unzip libtorch*
 
 WORKDIR /crazyflie_ws
 

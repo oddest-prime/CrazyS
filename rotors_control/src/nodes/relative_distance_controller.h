@@ -47,6 +47,8 @@
 #include <ros/ros.h>
 #include <ros/time.h>
 
+#include <torch/script.h> // for ML
+
 #include "rotors_control/common.h"
 #include "rotors_control/Eigen.h"
 
@@ -55,6 +57,8 @@
 #define N_VECTORS_MAX  3          /* number of saved unit vectors */
 
 #define HISTORY_CNT_MAX                   512
+
+#define N_STEPS                   5
 
 namespace rotors_control {
     using namespace Eigen;
@@ -79,6 +83,7 @@ namespace rotors_control {
             ~RelativeDistanceController();
 
             void InitializeParams();
+            void InitializeML();
 
         private:
             std::mt19937 generator_;
@@ -145,6 +150,13 @@ namespace rotors_control {
             Matrix3f transform_vectors_;
             int transform_ok_;
             int transform_available_;
+
+            torch::jit::script::Module distances_model_[N_DRONES_MAX];
+            c10::IValue distances_hx_[N_DRONES_MAX];
+            torch::jit::script::Module beacons_model_[N_BEACONS_MAX];
+            c10::IValue beacons_hx_[N_BEACONS_MAX];
+            EigenOdometry odometry_last_distances_measurement_;
+            EigenOdometry odometry_last_beacons_measurement_;
 
             std::string namespace_;
 

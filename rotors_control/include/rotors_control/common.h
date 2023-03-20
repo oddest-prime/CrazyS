@@ -42,9 +42,11 @@
 #define SWARM_SPC_DISTANCES_ELEV          2
 #define SWARM_SPC_DISTANCES_CHAIN         4
 #define SWARM_USE_GROUND_TRUTH            16 // only for debug! it is using ground grouth absolute positions!
-#define SWARM_SPC_DISTANCES_ONLY_GT       (SWARM_SPC_DISTANCES_ONLY|SWARM_USE_GROUND_TRUTH) // only for debug! it is using grount grouth absolute positions!
-#define SWARM_SPC_DISTANCES_ELEV_GT       (SWARM_SPC_DISTANCES_ELEV|SWARM_USE_GROUND_TRUTH) // only for debug! it is using grount grouth absolute positions!
-#define SWARM_SPC_DISTANCES_CHAIN_GT      (SWARM_SPC_DISTANCES_CHAIN|SWARM_USE_GROUND_TRUTH) // only for debug! it is using grount grouth absolute positions!
+#define SWARM_USE_ML                      32
+#define SWARM_SPC_DISTANCES_ONLY_GT       (SWARM_SPC_DISTANCES_ONLY|SWARM_USE_GROUND_TRUTH) // only for debug! it is using ground grouth absolute positions!
+#define SWARM_SPC_DISTANCES_ONLY_ML       (SWARM_SPC_DISTANCES_ONLY|SWARM_USE_ML)
+#define SWARM_SPC_DISTANCES_ELEV_GT       (SWARM_SPC_DISTANCES_ELEV|SWARM_USE_GROUND_TRUTH) // only for debug! it is using ground grouth absolute positions!
+#define SWARM_SPC_DISTANCES_CHAIN_GT      (SWARM_SPC_DISTANCES_CHAIN|SWARM_USE_GROUND_TRUTH) // only for debug! it is using ground grouth absolute positions!
 
 namespace rotors_control {
 

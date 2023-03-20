@@ -913,7 +913,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             }
             tempEnv << exploration_info << "," << direction[0] << "," << direction[1] << "," << direction[2] << "," << -1 << "," << history_cnt_ << ",";
         }
-        else if(true) // use n-step prediction
+        else if(enable_swarm_ & SWARM_USE_ML) // use N-step prediction instead of matrix transformed estimation
         {
             Vector3f best_movement;
             float best_sum = FLT_MAX;

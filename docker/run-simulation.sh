@@ -1,6 +1,7 @@
 #!/bin/bash
 
-TIMEOUT=5000
+TIMEOUT=9000
+#TIMEOUT=5000
 #TIMEOUT=3000
 #TIMEOUT=60 # debug, faster runs...
 

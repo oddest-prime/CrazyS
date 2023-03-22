@@ -85,20 +85,20 @@ do
 #  for j in 0 5 10 20 40 80 160 320 640 1280  # dyn_hgh
 #  for j in 1000 100 50 25 20 15 12 10 7 5 2  # dyn_hzd
 #  for j in 0 2 3 5 6 7 8 10 12 15 20 25 30 # dyn_nse
-for j in 100 120 150 180 200 300 400 # dyn_sep
+for j in 100 120 150 180 # dyn_sep
 #  for j in 15 # dyn_thr
 #  for j in 1 # fake loop
 do
     #for c in 0 2 # dyn_col
-    for c in 2 3 # dyn_col
+    for c in 3 # dyn_col
     do
     yamlname=`printf "%05d%s%s" $j $i $c`
 
     #dyn_nse=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_nse="0.1" # 0.05 0.1
     #dyn_eps=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
-    dyn_eps="0.15" # "0.1" # "0.05"
-    dyn_nmm="3" # 6
+    dyn_eps="0.05" # "0.1" # "0.05" "0.15"
+    dyn_nmm="6" # 6 # 3
     dyn_sep="$j" # 350 # "100" "120"
     dyn_tar="250" # "200" # "250" # "150"
     dyn_hgh="100"
@@ -147,8 +147,8 @@ do
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elevGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     #wait_until_max_procs_running
 
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
-    wait_until_max_procs_running
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+#    wait_until_max_procs_running
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     wait_until_max_procs_running
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &

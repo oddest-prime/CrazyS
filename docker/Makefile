@@ -144,11 +144,16 @@ Metrics%.png: DistSimMetrics%.csv Env%.csv Makefile
 		print sprintf(\"metric: MAX of drone count %f\", STATS_max) \n\
 		stats \"$<\" using ((column(3)>64) ? column(5) : NaN) \n\
 		print sprintf(\"metric: MAX of beacon count %f\", STATS_max) \n\
-	    stats \"$<\" using ((column(3)>64) ? column(6) : NaN) \n\
+    stats \"$<\" using ((column(3)>64) ? column(6) : NaN) \n\
 		print sprintf(\"metric: MEAN of dist min %f\", STATS_mean) \n\
 		print sprintf(\"metric: MEDIAN of dist min %f\", STATS_median) \n\
 		print sprintf(\"metric: MIN of dist min %f\", STATS_min) \n\
 		print sprintf(\"metric: MAX of dist min %f\", STATS_max) \n\
+		stats \"$<\" using ((column(3)>64) ? column(9) : NaN) \n\
+		print sprintf(\"metric: MEAN of dist max %f\", STATS_mean) \n\
+		print sprintf(\"metric: MEDIAN of dist max %f\", STATS_median) \n\
+		print sprintf(\"metric: MIN of dist max %f\", STATS_min) \n\
+		print sprintf(\"metric: MAX of dist max %f\", STATS_max) \n\
 		stats \"$<\" using ((column(3)>64) ? column(7) : NaN) \n\
 		print sprintf(\"metric: MEAN of swarm radius %f\", STATS_mean) \n\
 		print sprintf(\"metric: MEDIAN of swarm radius %f\", STATS_median) \n\
@@ -183,6 +188,7 @@ Metrics%.png: DistSimMetrics%.csv Env%.csv Makefile
 				 \"$<\" using (column(1)+column(2)/1000000000):6 with lines title 'dist to drone min' lc 1 lw 2, \
 				 \"$<\" using (column(1)+column(2)/1000000000):7 with lines title 'swarm radius' lc 2 lw 2, \
 				 \"$<\" using (column(1)+column(2)/1000000000):8 with lines title 'dist to beacon0' lc 7, \
+				 \"$<\" using (column(1)+column(2)/1000000000):9 with lines title 'dist to drone max' lc 6 lw 2, \
 				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(5)+6) with lines title 'move_x' lc 9, \
 				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(6)+7) with lines title 'move_y' lc 10, \
 				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(7)+8) with lines title 'move_z' lc 11, \

@@ -262,6 +262,7 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
 
     // calculate distance to other drones
     float dist_min_gt = FLT_MAX;
+    float dist_max_gt = 0;
     for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
     {
       distances_gt_[i] = sqrt(
@@ -293,6 +294,8 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
 
       if(i != droneNumber_)
           dist_min_gt = std::min(distances_gt_[i], dist_min_gt);
+      if(i != droneNumber_)
+          dist_max_gt = std::max(distances_gt_[i], dist_max_gt);
       if(dataStoring_active_) // save data for log files
           tempDistance << distances_gt_[i] << ",";
 
@@ -350,6 +353,7 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         tempMetrics << dist_min_gt << ","; // minimum distance to other drones
         tempMetrics << vector_to_center_gt.norm() << ","; // length of vector, distance from the center (radius of whole flock = compactness)
         tempMetrics << beacon_distances_gt_[0] << ","; // distance to beacon 0
+        tempMetrics << dist_max_gt << ","; // maximum distance to other drones
 
         tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";
 

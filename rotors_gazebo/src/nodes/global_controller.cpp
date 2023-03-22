@@ -733,24 +733,19 @@ int main(int argc, char** argv) {
       }
       else if(pathScenario == 5) // longer distance for EEL (dist and distgnd)
       {
-        path_sleep_afterwards = 30.0;
+        path_sleep_afterwards = 45.0;
         desired_position(2) = (swarm_mode & SWARM_SPC_DISTANCES_ELEV) ? 0.0 : 5.0; // z
         if(path_cnt == 0)
         {
-          desired_position(0) = 10.0; // x
+          desired_position(0) = 8.0; // x
           desired_position(1) = 0.0; // y
         }
         else if(path_cnt == 1)
         {
           desired_position(0) = 0.0; // x
-          desired_position(1) = 10.0; // y
+          desired_position(1) = 8.0; // y
         }
-        else if(path_cnt == 2)
-        {
-          desired_position(0) = 0.0; // x
-          desired_position(1) = -10.0; // y
-        }
-        else if(path_cnt == 3) // no real point, but need to change target, to trigger DistanceMeasurementSim::RecalcTargetSpeed for final position
+        else if(path_cnt == 2) // no real point, but need to change target, to trigger DistanceMeasurementSim::RecalcTargetSpeed for final position
         {
           path_sleep_afterwards = 3.0;
           desired_position(0) = 0.0; // x

@@ -10,6 +10,10 @@ allMetricsCsv := $(shell ls DistSimMetrics*.csv | grep -v Merged)
 allMetricsTmp := $(subst DistSimMetrics,Metrics,$(allMetricsCsv))
 allMetricsPng := $(subst csv,png,$(allMetricsTmp))
 
+allMinDist := $(subst DistSimMetrics,MinDist,$(allMetricsCsv))
+allMaxDist := $(subst DistSimMetrics,MaxDist,$(allMetricsCsv))
+allBeaconDist := $(subst DistSimMetrics,BeaconDist,$(allMetricsCsv))
+
 allCentroidCsv := $(shell ls DistSimCentroid*.csv | grep -v Merged)
 allCentroidTmp := $(subst DistSimCentroid,Centroid,$(allCentroidCsv))
 allCentroidPng := $(subst csv,png,$(allCentroidTmp))
@@ -136,7 +140,7 @@ DistanceGT%.png: DistSimDistance%.csv Env%.csv Makefile
 				   	 0.28 with lines linewidth 2 lt rgb 'light-red' dashtype 2 title 'dist_{thr} (28cm)'" \
 	 | gnuplot
 
-Metrics%.png: DistSimMetrics%.csv Env%.csv Makefile
+Metrics%.png: DistSimMetrics%.csv Env%.csv AllMinDist.csv AllMaxDist.csv AllBeaconDist.csv Makefile
 	echo " \
 		set datafile separator ',' \n\
 		 \n\
@@ -170,7 +174,7 @@ Metrics%.png: DistSimMetrics%.csv Env%.csv Makefile
 		set xlabel \"Time [s]\" \n\
 		set ylabel \"Distance [m]\" \n\
 		set y2label \"Count\" \n\
-		set yrange [0:10] \n\
+		set yrange [0:15] \n\
 		set y2range [0:20] \n\
 		set y2tics 0,1,20 \n\
 		set xtics nomirror \n\
@@ -192,6 +196,9 @@ Metrics%.png: DistSimMetrics%.csv Env%.csv Makefile
 				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(5)+6) with lines title 'move_x' lc 9, \
 				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(6)+7) with lines title 'move_y' lc 10, \
 				 \"$(word 2,$^)\" using (column(1)+column(2)/1000000000):(column(7)+8) with lines title 'move_z' lc 11, \
+				 \"AllMinDist.csv\" using (column(1)+column(2)/1000000000):3 with lines lc 4 lw 2 title 'min interagent dist', \
+				 \"AllMaxDist.csv\" using (column(1)+column(2)/1000000000):3 with lines lc 6 lw 2 title 'max interagent dist', \
+				 \"AllBeaconDist.csv\" using (column(1)+column(2)/1000000000):3 with lines lc 7 lw 2 title 'avg beacon dist', \
 		   	     6 with lines linewidth 1 lc 9 dashtype 3 title '', \
 		   	     7 with lines linewidth 1 lc 10 dashtype 3 title '', \
 		   	     8 with lines linewidth 1 lc 11 dashtype 3 title '', \
@@ -483,8 +490,98 @@ EnvMerged.csv: $(allEnvCsv)
 	rm -rf $@
 	cat $? > $@
 
+EstDistance%.csv: Distance%.csv Makefile
+	awk 'BEGIN { FS = "," } ; { if ($$1+$$2/1000000000 >= $(starttime) && $$1+$$2/1000000000 <= $(endtime)+1) { \
+	min = 999; \
+	max = 0; \
+	if ($$5 < min && $$5 > 0) min = $$5; \
+	if ($$7 < min && $$7 > 0) min = $$7; \
+	if ($$9 < min && $$9 > 0) min = $$9; \
+	if ($$11 < min && $$11 > 0) min = $$11; \
+	if ($$13 < min && $$13 > 0) min = $$13; \
+	if ($$5 > max && $$5 > 0) max = $$5; \
+	if ($$7 > max && $$7 > 0) max = $$7; \
+	if ($$9 > max && $$9 > 0) max = $$9; \
+	if ($$11 > max && $$11 > 0) max = $$11; \
+	if ($$13 > max && $$13 > 0) max = $$13; \
+	print $$0 min FS max \
+	 } }' $< > $@
 
+MinDist%.csv: DistSimMetrics%.csv Makefile
+	awk 'BEGIN { FS = "," } ; { print $$1 FS $$2 FS $$6 }' $< > $@
 
+MaxDist%.csv: DistSimMetrics%.csv Makefile
+	awk 'BEGIN { FS = "," } ; { print $$1 FS $$2 FS $$9 }' $< > $@
+
+BeaconDist%.csv: DistSimMetrics%.csv Makefile
+	awk 'BEGIN { FS = "," } ; { print $$1 FS $$2 FS $$8 }' $< > $@
+
+AllMinDist.csv: $(allMinDist) Makefile
+	paste -d "," $(allMinDist) | \
+	awk 'BEGIN { FS = "," } ; { \
+	min = 999; \
+	if ($$3 < min && $$3 > 0) min = $$3; \
+	if ($$6 < min && $$6 > 0) min = $$6; \
+	if ($$9 < min && $$9 > 0) min = $$9; \
+	if ($$12 < min && $$12 > 0) min = $$12; \
+	if ($$15 < min && $$15 > 0) min = $$15; \
+	if ($$18 < min && $$18 > 0) min = $$18; \
+	if ($$21 < min && $$21 > 0) min = $$21; \
+	if ($$24 < min && $$24 > 0) min = $$24; \
+	if ($$27 < min && $$27 > 0) min = $$27; \
+	if ($$30 < min && $$30 > 0) min = $$30; \
+	if ($$33 < min && $$33 > 0) min = $$33; \
+	if ($$36 < min && $$36 > 0) min = $$36; \
+	if ($$39 < min && $$39 > 0) min = $$39; \
+	if ($$42 < min && $$42 > 0) min = $$42; \
+	if ($$45 < min && $$45 > 0) min = $$45; \
+	print $$1 FS $$2 FS min \
+	 }' > $@
+
+AllMaxDist.csv: $(allMaxDist) Makefile
+	paste -d "," $(allMaxDist) | \
+	awk 'BEGIN { FS = "," } ; { \
+	max = 0; \
+	if ($$3 > max && $$3 > 0) max = $$3; \
+	if ($$6 > max && $$6 > 0) max = $$6; \
+	if ($$9 > max && $$9 > 0) max = $$9; \
+	if ($$12 > max && $$12 > 0) max = $$12; \
+	if ($$15 > max && $$15 > 0) max = $$15; \
+	if ($$18 > max && $$18 > 0) max = $$18; \
+	if ($$21 > max && $$21 > 0) max = $$21; \
+	if ($$24 > max && $$24 > 0) max = $$24; \
+	if ($$27 > max && $$27 > 0) max = $$27; \
+	if ($$30 > max && $$30 > 0) max = $$30; \
+	if ($$33 > max && $$33 > 0) max = $$33; \
+	if ($$36 > max && $$36 > 0) max = $$36; \
+	if ($$39 > max && $$39 > 0) max = $$39; \
+	if ($$42 > max && $$42 > 0) max = $$42; \
+	if ($$45 > max && $$45 > 0) max = $$45; \
+	print $$1 FS $$2 FS max \
+	 }' > $@
+
+AllBeaconDist.csv: $(allBeaconDist) Makefile
+	paste -d "," $(allBeaconDist) | \
+	awk 'BEGIN { FS = "," } ; { \
+	avgsum = 0; avgn = 0; \
+	if ($$3 > 0) { avgsum += $$3; avgn ++; } \
+	if ($$6 > 0) { avgsum += $$6; avgn ++; } \
+	if ($$9 > 0) { avgsum += $$9; avgn ++; } \
+	if ($$12 > 0) { avgsum += $$12; avgn ++; } \
+	if ($$15 > 0) { avgsum += $$15; avgn ++; } \
+	if ($$18 > 0) { avgsum += $$18; avgn ++; } \
+	if ($$21 > 0) { avgsum += $$21; avgn ++; } \
+	if ($$24 > 0) { avgsum += $$24; avgn ++; } \
+	if ($$27 > 0) { avgsum += $$27; avgn ++; } \
+	if ($$30 > 0) { avgsum += $$30; avgn ++; } \
+	if ($$33 > 0) { avgsum += $$33; avgn ++; } \
+	if ($$36 > 0) { avgsum += $$36; avgn ++; } \
+	if ($$39 > 0) { avgsum += $$39; avgn ++; } \
+	if ($$42 > 0) { avgsum += $$42; avgn ++; } \
+	if ($$45 > 0) { avgsum += $$45; avgn ++; } \
+	if (avgn == 0) { avgsum = 0; avgn = 1; } \
+	print $$1 FS $$2 FS avgsum/avgn FS avgsum FS avgn \
+	 }' > $@
 
 
 all-step: \

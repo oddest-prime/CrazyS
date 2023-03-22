@@ -742,7 +742,7 @@ int main(int argc, char** argv) {
         }
         else if(path_cnt == 1)
         {
-          desired_position(0) = 0.0; // x
+          desired_position(0) = 8.0; // x
           desired_position(1) = 8.0; // y
         }
         else if(path_cnt == 2) // no real point, but need to change target, to trigger DistanceMeasurementSim::RecalcTargetSpeed for final position

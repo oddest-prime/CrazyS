@@ -583,6 +583,27 @@ AllBeaconDist.csv: $(allBeaconDist) Makefile
 	print $$1 FS $$2 FS avgsum/avgn FS avgsum FS avgn \
 	 }' > $@
 
+PaperDist.pdf: AllMinDist.csv AllMaxDist.csv AllBeaconDist.csv Makefile
+	echo " \
+		set datafile separator ',' \n\
+		 \n\
+		set term pdf size 5in,3.5in font \"Times,15\" \n\
+		set grid \n\
+		set xlabel \"Time [s]\" \n\
+		set ylabel \"Distance [m]\" \n\
+		set yrange [0:10] \n\
+		set xrange [5:110] \n\
+		set y2range [0:20] \n\
+		set xtics nomirror \n\
+		set output \"$@\" \n\
+		unset colorbox \n\
+		unset key \n\
+		plot  \"AllMinDist.csv\" using (column(1)+column(2)/1000000000):3 with lines lc 4 lw 3 title 'min interagent dist', \
+          \"AllMaxDist.csv\" using (column(1)+column(2)/1000000000):3 with lines lc 6 lw 3 title 'max interagent dist', \
+          \"AllBeaconDist.csv\" using (column(1)+column(2)/1000000000):3 with lines lc rgb '#229922' lw 3 title 'avg dist to target', \
+          0.28 with lines linewidth 2 lt rgb 'light-red' dashtype 2 title 'dist_{thr} (28cm)'" \
+	 | gnuplot
+
 
 all-step: \
 DronePosition0.png \

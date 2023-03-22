@@ -63,7 +63,7 @@ function wait_until_max_procs_running {
 
 rm -f rotors_gazebo/resource/crazyflie2_mpc1_dyn_*.yaml
 # test different separation weights
-for i in a b c
+for i in a b c d e
 do
 #  for j in 5 7 10 12 15 20 30 50 70 100 150 200 250 300 500 700 1000 2000 3000 # dyn_sep
 #  for j in 600 700 850 1000 1200 1500 1800 2200 # dyn_sep
@@ -75,7 +75,7 @@ do
 #  for j in 0 1 2 3 5 7 10 15 20 35 50 # dyn_nse
 #  for j in 2 5 7 8 10 12 15 20 35 50 70 100 150 200 # dyn_eps
 #  for j in 6 12 # dyn_nmm
-for j in 250 500 1000 2000 5000 6000 10000 # dyn_tar
+#  for j in 250 500 1000 2000 5000 6000 10000 # dyn_tar
 #  for j in 100 150 200 300 500 1000 # dyn_sca
 #  for j in 248 249 250 251 252 # dyn_tar
 #  for j in 50 75 87 92 100 110 120 140 200 # dyn_ese
@@ -87,7 +87,7 @@ for j in 250 500 1000 2000 5000 6000 10000 # dyn_tar
 #  for j in 0 2 3 5 6 7 8 10 12 15 20 25 30 # dyn_nse
 #  for j in 100 120 150 180 # dyn_sep
 #  for j in 15 # dyn_thr
-#  for j in 1 # fake loop
+for j in 1 # fake loop
 do
     #for c in 0 2 # dyn_col
     for c in 3 # dyn_col
@@ -97,10 +97,10 @@ do
     #dyn_nse=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     dyn_nse="0.1" # 0.05 0.1
     #dyn_eps=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
-    dyn_eps="0.05" # "0.1" # "0.05" "0.15"
+    dyn_eps="0.07" # "0.1" # "0.05" "0.15"
     dyn_nmm="6" # 6 # 3
     dyn_sep="100" # 350 # "100" "120"
-    dyn_tar="$j" # "200" # "250" # "150" # 250
+    dyn_tar="6000" # "200" # "250" # "150" # 250
     dyn_hgh="100"
     dyn_cal="0" # 30, 5
     #dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
@@ -147,8 +147,8 @@ do
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elevGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     #wait_until_max_procs_running
 
-#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
-#    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     wait_until_max_procs_running
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &

@@ -87,7 +87,7 @@ do
 #  for j in 0 2 3 5 6 7 8 10 12 15 20 25 30 # dyn_nse
 #  for j in 100 120 150 180 # dyn_sep
 #  for j in 15 # dyn_thr
-for j in 100 110 120 130 150 180 200 # dyn_sca
+for j in 120 150 # dyn_sca
 #for j in 1 # fake loop
 do
     #for c in 0 2 # dyn_col

@@ -87,8 +87,8 @@ do
 #  for j in 0 2 3 5 6 7 8 10 12 15 20 25 30 # dyn_nse
 #  for j in 100 120 150 180 # dyn_sep
 #  for j in 15 # dyn_thr
-for j in 120 150 # dyn_sca
-#for j in 1 # fake loop
+#  for j in 120 150 # dyn_sca
+for j in 1 # fake loop
 do
     #for c in 0 2 # dyn_col
     for c in 3 # dyn_col
@@ -104,12 +104,12 @@ do
     dyn_tar="6000" # "200" # "250" # "150" # 250
     dyn_hgh="800"
     dyn_cal="0" # 30, 5
-    dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
-    #dyn_sca="2" # "2"
+    #dyn_sca=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
+    dyn_sca="1.5" # "2"
     dyn_thr="0.15" # "0.15" # "0.12" # "0.55"
     #dyn_thr=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
     #dyn_ese=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
-    dyn_ese="1.00" # "0.87"
+    dyn_ese="1.10" # "0.87"
     #dyn_nhd=`echo "scale=1;$j / 10" | bc | awk '{printf "%.1f", $0}'`
     dyn_nhd="999.99"
     dyn_hzd="17"

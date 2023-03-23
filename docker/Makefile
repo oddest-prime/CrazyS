@@ -591,8 +591,8 @@ PaperDist.pdf: AllMinDist.csv AllMaxDist.csv AllBeaconDist.csv Makefile
 		set grid \n\
 		set xlabel \"Time [s]\" \n\
 		set ylabel \"Distance [m]\" \n\
-		set yrange [0:10] \n\
-		set xrange [5:110] \n\
+		set yrange [0:12] \n\
+		set xrange [5:220] \n\
 		set y2range [0:20] \n\
 		set xtics nomirror \n\
 		set output \"$@\" \n\

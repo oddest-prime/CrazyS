@@ -733,7 +733,7 @@ int main(int argc, char** argv) {
       }
       else if(pathScenario == 5) // longer distance for EEL (dist and distgnd)
       {
-        path_sleep_afterwards = 90.0;
+        path_sleep_afterwards = 100.0;
         desired_position(2) = (swarm_mode & SWARM_SPC_DISTANCES_ELEV) ? 0.0 : 5.0; // z
         if(path_cnt == 0)
         {

@@ -463,7 +463,7 @@ int main(int argc, char** argv) {
   {
     // wait before unpause physics, s.t. all drones are spawned
     //std::this_thread::sleep_for(std::chrono::seconds(10));
-    std::this_thread::sleep_for(std::chrono::seconds(droneCount*2));
+    std::this_thread::sleep_for(std::chrono::seconds(droneCount*10));
 
     std_srvs::Empty srv;
     bool unpaused = ros::service::call("/gazebo/unpause_physics", srv);

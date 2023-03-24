@@ -1,13 +1,13 @@
 # Swarm controller parameters
 {
 "swarm": {
-  "position_noise": 0.001, # simulate gaussian sensor noise, sigma = 0 cm
-  "distance_noise": 0.001, # simulate gaussian sensor noise for distance measurements, sigma = 0 cm
-  "elevation_noise": 0.001, # simulate gaussian sensor noise for elevation measurements, sigma = 0 cm
-  "noise_color": 2, # NOISE_COLOR_WHITE=0, NOISE_COLOR_RED=1, NOISE_COLOR_PINK=2
-  "distance_max_rate": 1000, # max rate for distance measurements [Hz]
+  "position_noise": 0.0, # simulate gaussian sensor noise, sigma = 0 cm
+  "distance_noise": 0.1, # simulate gaussian sensor noise for distance measurements, sigma = 0 cm
+  "elevation_noise": 0.1, # simulate gaussian sensor noise for elevation measurements, sigma = 0 cm
+  "noise_color": 3, # NOISE_COLOR_WHITE=0, NOISE_COLOR_RED=1, NOISE_COLOR_PINK=2
+  "distance_max_rate": 17, # max rate for distance measurements [Hz]
   "elevation_max_rate": 1000, # max rate for distance measurements [Hz]
-  "neighbourhood_distance": 999.0, # global neighbourhood
+  "neighbourhood_distance": 999.99, # 999.0 = global neighbourhood
   "drone_radius": 0.07, # 7 cm
   "obstacle_radius": 0.25 # 15 cm
   },
@@ -20,24 +20,27 @@
   "mpc_obstacle_weight": 20.0
   },
 "dist": {
-  "eps_move": 0.05,
-  "n_move_max": 6,
-  "explore_command_length": 0.5, # length for exploration vector in meters
+  "eps_move": 0.07, # 0.05
+  "n_move_max": 6, # 6,
+  "explore_command_length": 0.35, # length for exploration vector in meters
   "explore_movement_thr": 0.15, # threshold for movement in meters, s.t. it is considered as new measurement
-  "spc_cohesion_weight": 20.0,
-  "spc_separation_weight": 1000.0,
-  "spc_target_weight": 200.0,
-  "spc_height_weight": 50.0,
+  "explore_distance_cap": 100.0, # maxium distance for learned data
+  "spc_cohesion_weight": 30.0,
+  "spc_separation_weight": 100,
+  "spc_target_weight": 6000,
+  "spc_height_weight": 800,
   "spc_limit_weight": 0.0,
-  "spc_calm_weight": 5.0,
-  "velocity_scaling": 1.0,
+  "spc_calm_weight": 0.0,
+  "velocity_scaling": 1.7,
   "distance_iir_filter": 0.05,
   "elevation_iir_filter": 0.05,
-  "extra_separation_distance": 0.03
+  "distance_min_filter": 0.25, # minimum value for distances to be accepted, otherwise using old value
+  "distance_max_filter": 100.0, # maximum value for distances to be accepted, otherwise using old value
+  "extra_separation_distance": 1.10
   },
 "elevation": {
   "target_elevation": 0.0, # target is located on ground [m]
-  "swarm_elevation": 1.5 # swarm should stay at this altitude [m]
+  "swarm_elevation": 5.0 # swarm should stay at this altitude [m]
   },
 "gradient": {
   "scale_factor": 0.005

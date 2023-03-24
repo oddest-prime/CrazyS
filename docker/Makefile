@@ -29,6 +29,8 @@ allEnvPng := $(subst csv,png,$(allEnvCsv))
 
 allNoisePng := $(subst State,Noise,$(allStatePng))
 
+workingDir := $(shell pwd | grep -o -e "/[^/]*$$" | tr -d "/")
+
 all-distance: $(allDistancePng)
 all-distanceGT: $(allDistanceGTPng)
 all-metrics: $(allMetricsPng)
@@ -39,6 +41,9 @@ all-noise: $(allNoisePng)
 all-trace: TraceXY.png TraceXZ.png TraceYZ.png
 
 all: all-distance all-distanceGT all-metrics all-centroid all-state all-cost all-trace
+
+pwd:
+	echo "[$(workingDir)]"
 
 plot_start_val := 0
 plot_end_val := 9999999999999999999
@@ -603,6 +608,7 @@ PaperDist.pdf: AllMinDist.csv AllMaxDist.csv AllBeaconDist.csv Makefile
           \"AllBeaconDist.csv\" using (column(1)+column(2)/1000000000):3 with lines lc rgb '#229922' lw 3 title 'avg dist to target', \
           0.28 with lines linewidth 2 lt rgb 'light-red' dashtype 2 title 'dist_{thr} (28cm)'" \
 	 | gnuplot
+	cp PaperDist.pdf PaperDist_$(workingDir).pdf
 
 
 all-step: \

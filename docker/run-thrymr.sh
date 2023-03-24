@@ -1,8 +1,143 @@
 #!/bin/bash
 
 RUN_START=`date`
+RUN_START_INT=`date +%s`
 rm -f /tmp/stop
 cd ~/SWARM/crazys
+
+DOCKER_PIDS=()
+function wait_until_max_procs_running {
+  NEWPID=$!
+
+  MAX_RUNNING=8
+  if [ $# -eq 1 ]
+  then
+    MAX_RUNNING=$1
+  fi;
+
+  DOCKER_PIDS+=($NEWPID)
+  echo "New instance started with pid $NEWPID. Wait 5 sec."
+  sleep 5
+
+  while : ; do
+    NPROC_RUNNING=0
+    for value in "${DOCKER_PIDS[@]}"
+    do
+        if kill -0 $value 2> /dev/null
+        then
+          #echo "pid $value still running"
+          NPROC_RUNNING=$(($NPROC_RUNNING + 1))
+        #else
+        #  echo "pid $value already done"
+        fi;
+    done
+    if pidof cmake > /dev/null 2> /dev/null
+    then
+      echo "$NPROC_RUNNING processed running of $MAX_RUNNING max. cmake running: should wait 10 sec."
+      sleep 10;
+    elif [ $NPROC_RUNNING -ge $MAX_RUNNING ]
+    then
+      echo "$NPROC_RUNNING processed running of $MAX_RUNNING max: should wait 10 sec."
+      sleep 10;
+    else
+      echo "$NPROC_RUNNING processed running of $MAX_RUNNING max: ok, proceed."
+      break;
+    fi;
+  done;
+
+  if test -e /tmp/stop
+  then
+    RUN_END=`date`
+    RUN_END_INT=`date +%s`
+    DURATION=`echo "scale=2;(${RUN_END_INT} - ${RUN_START_INT}) / (60*60)" | bc | awk '{printf "%.2f", $0}'`
+    echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    echo "%   aborted by /tmp/stop - not starting any new instances."
+    echo "% RUN_START:  ${RUN_START}"
+    echo "% RUN_END:    ${RUN_END}"
+    echo "% DURATION:   ${DURATION} hours"
+    echo "%   run-thrymr.sh done."
+    echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    exit 7 # stop if flag is present
+  fi;
+}
+
+for i in a b c
+do
+    extratext="fin"
+
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_params2a 0 5 "${extratext}" &
+    #wait_until_max_procs_running
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 distGT mpc1_params2a 0 5 "${extratext}" &
+    #wait_until_max_procs_running
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elev mpc1_params2a 0 5 "${extratext}" &
+    #wait_until_max_procs_running
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elevGT mpc1_params2a 0 5 "${extratext}" &
+    #wait_until_max_procs_running
+
+##    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_params2a 0 5 "${extratext}" &
+##    wait_until_max_procs_running
+##    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_params2a 0 5 "${extratext}" &
+##    wait_until_max_procs_running
+##    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_params2a 0 5 "${extratext}" &
+##    wait_until_max_procs_running
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 dist mpc1_params2a 0 5 "${extratext}" &
+#    wait_until_max_procs_running
+
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 distGT mpc1_params2a 0 5 "${extratext}" &
+#    wait_until_max_procs_running
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 distGT mpc1_params2a 0 5 "${extratext}" &
+#    wait_until_max_procs_running
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 distGT mpc1_params2a 0 5 "${extratext}" &
+#    wait_until_max_procs_running
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 distGT mpc1_params2a 0 5 "${extratext}" &
+#    wait_until_max_procs_running
+
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 elev mpc1_params2a 0 5 "${extratext}" &
+#    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 elev mpc1_params2a 0 5 "${extratext}" &
+    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elev mpc1_params2a 0 5 "${extratext}" &
+    wait_until_max_procs_running
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 elev mpc1_params2a 0 5 "${extratext}" &
+#    wait_until_max_procs_running
+
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 elevGT mpc1_params2a 0 5 "${extratext}" &
+#    wait_until_max_procs_running
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 elevGT mpc1_params2a 0 5 "${extratext}" &
+#    wait_until_max_procs_running
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elevGT mpc1_params2a 0 5 "${extratext}" &
+#    wait_until_max_procs_running
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 elevGT mpc1_params2a 0 5 "${extratext}" &
+#    wait_until_max_procs_running
+done
+
+wait_until_max_procs_running 1
+rm -f rotors_gazebo/resource/crazyflie2_mpc1_dyn_*.yaml
+
+RUN_END=`date`
+RUN_END_INT=`date +%s`
+DURATION=`echo "scale=2;(${RUN_END_INT} - ${RUN_START_INT}) / (60*60)" | bc | awk '{printf "%.2f", $0}'`
+echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+echo "% RUN_START:  ${RUN_START}"
+echo "% RUN_END:    ${RUN_END}"
+echo "% DURATION:   ${DURATION} hours"
+echo "%   run-thrymr.sh done."
+echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+exit 0
+
+
+
+
+
+
+# ####################################################################################
+
+
+
+
+
+
+
 
 #                                                                                                                         hash                         launch      mode    params        obs path extra
 docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2_chain chainGT mpc1_params2c 0 9 "chain1" &

@@ -40,7 +40,7 @@
   },
 "elevation": {
   "target_elevation": 0.0, # target is located on ground [m]
-  "swarm_elevation": 4.0 # swarm should stay at this altitude [m]
+  "swarm_elevation": 5.0 # swarm should stay at this altitude [m]
   },
 "gradient": {
   "scale_factor": 0.005

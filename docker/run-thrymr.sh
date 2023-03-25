@@ -61,55 +61,70 @@ function wait_until_max_procs_running {
   fi;
 }
 
-for i in a b c
+for i in a b c d e
 do
-    extratext="fin"
+    for j in 300 99999 # dyn_nhd
+    do
+        for k in 150 170 # dyn_sca
+        do
+        yamlname=`printf "%05d%s%s" $j $i $k`
+        dyn_nhd=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
+        dyn_sca=`echo "scale=2;$k / 100" | bc | awk '{printf "%.2f", $0}'`
 
-    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_params2a 0 5 "${extratext}" &
+        cp rotors_gazebo/resource/crazyflie2_mpc1_params2a.yaml rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+        sed -i "s/__DYN_NHD__/$dyn_nhd/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+        sed -i "s/__DYN_SCA__/$dyn_sca/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+
+        extratext="dyn_nhd${dyn_nhd}dyn_sca${dyn_sca}fin"
+
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     #wait_until_max_procs_running
-    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 distGT mpc1_params2a 0 5 "${extratext}" &
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 distGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     #wait_until_max_procs_running
-    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elev mpc1_params2a 0 5 "${extratext}" &
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elev mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     #wait_until_max_procs_running
-    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elevGT mpc1_params2a 0 5 "${extratext}" &
+    #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elevGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     #wait_until_max_procs_running
 
-##    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_params2a 0 5 "${extratext}" &
-##    wait_until_max_procs_running
-##    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_params2a 0 5 "${extratext}" &
-##    wait_until_max_procs_running
-##    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_params2a 0 5 "${extratext}" &
-##    wait_until_max_procs_running
-#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 dist mpc1_params2a 0 5 "${extratext}" &
-#    wait_until_max_procs_running
-
-#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 distGT mpc1_params2a 0 5 "${extratext}" &
-#    wait_until_max_procs_running
-#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 distGT mpc1_params2a 0 5 "${extratext}" &
-#    wait_until_max_procs_running
-#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 distGT mpc1_params2a 0 5 "${extratext}" &
-#    wait_until_max_procs_running
-#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 distGT mpc1_params2a 0 5 "${extratext}" &
-#    wait_until_max_procs_running
-
-#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 elev mpc1_params2a 0 5 "${extratext}" &
-#    wait_until_max_procs_running
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 elev mpc1_params2a 0 5 "${extratext}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     wait_until_max_procs_running
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elev mpc1_params2a 0 5 "${extratext}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     wait_until_max_procs_running
-#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 elev mpc1_params2a 0 5 "${extratext}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
+
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 distGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+#    wait_until_max_procs_running
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 distGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+#    wait_until_max_procs_running
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 distGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+#    wait_until_max_procs_running
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 distGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
 #    wait_until_max_procs_running
 
-#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 elevGT mpc1_params2a 0 5 "${extratext}" &
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 elev mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 elev mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elev mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 elev mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
+
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 elevGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
 #    wait_until_max_procs_running
-#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 elevGT mpc1_params2a 0 5 "${extratext}" &
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 elevGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
 #    wait_until_max_procs_running
-#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elevGT mpc1_params2a 0 5 "${extratext}" &
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elevGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
 #    wait_until_max_procs_running
-#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 elevGT mpc1_params2a 0 5 "${extratext}" &
+#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 elevGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
 #    wait_until_max_procs_running
+        done
+    done
 done
+
 
 wait_until_max_procs_running 1
 rm -f rotors_gazebo/resource/crazyflie2_mpc1_dyn_*.yaml

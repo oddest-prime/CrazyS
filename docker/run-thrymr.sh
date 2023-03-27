@@ -65,7 +65,7 @@ for i in a b c d e
 do
     for j in 300 99999 # dyn_nhd
     do
-        for k in 150 170 # dyn_sca
+        for k in 150 # 170 dyn_sca
         do
         yamlname=`printf "%05d%s%s" $j $i $k`
         dyn_nhd=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`

@@ -36,7 +36,7 @@
   "elevation_iir_filter": 0.05,
   "distance_min_filter": 0.25, # minimum value for distances to be accepted, otherwise using old value
   "distance_max_filter": 100.0, # maximum value for distances to be accepted, otherwise using old value
-  "extra_separation_distance": 1.10
+  "extra_separation_distance": 1.35
   },
 "elevation": {
   "target_elevation": 0.0, # target is located on ground [m]

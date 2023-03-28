@@ -61,7 +61,7 @@ namespace rotors_control {
 
     class DroneStateWithTime {
      public:
-      void SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, float elevation_noise, int noise_color, float distance_max_rate, float elevation_max_rate, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* swarm_center_gt);
+      void SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, float elevation_noise, int noise_color, float distance_max_rate, float elevation_max_rate, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* beacon_air, Vector3f* swarm_center_gt);
       void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
       void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
       void FileSaveData(void);
@@ -93,6 +93,7 @@ namespace rotors_control {
       ros::Time elevation_pub_last_time_; // save time, when distances_pub_ was published last time (for rate limiting)
 
       Vector3f* beacon_gt_; // ground-truth
+      Vector3f* beacon_air_; // ground-truth
       Vector3f* swarm_center_gt_; // ground-truth
 
       float distances_[N_DRONES_MAX]; // with simulated sensor noise
@@ -103,6 +104,7 @@ namespace rotors_control {
 
       float beacon_distances_[N_BEACONS_MAX]; // with simulated sensor noise
       float beacon_distances_gt_[N_BEACONS_MAX]; // ground-truth
+      float beacon_distances_air_[N_BEACONS_MAX]; // ground-truth
       float beacon_distances_iir_[N_BEACONS_MAX]; // lowpass for sensor noise
 
 
@@ -121,6 +123,7 @@ namespace rotors_control {
             void RecalcTargetSpeed(ros::Time timeStamp);
 
             Vector3f beacon_gt_[N_BEACONS_MAX]; // beacon positions, ground-truth
+            Vector3f beacon_air_[N_BEACONS_MAX]; // beacon positions, ground-truth
             Vector3f swarm_center_gt_; // drone centroid, ground-truth
             bool dataStoring_active_;
             int enable_swarm_ = 0;

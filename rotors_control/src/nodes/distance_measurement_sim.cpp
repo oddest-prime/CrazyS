@@ -98,7 +98,7 @@ DistanceMeasurementSim::DistanceMeasurementSim() {
                           distance_noise_, elevation_noise_, noise_color_,
                           distance_max_rate_, elevation_max_rate_, dronestate,
                           &(distances_pub_[i]), &positions_pub_, &elevation_pub_, &(beacons_pub_[i]),
-                          dataStoring_active_, beacon_gt_, &swarm_center_gt_);
+                          dataStoring_active_, beacon_gt_, beacon_air_, &swarm_center_gt_);
     }
 }
 
@@ -191,6 +191,9 @@ void DistanceMeasurementSim::ModelstateCallback(const gazebo_msgs::ModelStatesCo
                 beacon_gt_[b][0] = modelstates_msg->pose[i].position.x;
                 beacon_gt_[b][1] = modelstates_msg->pose[i].position.y;
                 beacon_gt_[b][2] = modelstates_msg->pose[i].position.z;
+                beacon_air_[b][0] = modelstates_msg->pose[i].position.x;
+                beacon_air_[b][1] = modelstates_msg->pose[i].position.y;
+                beacon_air_[b][2] = 5.0; // TODO: take from config.
                 ROS_INFO_ONCE("model %d: %s (%d) at location %s", (int)i, modelstates_msg->name[i].c_str(), b, VectorToString(beacon_gt_[b]).c_str());
                 b ++;
 
@@ -198,6 +201,7 @@ void DistanceMeasurementSim::ModelstateCallback(const gazebo_msgs::ModelStatesCo
                   this->RecalcTargetSpeed(ros::Time::now());
             }
         }
+/*
         if(modelstates_msg->name[i] == "jackal")
         {
             // save jackal position as beacon 1
@@ -207,6 +211,7 @@ void DistanceMeasurementSim::ModelstateCallback(const gazebo_msgs::ModelStatesCo
             beacon_gt_[1][2] = 3.5; // TODO: this is just for testing!
             ROS_INFO_ONCE("model %d: %s (%d) at location %s", (int)i, modelstates_msg->name[i].c_str(), 1, VectorToString(beacon_gt_[b]).c_str());
         }
+*/
     }
 }
 
@@ -310,6 +315,10 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
           pow(odometry_gt_.position[0] - beacon_gt_[i][0], 2) +
           pow(odometry_gt_.position[1] - beacon_gt_[i][1], 2) +
           pow(odometry_gt_.position[2] - beacon_gt_[i][2], 2));
+        beacon_distances_air_[i] = sqrt(
+          pow(odometry_gt_.position[0] - beacon_air_[i][0], 2) +
+          pow(odometry_gt_.position[1] - beacon_air_[i][1], 2) +
+          pow(odometry_gt_.position[2] - beacon_air_[i][2], 2));
 
         if(noise_color_ == NOISE_COLOR_WHITE) // white noise
         {
@@ -352,8 +361,9 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
         tempMetrics << beaconCount_ << ","; // number of beacons
         tempMetrics << dist_min_gt << ","; // minimum distance to other drones
         tempMetrics << vector_to_center_gt.norm() << ","; // length of vector, distance from the center (radius of whole flock = compactness)
-        tempMetrics << beacon_distances_gt_[0] << ","; // distance to beacon 0
+        tempMetrics << beacon_distances_air_[0] << ","; // distance to beacon 0 (moved to air)
         tempMetrics << dist_max_gt << ","; // maximum distance to other drones
+        tempMetrics << beacon_distances_gt_[0] << ","; // distance to beacon 0
 
         tempState << odometry_gt_.position[0] << "," << odometry_gt_.position[1] << "," << odometry_gt_.position[2] << ",";
 
@@ -653,7 +663,7 @@ void DroneStateWithTime::FileSaveData(void){
       // dataStoring_active_ = false;
 }
 
-void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, float elevation_noise, int noise_color, float distance_max_rate, float elevation_max_rate, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* swarm_center_gt)
+void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, float elevation_noise, int noise_color, float distance_max_rate, float elevation_max_rate, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* beacon_air, Vector3f* swarm_center_gt)
 {
     parentPtr_ = parentPtr;
 
@@ -676,6 +686,7 @@ void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumbe
     beacons_pub_ = beacons_pub;
 
     beacon_gt_ = beacon_gt;
+    beacon_air_ = beacon_air;
     swarm_center_gt_ = swarm_center_gt;
 
     enable_swarm_ = 0; // initial value

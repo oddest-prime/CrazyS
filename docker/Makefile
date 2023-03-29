@@ -603,9 +603,9 @@ PaperDist.pdf: AllMinDist.csv AllMaxDist.csv AllBeaconDist.csv Makefile
 		set output \"$@\" \n\
 		unset colorbox \n\
 		unset key \n\
-		plot  \"AllMinDist.csv\" using (column(1)+column(2)/1000000000):(column(3)) with lines lc 4 lw 3 title 'min interagent dist', \
-          \"AllMaxDist.csv\" using (column(1)+column(2)/1000000000):(column(3)/2) with lines lc 6 lw 3 title 'max interagent dist', \
-          \"AllBeaconDist.csv\" using (column(1)+column(2)/1000000000):(column(3)) with lines lc rgb '#229922' lw 3 title 'avg dist to target', \
+		plot  \"AllMinDist.csv\" using (column(1)+column(2)/1000000000):(column(3)) with lines lc 4 lw 2 title 'min interagent dist', \
+          \"AllMaxDist.csv\" using (column(1)+column(2)/1000000000):(column(3)/2) with lines lc 6 lw 2 title 'max interagent dist', \
+          \"AllBeaconDist.csv\" using (column(1)+column(2)/1000000000):(column(3)) with lines lc rgb '#229922' lw 2 title 'avg dist to target', \
           0.28 with lines linewidth 2 lt rgb 'light-red' dashtype 2 title 'dist_{thr} (28cm)'" \
 	 | gnuplot
 	cp PaperDist.pdf PaperDist_$(workingDir).pdf

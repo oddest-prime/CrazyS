@@ -70,6 +70,10 @@
 ## Generate plots for paper
 	for i in `ls | grep ec699`; do pushd $i; pwd; make PaperDist.pdf; popd; done;
 
+	for i in `ls | grep ec699`; do pushd $i; cp /home/andreas/SWARM/crazys/docker/Makefile .; rm PaperDist*; make PaperDist.pdf; popd; done;
+
+	tar -cvjf log_z.bz2 log_*/PaperDist_*
+
 ## Database notes
 
 ### Create database and table

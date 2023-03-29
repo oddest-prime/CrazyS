@@ -99,7 +99,7 @@ do
     jscaled=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
 
     #dyn_nse="$jscaled"
-    dyn_nse="jscaled" # 0.05 0.1
+    dyn_nse="$jscaled" # 0.05 0.1
     #dyn_eps="$jscaled"
     dyn_eps="0.07" # "0.1" # "0.05" "0.15"
     dyn_nmm="6" # 6 # 3

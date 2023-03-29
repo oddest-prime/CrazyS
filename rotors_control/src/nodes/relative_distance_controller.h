@@ -115,6 +115,7 @@ namespace rotors_control {
             float target_elevation_;
             float swarm_elevation_;
             int inner_controller_;
+            int noise_suppression_;
 
             bool dataStoring_active_;
             int enable_swarm_ = SWARM_DISABLED;

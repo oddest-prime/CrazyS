@@ -67,6 +67,9 @@
 	ffmpeg -i my_cam2.mp4 -i my_cam4.mp4 -filter_complex hstack my_out2.mp4
 	ffmpeg -i my_out1.mp4 -i my_out2.mp4 -filter_complex vstack my_out.mp4
 
+## Generate plots for paper
+	for i in `ls | grep ec699`; do pushd $i; pwd; make PaperDist.pdf; popd; done;
+
 ## Database notes
 
 ### Create database and table
@@ -97,4 +100,4 @@ echo "select * from metrics;" | sqlite3 simulations.database
 echo "select * from params;" | sqlite3 simulations.database
 
 ### Insert data
-	echo "insert into metrics values('x', 'x', 'x');" | sqlite3 simulations.database
+echo "insert into metrics values('x', 'x', 'x');" | sqlite3 simulations.database

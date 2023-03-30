@@ -32,8 +32,8 @@
   "spc_limit_weight": 0.0,
   "spc_calm_weight": __DYN_CAL__,
   "velocity_scaling": __DYN_SCA__,
-  "distance_iir_filter": 0.05,
-  "elevation_iir_filter": 0.05,
+  "distance_iir_filter": __DYN_IIR__,
+  "elevation_iir_filter": __DYN_IIR__,
   "distance_min_filter": 0.25, # minimum value for distances to be accepted, otherwise using old value
   "distance_max_filter": 100.0, # maximum value for distances to be accepted, otherwise using old value
   "extra_separation_distance": __DYN_ESE__,

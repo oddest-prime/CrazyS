@@ -118,7 +118,7 @@ do
     #dyn_nhd="$jscaled"
     dyn_nhd="999.99"
     dyn_hzd="17"
-    dyn_col="2" # "3" $c
+    dyn_col="0" # "3" $c
     dyn_sup="$c"
     dyn_iir="0.3"
 

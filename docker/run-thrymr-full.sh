@@ -89,19 +89,19 @@ do
 #  for j in 15 # dyn_thr
 #  for j in 150 170 190 210 230 250 # dyn_sca
 #  for j in 150 200 250 300 400 500 999 # dyn_nhd
+#  for j in 2 5 7 10 20 30  # dyn_iir
 #for j in 1 # fake loop
-#  for j in 20 0 2 5 10 15 # dyn_nse
-for j in 2 5 7 10 20 30  # dyn_iir
+  for j in 20 0 2 5 10 15 # dyn_nse
 do
     #for c in 0 2 3 # dyn_col
-    #for c in 0 1 # dyn_col
-    for c in 1 # dyn_sup
+    for c in 0 1 # dyn_col
+    #for c in 1 # dyn_sup
     do
     yamlname=`printf "%05d%s%s" $j $i $c`
     jscaled=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
 
-    #dyn_nse="$jscaled"
-    dyn_nse="0.1" # 0.05 0.1
+    dyn_nse="$jscaled"
+    #dyn_nse="0.1" # 0.05 0.1
     #dyn_eps="$jscaled"
     dyn_eps="0.07" # "0.1" # "0.05" "0.15"
     dyn_nmm="6" # 6 # 3
@@ -118,9 +118,9 @@ do
     #dyn_nhd="$jscaled"
     dyn_nhd="999.99"
     dyn_hzd="17"
-    dyn_col="3" # $c
+    dyn_col="2" # "3" $c
     dyn_sup="$c"
-    dyn_iir="$jscaled"
+    dyn_iir="0.3"
 
     echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_col = $dyn_col, dyn_eps = $dyn_eps, dyn_nmm = $dyn_nmm, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal, dyn_ese = $dyn_ese, dyn_nhd = $dyn_nhd, dyn_hgh = $dyn_hgh, dyn_hzd = $dyn_hzd"
 

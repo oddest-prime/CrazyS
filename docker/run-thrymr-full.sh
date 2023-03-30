@@ -63,7 +63,7 @@ function wait_until_max_procs_running {
 
 rm -f rotors_gazebo/resource/crazyflie2_mpc1_dyn_*.yaml
 # test different separation weights
-for i in a b c d e f g h i j
+for i in a b
 do
 #  for j in 5 7 10 12 15 20 30 50 70 100 150 200 250 300 500 700 1000 2000 3000 # dyn_sep
 #  for j in 600 700 850 1000 1200 1500 1800 2200 # dyn_sep
@@ -90,10 +90,10 @@ do
 #  for j in 150 170 190 210 230 250 # dyn_sca
 #  for j in 150 200 250 300 400 500 999 # dyn_nhd
 #for j in 1 # fake loop
-for j in 0 2 5 10 15 20 # dyn_nse
+for j in 20 0 2 5 10 15 # dyn_nse
 do
-    #for c in 0 2 # dyn_col
-    for c in 3 # dyn_col
+    #for c in 0 2 3 # dyn_col
+    for c in 0 1 # dyn_col
     do
     yamlname=`printf "%05d%s%s" $j $i $c`
     jscaled=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
@@ -116,7 +116,8 @@ do
     #dyn_nhd="$jscaled"
     dyn_nhd="999.99"
     dyn_hzd="17"
-    dyn_col="$c" # $c
+    dyn_col="3" # $c
+    dyn_sup="$c"
 
     echo "i = $i, j = $j, dyn_nse = $dyn_nse, dyn_col = $dyn_col, dyn_eps = $dyn_eps, dyn_nmm = $dyn_nmm, dyn_sep = $dyn_sep, dyn_thr = $dyn_thr, dyn_tar = $dyn_tar, dyn_sca = $dyn_sca, dyn_cal = $dyn_cal, dyn_ese = $dyn_ese, dyn_nhd = $dyn_nhd, dyn_hgh = $dyn_hgh, dyn_hzd = $dyn_hzd"
 
@@ -135,12 +136,13 @@ do
     sed -i "s/__DYN_NHD__/$dyn_nhd/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
     sed -i "s/__DYN_HGH__/$dyn_hgh/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
     sed -i "s/__DYN_HZD__/$dyn_hzd/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
+    sed -i "s/__DYN_SUP__/$dyn_sup/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
 
     #extratext="dyn_nmm${dyn_nmm}"
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2_rover dist mpc1_dyn_${yamlname} 0 6 "${extratext}" &
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9_rover dist mpc1_dyn_${yamlname} 0 6 "${extratext}" &
 
-    extratext="dyn_ese${dyn_ese}"
+    extratext="dyn_sup${dyn_sup}dyn_nse${dyn_nse}"
 
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     #wait_until_max_procs_running

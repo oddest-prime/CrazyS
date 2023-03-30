@@ -164,7 +164,7 @@ void RelativeDistanceController::InitializeParams() {
     ROS_INFO_ONCE("  dist/distance_min_filter=%f", distance_min_filter_);
     ROS_INFO_ONCE("  dist/distance_max_filter=%f", distance_max_filter_);
     ROS_INFO_ONCE("  dist/extra_separation_distance=%f", extra_separation_distance_);
-    ROS_INFO_ONCE("  dist/noise_suppression=%f", noise_suppression_);
+    ROS_INFO_ONCE("  dist/noise_suppression=%d", noise_suppression_);
     ROS_INFO_ONCE("  elevation/target_elevation=%f", target_elevation_);
     ROS_INFO_ONCE("  elevation/swarm_elevation=%f", swarm_elevation_);
     ROS_INFO_ONCE("  inner/controller=%d", inner_controller_);
@@ -627,7 +627,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
               }
             }
             else
-              ROS_FATAL("OdometryCallback (%d) invalid value for noise_suppression: %d", noise_suppression_);
+              ROS_FATAL("OdometryCallback (%d) invalid value for noise_suppression: %d", droneNumber_, noise_suppression_);
 
             ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_0 (age:%d): %s", droneNumber_, unit_vectors_age_[0], VectorToString(unit_vectors_[0]).c_str());
             ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_1 (age:%d): %s", droneNumber_, unit_vectors_age_[1], VectorToString(unit_vectors_[1]).c_str());
@@ -1416,10 +1416,12 @@ void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiA
     for (size_t j = 0; j < droneCount_; j++)
     {
         distances_[droneNumber_][j] = distances_msg.data[j];
-        if(distances_[droneNumber_][j] < distance_max_filter_ && distances_[droneNumber_][j] > distance_min_filter_) // reject completely incorrect measurements
-            distances_filtered_[droneNumber_][j] = distances_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + distances_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
-
-        if(noise_suppression_ == 0)
+        if(noise_suppression_ == 1)
+        {
+            if(distances_[droneNumber_][j] < distance_max_filter_ && distances_[droneNumber_][j] > distance_min_filter_) // reject completely incorrect measurements
+                distances_filtered_[droneNumber_][j] = distances_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + distances_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
+        }
+        else if(noise_suppression_ == 0)
             distances_filtered_[droneNumber_][j] = distances_[droneNumber_][j];
 
         ROS_INFO_ONCE("DistancesCallback drone#%d -> drone#%d: distance=%f filtered=%f.", (int)droneNumber_, (int)j, distances_[droneNumber_][j], distances_filtered_[droneNumber_][j]);
@@ -1472,12 +1474,15 @@ void RelativeDistanceController::BeaconsCallback(const std_msgs::Float32MultiArr
     for (size_t j = 0; j < beaconCount_; j++)
     {
         beacons_[droneNumber_][j] = distances_msg.data[j];
-        if(beacons_[droneNumber_][j] < distance_max_filter_ && beacons_[droneNumber_][j] > distance_min_filter_) // reject completely incorrect measurements
-            beacons_filtered_[droneNumber_][j] = beacons_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + beacons_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
+        if(noise_suppression_ == 1)
+        {
+            if(beacons_[droneNumber_][j] < distance_max_filter_ && beacons_[droneNumber_][j] > distance_min_filter_) // reject completely incorrect measurements
+                beacons_filtered_[droneNumber_][j] = beacons_filtered_[droneNumber_][j]*(1.0-distance_iir_filter_) + beacons_[droneNumber_][j]*(distance_iir_filter_); // IIR lowpass filter for distance measurements
+        }
+        else if(noise_suppression_ == 0)
+            beacons_filtered_[droneNumber_][j] = beacons_[droneNumber_][j];
         ROS_INFO_ONCE("BeaconsCallback drone#%d -> beacon#%d: distance=%f filtered=%f.", (int)droneNumber_, (int)j, beacons_[droneNumber_][j], beacons_filtered_[droneNumber_][j]);
 
-        if(noise_suppression_ == 0)
-            beacons_filtered_[droneNumber_][j] = beacons_[droneNumber_][j];
 
         if(enable_swarm_ & SWARM_USE_ML)
         {

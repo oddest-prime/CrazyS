@@ -111,7 +111,7 @@ do
     dyn_cal="0" # 30, 5
     #dyn_sca="$jscaled"
     dyn_sca="1.5" # "2"
-    dyn_thr="0.15" # "0.15" # "0.12" # "0.55"
+    dyn_thr="0.55" # "0.15" # "0.12" # "0.55"
     #dyn_thr="$jscaled"
     #dyn_ese="$jscaled"
     dyn_ese="1.35" # "0.87" # "1.10"

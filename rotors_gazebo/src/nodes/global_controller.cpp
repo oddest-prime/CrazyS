@@ -797,7 +797,7 @@ int main(int argc, char** argv) {
       }
       else if(pathScenario == 9) // keep marker 0 at 0,0,2.5
       {
-        path_sleep_afterwards = 50.0;
+        path_sleep_afterwards = 60.0;
         if(path_cnt == 0)
         {
           desired_position(0) = 0;

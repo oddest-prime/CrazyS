@@ -55,6 +55,7 @@
 #define SWARM_SPC_DISTANCES_ONLY          1
 #define SWARM_SPC_DISTANCES_ELEV          2
 #define SWARM_SPC_DISTANCES_CHAIN         4
+#define SWARM_SPC_CYCLIC                  8
 #define SWARM_USE_GROUND_TRUTH            16 // only for debug! it is using ground grouth absolute positions!
 #define SWARM_USE_ML                      32
 #define SWARM_SPC_DISTANCES_ONLY_GT       (SWARM_SPC_DISTANCES_ONLY|SWARM_USE_GROUND_TRUTH) // only for debug! it is using ground grouth absolute positions!
@@ -418,6 +419,11 @@ int main(int argc, char** argv) {
   {
     ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_SPC_DISTANCES_CHAIN_GT");
     swarm_mode = SWARM_SPC_DISTANCES_CHAIN_GT;
+  }
+  else if(swarmMode == "cyclic")
+  {
+    ROS_INFO("global_controller: 'swarmMode' recognized as SWARM_SPC_CYCLIC");
+    swarm_mode = SWARM_SPC_CYCLIC;
   }
   else
     ROS_FATAL("global_controller: 'swarmMode' not recognized (%s)", swarmMode.c_str());

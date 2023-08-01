@@ -82,6 +82,8 @@ RelativeDistanceController::RelativeDistanceController() {
         elevation_filtered_[i] = 0;
     }
 
+    cyclic_current_phase_ = CYCLIC_PHASE_REST;
+
     // Topics subscribe
     cmd_multi_dof_joint_trajectory_sub_ = nh.subscribe(mav_msgs::default_topics::COMMAND_TRAJECTORY, 1, &RelativeDistanceController::MultiDofJointTrajectoryCallback, this);
     odometry_sub_ = nh.subscribe("odometry", 1, &RelativeDistanceController::OdometryCallback, this);
@@ -493,196 +495,199 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     Vector3f set_point_marker;
     set_point.header.stamp = odometry_msg->header.stamp;
 
-    if(history_cnt_ < HISTORY_CNT_MAX)
+    if(!(enable_swarm_ & SWARM_SPC_CYCLIC))
     {
-        for (size_t i = 0; i < droneCount_; i++)
-            distances_history_[i][history_cnt_] = distances_[droneNumber_][i];
-            //distances_history_[i][history_cnt_] = distances_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
-        for (size_t i = 0; i < beaconCount_; i++)
-            beacons_history_[i][history_cnt_] = beacons_[droneNumber_][i];
-            //beacons_history_[i][history_cnt_] = beacons_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
-    }
-    if(unit_vectors_age_[0] >= 0) unit_vectors_age_[0] ++; // age of -1 means this unit vector is invalid
-    if(unit_vectors_age_[1] >= 0) unit_vectors_age_[1] ++; // age of -1 means this unit vector is invalid
-    if(unit_vectors_age_[2] >= 0) unit_vectors_age_[2] ++; // age of -1 means this unit vector is invalid
-
-    if(unit_vectors_age_[0] > HISTORY_CNT_MAX*5) // delete old unit vectors
-    {
-        Vector3f tmp = unit_vectors_[0];
-        unit_vectors_[0] = unit_vectors_[2];
-        unit_vectors_[2] = tmp;
-        unit_vectors_age_[0] = unit_vectors_age_[2];
-        unit_vectors_age_[2] = -1;
-        transform_ok_ = 0; // need to do exploration now
-        ROS_INFO("OdometryCallback (%d) deleted old unit_vector_0 (moved to 2)", droneNumber_);
-    }
-    else if(unit_vectors_age_[1] > HISTORY_CNT_MAX*5) // delete old unit vectors
-    {
-        Vector3f tmp = unit_vectors_[1];
-        unit_vectors_[1] = unit_vectors_[2];
-        unit_vectors_[2] = tmp;
-        unit_vectors_age_[1] = unit_vectors_age_[2];
-        unit_vectors_age_[2] = -1;
-        transform_ok_ = 0; // need to do exploration now
-        ROS_INFO("OdometryCallback (%d) deleted old unit_vector_1 (moved to 2)", droneNumber_);
-    }
-    else if(unit_vectors_age_[2] > HISTORY_CNT_MAX*5) // delete old unit vectors
-    {
-        unit_vectors_age_[2] = -1;
-        transform_ok_ = 0; // need to do exploration now
-        ROS_INFO("OdometryCallback (%d) deleted old unit_vector_2", droneNumber_);
-    }
-
-    if(history_cnt_ >= HISTORY_CNT_MAX)
-    {
-        ROS_INFO("OdometryCallback (%d) Over threshold: %d. Reset history_cnt_: %d.", droneNumber_, HISTORY_CNT_MAX, history_cnt_);
-        odometry_history1_ = odometry_;
-        history_cnt_ = 0;
-        random_direction_[0] = 0;
-        random_direction_[1] = 0;
-        random_direction_[2] = 0;
-    }
-    else if(movement_norm > explore_movement_thr_) // last move was at least Xcm, TODO: find better threshold?
-    {
-        ROS_INFO_ONCE("OdometryCallback (%d) movement over threshold (%f): %s", droneNumber_, explore_movement_thr_, VectorToString(movement).c_str());
-
-        if(enable_swarm_ != SWARM_DISABLED)
+        if(history_cnt_ < HISTORY_CNT_MAX)
         {
-            movement = movement / movement_norm; // divide by norm to get unit vector
+            for (size_t i = 0; i < droneCount_; i++)
+                distances_history_[i][history_cnt_] = distances_[droneNumber_][i];
+                //distances_history_[i][history_cnt_] = distances_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
+            for (size_t i = 0; i < beaconCount_; i++)
+                beacons_history_[i][history_cnt_] = beacons_[droneNumber_][i];
+                //beacons_history_[i][history_cnt_] = beacons_filtered_[droneNumber_][i]; // TODO: is filtered version better, or non filtered?
+        }
+        if(unit_vectors_age_[0] >= 0) unit_vectors_age_[0] ++; // age of -1 means this unit vector is invalid
+        if(unit_vectors_age_[1] >= 0) unit_vectors_age_[1] ++; // age of -1 means this unit vector is invalid
+        if(unit_vectors_age_[2] >= 0) unit_vectors_age_[2] ++; // age of -1 means this unit vector is invalid
 
-            // calculate similarity of unit_vectors to each other
-            float same_dot[3];
-            same_dot[0] = abs(unit_vectors_[0].dot(unit_vectors_[1])) + abs(unit_vectors_[0].dot(unit_vectors_[2]));
-            same_dot[1] = abs(unit_vectors_[1].dot(unit_vectors_[0])) + abs(unit_vectors_[1].dot(unit_vectors_[2]));
-            same_dot[2] = abs(unit_vectors_[2].dot(unit_vectors_[1])) + abs(unit_vectors_[2].dot(unit_vectors_[0]));
-
-            // find unit vector closest to the current movement vector: having the largest dot product
-            float max_dot_product = 0;
-            size_t index_dot_product = 0;
-            for (size_t i = 0; i < N_VECTORS_MAX; i++)
-            {
-                if(unit_vectors_age_[i] < 0) // this unit vector is not yet initialized, use it
-                {
-                    ROS_INFO_ONCE("OdometryCallback (%d) this unit vector is not yet initialized, use it: %d", droneNumber_, (int)i);
-                    index_dot_product = i;
-                    break;
-                }
-                float dot_product = abs(unit_vectors_[i].dot(movement)); // TODO: find factor for penalizing same similarity
-                //ROS_INFO("%s * %s (%d) = %f (%f)", VectorToString(unit_vectors_[i]).c_str(), VectorToString(movement).c_str(), (int)i, dot_product, same_dot[i]);
-
-                if(dot_product*same_dot[i] > max_dot_product)
-                {
-                    index_dot_product = i;
-                    max_dot_product = dot_product*same_dot[i];
-                }
-            }
-
-            ROS_INFO_ONCE("OdometryCallback (%d) replace unit vector: %d", droneNumber_, (int)index_dot_product);
-            unit_vectors_[index_dot_product] = movement;
-            unit_vectors_age_[index_dot_product] = 0;
-
-            if(noise_suppression_ == 0)
-            {
-              // old version using difference only
-              for (size_t i = 0; i < droneCount_; i++)
-                  distances_differences_[index_dot_product][i] = (distances_[droneNumber_][i] - distances_history_[i][0]) / movement_norm;
-              for (size_t i = 0; i < beaconCount_; i++)
-                  beacons_differences_[index_dot_product][i] = (beacons_[droneNumber_][i] - beacons_history_[i][0]) / movement_norm;
-            }
-            else if(noise_suppression_ == 1)
-            {
-              // new version using linear least squares approximation
-              for (size_t i = 0; i < droneCount_; i++)
-              {
-                  if(i == droneNumber_) // skip for own quadcopter
-                  {
-                      distances_differences_[index_dot_product][i] = 0;
-                      continue;
-                  }
-
-                  float alpha0, alpha1;
-                  linearLeastSquaresApproximation(distances_history_[i], (size_t)history_cnt_, &alpha0, &alpha1);
-                  distances_differences_[index_dot_product][i] = (alpha1 * history_cnt_) / movement_norm;
-                  // cap by +/- 1, as the change should not be larger than the movement-norm
-                  if(distances_differences_[index_dot_product][i] < 0-explore_distance_cap_)
-                      distances_differences_[index_dot_product][i] = 0-explore_distance_cap_;
-                  if(distances_differences_[index_dot_product][i] > explore_distance_cap_)
-                      distances_differences_[index_dot_product][i] = explore_distance_cap_;
-
-                  /*float distances_differences_diff = (distances_[droneNumber_][i] - distances_history_[i][0]) / movement_norm;
-                  ROS_INFO("OdometryCallback distances_=%f distances_history_=%f", distances_[droneNumber_][i], distances_history_[i][0]);
-                  ROS_INFO("OdometryCallback (%d) to %d (history_cnt_=%d) LSQApr=%f, diff=%f ", droneNumber_, (int)i, history_cnt_, distances_differences_[index_dot_product][i], distances_differences_diff);
-                  */
-              }
-              for (size_t i = 0; i < beaconCount_; i++)
-              {
-                  float alpha0, alpha1;
-                  linearLeastSquaresApproximation(beacons_history_[i], (size_t)history_cnt_, &alpha0, &alpha1);
-                  beacons_differences_[index_dot_product][i] = (alpha1 * history_cnt_) / movement_norm;
-                  // cap by +/- 1, as the change should not be larger than the movement-norm
-                  if(beacons_differences_[index_dot_product][i] < 0-explore_distance_cap_)
-                      beacons_differences_[index_dot_product][i] = 0-explore_distance_cap_;
-                  if(beacons_differences_[index_dot_product][i] > explore_distance_cap_)
-                      beacons_differences_[index_dot_product][i] = explore_distance_cap_;
-              }
-            }
-            else
-              ROS_FATAL("OdometryCallback (%d) invalid value for noise_suppression: %d", droneNumber_, noise_suppression_);
-
-            ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_0 (age:%d): %s", droneNumber_, unit_vectors_age_[0], VectorToString(unit_vectors_[0]).c_str());
-            ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_1 (age:%d): %s", droneNumber_, unit_vectors_age_[1], VectorToString(unit_vectors_[1]).c_str());
-            ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_2 (age:%d): %s\n", droneNumber_, unit_vectors_age_[2], VectorToString(unit_vectors_[2]).c_str());
-
-            Vector3f span_vectors;
-            span_vectors[0] = fmax(unit_vectors_[0][0], fmax(unit_vectors_[1][0], unit_vectors_[2][0])) - fmin(unit_vectors_[0][0], fmin(unit_vectors_[1][0], unit_vectors_[2][0]));
-            span_vectors[1] = fmax(unit_vectors_[0][1], fmax(unit_vectors_[1][1], unit_vectors_[2][1])) - fmin(unit_vectors_[0][1], fmin(unit_vectors_[1][1], unit_vectors_[2][1]));
-            span_vectors[2] = fmax(unit_vectors_[0][2], fmax(unit_vectors_[1][2], unit_vectors_[2][2])) - fmin(unit_vectors_[0][2], fmin(unit_vectors_[1][2], unit_vectors_[2][2]));
-            ROS_INFO_ONCE("OdometryCallback (%d) span_vectors: %s", droneNumber_, VectorToString(span_vectors).c_str());
-
-            if(unit_vectors_[0].norm() > 0.01 &&
-               unit_vectors_[1].norm() > 0.01 &&
-               unit_vectors_[2].norm() > 0.01 &&
-               span_vectors[0] > 0.01 && span_vectors[1] > 0.01 && span_vectors[2] > 0.01 &&
-               abs(unit_vectors_[0].dot(unit_vectors_[1])) < 0.9 &&
-               abs(unit_vectors_[1].dot(unit_vectors_[2])) < 0.9 &&
-               abs(unit_vectors_[2].dot(unit_vectors_[0])) < 0.9)
-            {
-                // calculate basis transform Matrix
-                Matrix3f transform_tmp;
-                transform_tmp(0,0) = unit_vectors_[0][0];
-                transform_tmp(1,0) = unit_vectors_[0][1];
-                transform_tmp(2,0) = unit_vectors_[0][2];
-                transform_tmp(0,1) = unit_vectors_[1][0];
-                transform_tmp(1,1) = unit_vectors_[1][1];
-                transform_tmp(2,1) = unit_vectors_[1][2];
-                transform_tmp(0,2) = unit_vectors_[2][0];
-                transform_tmp(1,2) = unit_vectors_[2][1];
-                transform_tmp(2,2) = unit_vectors_[2][2];
-                transform_vectors_ = transform_tmp.inverse();
-                ROS_INFO_ONCE("OdometryCallback (%d) transform_vectors_: %s", droneNumber_, MatrixToString(transform_vectors_).c_str());
-                if(unit_vectors_age_[0] >= 0 && unit_vectors_age_[1] >= 0 && unit_vectors_age_[2] >= 0)
-                    transform_ok_ = 1;
-                else
-                    transform_ok_ = 0;
-                transform_available_ = 1;
-            }
-            else
-            {
-                ROS_INFO_ONCE("OdometryCallback (%d) Bad unit vectors, cannot calculate transform_vectors.", droneNumber_);
-                transform_ok_ = 0;
-                transform_available_ = 0;
-            }
+        if(unit_vectors_age_[0] > HISTORY_CNT_MAX*5) // delete old unit vectors
+        {
+            Vector3f tmp = unit_vectors_[0];
+            unit_vectors_[0] = unit_vectors_[2];
+            unit_vectors_[2] = tmp;
+            unit_vectors_age_[0] = unit_vectors_age_[2];
+            unit_vectors_age_[2] = -1;
+            transform_ok_ = 0; // need to do exploration now
+            ROS_INFO("OdometryCallback (%d) deleted old unit_vector_0 (moved to 2)", droneNumber_);
+        }
+        else if(unit_vectors_age_[1] > HISTORY_CNT_MAX*5) // delete old unit vectors
+        {
+            Vector3f tmp = unit_vectors_[1];
+            unit_vectors_[1] = unit_vectors_[2];
+            unit_vectors_[2] = tmp;
+            unit_vectors_age_[1] = unit_vectors_age_[2];
+            unit_vectors_age_[2] = -1;
+            transform_ok_ = 0; // need to do exploration now
+            ROS_INFO("OdometryCallback (%d) deleted old unit_vector_1 (moved to 2)", droneNumber_);
+        }
+        else if(unit_vectors_age_[2] > HISTORY_CNT_MAX*5) // delete old unit vectors
+        {
+            unit_vectors_age_[2] = -1;
+            transform_ok_ = 0; // need to do exploration now
+            ROS_INFO("OdometryCallback (%d) deleted old unit_vector_2", droneNumber_);
         }
 
-        odometry_history1_ = odometry_;
-        ROS_INFO_ONCE("OdometryCallback (%d) Reset history_cnt_: %d.", droneNumber_, history_cnt_);
-        history_cnt_ = 0;
-        random_direction_[0] = 0;
-        random_direction_[1] = 0;
-        random_direction_[2] = 0;
+        if(history_cnt_ >= HISTORY_CNT_MAX)
+        {
+            ROS_INFO("OdometryCallback (%d) Over threshold: %d. Reset history_cnt_: %d.", droneNumber_, HISTORY_CNT_MAX, history_cnt_);
+            odometry_history1_ = odometry_;
+            history_cnt_ = 0;
+            random_direction_[0] = 0;
+            random_direction_[1] = 0;
+            random_direction_[2] = 0;
+        }
+        else if(movement_norm > explore_movement_thr_) // last move was at least Xcm, TODO: find better threshold?
+        {
+            ROS_INFO_ONCE("OdometryCallback (%d) movement over threshold (%f): %s", droneNumber_, explore_movement_thr_, VectorToString(movement).c_str());
+
+            if(enable_swarm_ != SWARM_DISABLED)
+            {
+                movement = movement / movement_norm; // divide by norm to get unit vector
+
+                // calculate similarity of unit_vectors to each other
+                float same_dot[3];
+                same_dot[0] = abs(unit_vectors_[0].dot(unit_vectors_[1])) + abs(unit_vectors_[0].dot(unit_vectors_[2]));
+                same_dot[1] = abs(unit_vectors_[1].dot(unit_vectors_[0])) + abs(unit_vectors_[1].dot(unit_vectors_[2]));
+                same_dot[2] = abs(unit_vectors_[2].dot(unit_vectors_[1])) + abs(unit_vectors_[2].dot(unit_vectors_[0]));
+
+                // find unit vector closest to the current movement vector: having the largest dot product
+                float max_dot_product = 0;
+                size_t index_dot_product = 0;
+                for (size_t i = 0; i < N_VECTORS_MAX; i++)
+                {
+                    if(unit_vectors_age_[i] < 0) // this unit vector is not yet initialized, use it
+                    {
+                        ROS_INFO_ONCE("OdometryCallback (%d) this unit vector is not yet initialized, use it: %d", droneNumber_, (int)i);
+                        index_dot_product = i;
+                        break;
+                    }
+                    float dot_product = abs(unit_vectors_[i].dot(movement)); // TODO: find factor for penalizing same similarity
+                    //ROS_INFO("%s * %s (%d) = %f (%f)", VectorToString(unit_vectors_[i]).c_str(), VectorToString(movement).c_str(), (int)i, dot_product, same_dot[i]);
+
+                    if(dot_product*same_dot[i] > max_dot_product)
+                    {
+                        index_dot_product = i;
+                        max_dot_product = dot_product*same_dot[i];
+                    }
+                }
+
+                ROS_INFO_ONCE("OdometryCallback (%d) replace unit vector: %d", droneNumber_, (int)index_dot_product);
+                unit_vectors_[index_dot_product] = movement;
+                unit_vectors_age_[index_dot_product] = 0;
+
+                if(noise_suppression_ == 0)
+                {
+                  // old version using difference only
+                  for (size_t i = 0; i < droneCount_; i++)
+                      distances_differences_[index_dot_product][i] = (distances_[droneNumber_][i] - distances_history_[i][0]) / movement_norm;
+                  for (size_t i = 0; i < beaconCount_; i++)
+                      beacons_differences_[index_dot_product][i] = (beacons_[droneNumber_][i] - beacons_history_[i][0]) / movement_norm;
+                }
+                else if(noise_suppression_ == 1)
+                {
+                  // new version using linear least squares approximation
+                  for (size_t i = 0; i < droneCount_; i++)
+                  {
+                      if(i == droneNumber_) // skip for own quadcopter
+                      {
+                          distances_differences_[index_dot_product][i] = 0;
+                          continue;
+                      }
+
+                      float alpha0, alpha1;
+                      linearLeastSquaresApproximation(distances_history_[i], (size_t)history_cnt_, &alpha0, &alpha1);
+                      distances_differences_[index_dot_product][i] = (alpha1 * history_cnt_) / movement_norm;
+                      // cap by +/- 1, as the change should not be larger than the movement-norm
+                      if(distances_differences_[index_dot_product][i] < 0-explore_distance_cap_)
+                          distances_differences_[index_dot_product][i] = 0-explore_distance_cap_;
+                      if(distances_differences_[index_dot_product][i] > explore_distance_cap_)
+                          distances_differences_[index_dot_product][i] = explore_distance_cap_;
+
+                      /*float distances_differences_diff = (distances_[droneNumber_][i] - distances_history_[i][0]) / movement_norm;
+                      ROS_INFO("OdometryCallback distances_=%f distances_history_=%f", distances_[droneNumber_][i], distances_history_[i][0]);
+                      ROS_INFO("OdometryCallback (%d) to %d (history_cnt_=%d) LSQApr=%f, diff=%f ", droneNumber_, (int)i, history_cnt_, distances_differences_[index_dot_product][i], distances_differences_diff);
+                      */
+                  }
+                  for (size_t i = 0; i < beaconCount_; i++)
+                  {
+                      float alpha0, alpha1;
+                      linearLeastSquaresApproximation(beacons_history_[i], (size_t)history_cnt_, &alpha0, &alpha1);
+                      beacons_differences_[index_dot_product][i] = (alpha1 * history_cnt_) / movement_norm;
+                      // cap by +/- 1, as the change should not be larger than the movement-norm
+                      if(beacons_differences_[index_dot_product][i] < 0-explore_distance_cap_)
+                          beacons_differences_[index_dot_product][i] = 0-explore_distance_cap_;
+                      if(beacons_differences_[index_dot_product][i] > explore_distance_cap_)
+                          beacons_differences_[index_dot_product][i] = explore_distance_cap_;
+                  }
+                }
+                else
+                  ROS_FATAL("OdometryCallback (%d) invalid value for noise_suppression: %d", droneNumber_, noise_suppression_);
+
+                ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_0 (age:%d): %s", droneNumber_, unit_vectors_age_[0], VectorToString(unit_vectors_[0]).c_str());
+                ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_1 (age:%d): %s", droneNumber_, unit_vectors_age_[1], VectorToString(unit_vectors_[1]).c_str());
+                ROS_INFO_ONCE("OdometryCallback (%d) unit_vectors_2 (age:%d): %s\n", droneNumber_, unit_vectors_age_[2], VectorToString(unit_vectors_[2]).c_str());
+
+                Vector3f span_vectors;
+                span_vectors[0] = fmax(unit_vectors_[0][0], fmax(unit_vectors_[1][0], unit_vectors_[2][0])) - fmin(unit_vectors_[0][0], fmin(unit_vectors_[1][0], unit_vectors_[2][0]));
+                span_vectors[1] = fmax(unit_vectors_[0][1], fmax(unit_vectors_[1][1], unit_vectors_[2][1])) - fmin(unit_vectors_[0][1], fmin(unit_vectors_[1][1], unit_vectors_[2][1]));
+                span_vectors[2] = fmax(unit_vectors_[0][2], fmax(unit_vectors_[1][2], unit_vectors_[2][2])) - fmin(unit_vectors_[0][2], fmin(unit_vectors_[1][2], unit_vectors_[2][2]));
+                ROS_INFO_ONCE("OdometryCallback (%d) span_vectors: %s", droneNumber_, VectorToString(span_vectors).c_str());
+
+                if(unit_vectors_[0].norm() > 0.01 &&
+                   unit_vectors_[1].norm() > 0.01 &&
+                   unit_vectors_[2].norm() > 0.01 &&
+                   span_vectors[0] > 0.01 && span_vectors[1] > 0.01 && span_vectors[2] > 0.01 &&
+                   abs(unit_vectors_[0].dot(unit_vectors_[1])) < 0.9 &&
+                   abs(unit_vectors_[1].dot(unit_vectors_[2])) < 0.9 &&
+                   abs(unit_vectors_[2].dot(unit_vectors_[0])) < 0.9)
+                {
+                    // calculate basis transform Matrix
+                    Matrix3f transform_tmp;
+                    transform_tmp(0,0) = unit_vectors_[0][0];
+                    transform_tmp(1,0) = unit_vectors_[0][1];
+                    transform_tmp(2,0) = unit_vectors_[0][2];
+                    transform_tmp(0,1) = unit_vectors_[1][0];
+                    transform_tmp(1,1) = unit_vectors_[1][1];
+                    transform_tmp(2,1) = unit_vectors_[1][2];
+                    transform_tmp(0,2) = unit_vectors_[2][0];
+                    transform_tmp(1,2) = unit_vectors_[2][1];
+                    transform_tmp(2,2) = unit_vectors_[2][2];
+                    transform_vectors_ = transform_tmp.inverse();
+                    ROS_INFO_ONCE("OdometryCallback (%d) transform_vectors_: %s", droneNumber_, MatrixToString(transform_vectors_).c_str());
+                    if(unit_vectors_age_[0] >= 0 && unit_vectors_age_[1] >= 0 && unit_vectors_age_[2] >= 0)
+                        transform_ok_ = 1;
+                    else
+                        transform_ok_ = 0;
+                    transform_available_ = 1;
+                }
+                else
+                {
+                    ROS_INFO_ONCE("OdometryCallback (%d) Bad unit vectors, cannot calculate transform_vectors.", droneNumber_);
+                    transform_ok_ = 0;
+                    transform_available_ = 0;
+                }
+            }
+
+            odometry_history1_ = odometry_;
+            ROS_INFO_ONCE("OdometryCallback (%d) Reset history_cnt_: %d.", droneNumber_, history_cnt_);
+            history_cnt_ = 0;
+            random_direction_[0] = 0;
+            random_direction_[1] = 0;
+            random_direction_[2] = 0;
+        }
+        else
+            history_cnt_ ++;
     }
-    else
-        history_cnt_ ++;
 
     int exploration_info = 0;
 
@@ -1329,6 +1334,269 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         //tempCost << unit_vectors_[0][0] << "," << unit_vectors_[0][1] << "," << unit_vectors_[0][2] << "," << unit_vectors_age_[0] << ",";
         //tempCost << unit_vectors_[1][0] << "," << unit_vectors_[1][1] << "," << unit_vectors_[1][2] << "," << unit_vectors_age_[1] << ",";
         //tempCost << unit_vectors_[2][0] << "," << unit_vectors_[2][1] << "," << unit_vectors_[2][2] << "," << unit_vectors_age_[2] << ",";
+    }
+    else if(enable_swarm_ & SWARM_SPC_CYCLIC)
+    {
+        ROS_INFO_ONCE("RelativeDistanceController %d starting swarm mode: SWARM_SPC_CYCLIC", droneNumber_);
+
+        float window_len = 2.0;
+        float window_time = std::fmod(odometry_.timeStampSec + odometry_.timeStampNsec/(double)1000000000, (double)droneCount_ * (double)window_len) - ((double)droneNumber_ * (double)window_len);
+
+        if(window_time < 0)
+            cyclic_current_phase_ = CYCLIC_PHASE_REST;
+        else if(window_time > window_len)
+            cyclic_current_phase_ = CYCLIC_PHASE_REST;
+        else if(window_time > 0.0 && cyclic_current_phase_ == CYCLIC_PHASE_REST)
+        {
+            cyclic_current_phase_ = CYCLIC_PHASE_IDENTIFY_A;
+            cyclic_odometry_history0_ = odometry_; // save absolute position, but use relative position only for calculation
+            for (size_t i = 0; i < droneCount_; i++)
+                cyclic_distances_history0_[i] = distances_[droneNumber_][i];
+        }
+        else if(window_time > 0.4 && cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_A)
+        {
+            cyclic_current_phase_ = CYCLIC_PHASE_IDENTIFY_B;
+            cyclic_odometry_history1_ = odometry_; // save absolute position, but use relative position only for calculation
+            for (size_t i = 0; i < droneCount_; i++)
+                cyclic_distances_history1_[i] = distances_[droneNumber_][i];
+        }
+        else if(window_time > 0.8 && cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_B)
+        {
+            cyclic_current_phase_ = CYCLIC_PHASE_IDENTIFY_C;
+            cyclic_odometry_history2_ = odometry_; // save absolute position, but use relative position only for calculation
+            for (size_t i = 0; i < droneCount_; i++)
+                cyclic_distances_history2_[i] = distances_[droneNumber_][i];
+        }
+        else if(window_time > 1.4 && cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_C)
+        {
+            cyclic_current_phase_ = CYCLIC_PHASE_CONTROL;
+            cyclic_odometry_history3_ = odometry_; // save absolute position, but use relative position only for calculation
+            for (size_t i = 0; i < droneCount_; i++)
+                cyclic_distances_history3_[i] = distances_[droneNumber_][i];
+
+            Vector3f movement_a, movement_b, movement_c, movement_v, movement_w, movement_u;
+            movement_a[0] = cyclic_odometry_history0_.position[0] - cyclic_odometry_history3_.position[0];
+            movement_a[1] = cyclic_odometry_history0_.position[1] - cyclic_odometry_history3_.position[1];
+            movement_a[2] = cyclic_odometry_history0_.position[2] - cyclic_odometry_history3_.position[2];
+            movement_b[0] = cyclic_odometry_history1_.position[0] - cyclic_odometry_history3_.position[0];
+            movement_b[1] = cyclic_odometry_history1_.position[1] - cyclic_odometry_history3_.position[1];
+            movement_b[2] = cyclic_odometry_history1_.position[2] - cyclic_odometry_history3_.position[2];
+            movement_c[0] = cyclic_odometry_history2_.position[0] - cyclic_odometry_history3_.position[0];
+            movement_c[1] = cyclic_odometry_history2_.position[1] - cyclic_odometry_history3_.position[1];
+            movement_c[2] = cyclic_odometry_history2_.position[2] - cyclic_odometry_history3_.position[2];
+            movement_v[0] = cyclic_odometry_history1_.position[0] - cyclic_odometry_history2_.position[0];
+            movement_v[1] = cyclic_odometry_history1_.position[1] - cyclic_odometry_history2_.position[1];
+            movement_v[2] = cyclic_odometry_history1_.position[2] - cyclic_odometry_history2_.position[2];
+            movement_w[0] = cyclic_odometry_history0_.position[0] - cyclic_odometry_history2_.position[0];
+            movement_w[1] = cyclic_odometry_history0_.position[1] - cyclic_odometry_history2_.position[1];
+            movement_w[2] = cyclic_odometry_history0_.position[2] - cyclic_odometry_history2_.position[2];
+            movement_u[0] = cyclic_odometry_history0_.position[0] - cyclic_odometry_history1_.position[0];
+            movement_u[1] = cyclic_odometry_history0_.position[1] - cyclic_odometry_history1_.position[1];
+            movement_u[2] = cyclic_odometry_history0_.position[2] - cyclic_odometry_history1_.position[2];
+
+            ROS_INFO("(#%d) movement_a x=%f y=%f z=%f", droneNumber_, movement_a[0], movement_a[1], movement_a[2]);
+            ROS_INFO("(#%d) movement_b x=%f y=%f z=%f", droneNumber_, movement_b[0], movement_b[1], movement_b[2]);
+            ROS_INFO("(#%d) movement_c x=%f y=%f z=%f", droneNumber_, movement_c[0], movement_c[1], movement_c[2]);
+
+            Vector3f c_1, c_2, c_3, c_4;
+            c_1[0] = 0; c_1[1] = 0; c_1[2] = 0;
+            c_2[0] = movement_c.norm(); c_2[1] = 0; c_2[2] = 0;
+            c_3[0] = (pow(movement_b.norm(),2) - pow(movement_v.norm(),2) + pow(c_2[0], 2)) / (2.0*c_2[0]);
+            if(pow(movement_b.norm(),2) - pow(c_3[0], 2) < 0)
+            {
+                ROS_ERROR("(#%d) ERROR: pow(movement_b.norm(),2) - pow(c_3[0], 2) < 0", droneNumber_);
+                c_3[1] = 0.01;
+            }
+            else
+                c_3[1] = sqrt(pow(movement_b.norm(),2) - pow(c_3[0], 2));
+            c_3[2] = 0;
+
+            ROS_INFO("(#%d) c_1 x=%f y=%f z=%f", droneNumber_, c_1[0], c_1[1], c_1[2]);
+            ROS_INFO("(#%d) c_2 x=%f y=%f z=%f", droneNumber_, c_2[0], c_2[1], c_2[2]);
+            ROS_INFO("(#%d) c_3 x=%f y=%f z=%f", droneNumber_, c_3[0], c_3[1], c_3[2]);
+
+            // determine rotation
+
+            // // first rotation: align point c_2 to movement_c
+            Vector3f a1 = c_2;
+            Vector3f b1 = movement_c;
+            a1 = a1 / a1.norm(); // divide by norm to get unit vector
+            b1 = b1 / b1.norm(); // divide by norm to get unit vector
+            // get axis of rotation by cross-product of a1, b1
+            Vector3f axis1 = a1.cross(b1);
+            Matrix3f rotation1;
+            if (axis1.norm() < 0.000001) // a1 is already aligned with b1, use identity matrix for first rotation
+                rotation1 = IdentityMatrix();
+            else
+                rotation1 = RotationMatrixFromAxisAngle(axis1 / axis1.norm(), acos(a1.dot(b1) / (a1.norm() * b1.norm()))); // get angle of rotation by scalar-product of a1, b1
+            /*
+            ROS_INFO("rotation1 %s", MatrixToString(rotation1).c_str());
+            Vector3f c_2_tmp = rotation1 * c_2;
+            ROS_INFO("c_2_tmp %s", VectorToString(c_2_tmp).c_str());
+            ROS_INFO("movement_c %s", VectorToString(movement_c).c_str());
+            */
+
+            Vector3f h0 = {0, 0, 1};
+            // // helper rotation: rotation axis to Z-axis
+            Vector3f aa1 = rotation1 * a1;
+            Vector3f axis0 = aa1.cross(h0);
+            Matrix3f rotation01 = RotationMatrixFromAxisAngle(axis0 / axis0.norm(), acos(aa1.dot(h0) / (aa1.norm() * h0.norm()))); // get angle of rotation by scalar-product of aa1, h0
+            Vector3f a_tmp = rotation01 * rotation1 * c_3;
+            a_tmp[2] = 0;
+
+            // // helper rotation: rotation axis to Z-axis
+            axis0 = b1.cross(h0);
+            Matrix3f rotation02 = RotationMatrixFromAxisAngle(axis0 / axis0.norm(), acos(b1.dot(h0) / (b1.norm() * h0.norm()))); // get angle of rotation by scalar-product of b1, h0
+            Vector3f b_tmp = rotation02 * movement_b;
+            b_tmp[2] = 0;
+
+            // // second rotation: align point a2 to b2
+            Vector3f a2 = c_3;
+            Vector3f b2 = movement_b;
+            a2 = a2 / a2.norm(); // divide by norm to get unit vector
+            b2 = b2 / b2.norm(); // divide by norm to get unit vector
+            // get axis as vector b1
+            Vector3f axis2 = b1 / b1.norm();
+            // get angle of rotation by scalar-product of a_tmp, b_tmp
+            float angle2 = acos(a_tmp.dot(b_tmp) / (a_tmp.norm() * b_tmp.norm()));
+            Matrix3f rotation2p = RotationMatrixFromAxisAngle(axis2, angle2);
+            Matrix3f rotation2m = RotationMatrixFromAxisAngle(axis2, -angle2);
+
+            Matrix3f rotation2;
+            // determine in which direction to rotate
+            float diff_p = (rotation2p * rotation1 * c_3 - movement_b).norm();
+            float diff_m = (rotation2m * rotation1 * c_3 - movement_b).norm();
+            if(diff_m < diff_p)
+                rotation2 = rotation2m;
+            else
+                rotation2 = rotation2p;
+            Matrix3f rotation = rotation2 * rotation1;
+/*
+            // if c_4:movement_a (tie-breaker) does not match, we need to do: https://www.youtube.com/watch?v=fXA7cgtgKH0
+            // b1 # first vector of reflection plane
+            // b2 # second vector of reflection plane
+            Vector3f b3 = movement_a;
+            Vector3f e1 = b1 / b1.norm();
+            Vector3f u2 = b2 - b2.dot(e1).dot(e1);
+            Vector3f e2 = u2 / u2.norm();
+            Vector3f u3 = b3 - b3.dot(e1).dot(e1) - b3.dot(e2).dot(e2);
+            Vector3f e3 = u3 / u3.norm();
+
+            Matrix3f transform_e1 = np.array([e1, e2, e3]);
+            Matrix3f transform_e = transform_e1.transpose();
+            Matrix3f transform_t = np.array([[1, 0, 0], [0, 1, 0], [0, 0, -1]]);
+            Matrix3f transform = transform_e * transform_t * transform_e1;
+
+            ROS_INFO("rotation2 %s", MatrixToString(rotation2).c_str());
+            ROS_INFO("rotation  %s", MatrixToString(rotation).c_str());
+*/
+
+            Vector3f c_2_tmp = rotation * c_2;
+            ROS_INFO("c_2_tmp %s", VectorToString(c_2_tmp).c_str());
+            ROS_INFO("movement_c %s", VectorToString(movement_c).c_str());
+
+            Vector3f c_3_tmp = rotation * c_3;
+            ROS_INFO("c_3_tmp %s", VectorToString(c_3_tmp).c_str());
+            ROS_INFO("movement_b %s", VectorToString(movement_b).c_str());
+
+            // check with c_4 (coresponds to history0_)
+            c_4[0] = (pow(movement_a.norm(), 2) - pow(movement_w.norm(), 2) + pow(c_2[0], 2)) / (2.0*c_2[0]);
+            c_4[1] = (pow(movement_a.norm(), 2) - pow(movement_u.norm(), 2) + pow(c_3[0], 2) + pow(c_3[1], 2) - 2*c_3[0]*c_4[0]) / (2.0*c_3[1]);
+            c_4[2] = sqrt(pow(movement_a.norm(), 2) - pow(c_4[0], 2) - pow(c_4[1], 2));
+            if(pow(movement_a.norm(), 2) - pow(c_4[0], 2) - pow(c_4[1], 2) < 0)
+                ROS_ERROR("(#%d) ERROR: pow(movement_a.norm(), 2) - pow(c_4[0], 2) - pow(c_4[1], 2) < 0", droneNumber_);
+
+            // check if it should be mirrored
+            Vector3f c_4neg = c_4;
+            c_4neg[2] = 0 - c_4neg[2];
+            if((rotation * c_4neg - movement_a).norm() < (rotation * c_4 - movement_a).norm())
+                c_4 = c_4neg;
+
+            Vector3f c_4_tmp = rotation * c_4;
+            ROS_INFO("c_4_tmp %s", VectorToString(c_4_tmp).c_str());
+            ROS_INFO("movement_a %s", VectorToString(movement_a).c_str());
+            ROS_INFO("------------------------------");
+
+            for (size_t i = 0; i < droneCount_; i++)
+            {
+                if(i == droneNumber_) // skip for own quadcopter
+                    continue;
+                // calculate relative position of drone i w.r.t. to own drone
+                float r_1 = cyclic_distances_history3_[i], r_2 = cyclic_distances_history2_[i], r_3 = cyclic_distances_history1_[i];
+                Vector3f other_drone_tmp;
+                Vector3f other_drone_pos;
+                Vector3f other_drone_neg;
+                Vector3f history3;
+                history3[0] = cyclic_odometry_history3_.position[0];
+                history3[1] = cyclic_odometry_history3_.position[1];
+                history3[2] = cyclic_odometry_history3_.position[2];
+
+                other_drone_tmp[0] = (pow(r_1, 2) - pow(r_2, 2) + pow(c_2[0], 2)) / (2.0*c_2[0]);
+                other_drone_tmp[1] = (pow(r_1, 2) - pow(r_3, 2) + pow(c_3[0], 2) + pow(c_3[1], 2) - 2*c_3[0]*other_drone_tmp[0]) / (2.0*c_3[1]);
+                other_drone_tmp[2] = sqrt(pow(r_1, 2) - pow(other_drone_tmp[0], 2) - pow(other_drone_tmp[1], 2));
+                if(pow(r_1, 2) - pow(other_drone_tmp[0], 2) - pow(other_drone_tmp[1], 2) < 0)
+                    ROS_ERROR("(#%d) ERROR: pow(r_1, 2) - pow(other_drone_tmp[0], 2) - pow(other_drone_tmp[1], 2) < 0", droneNumber_);
+
+                ROS_INFO("distances: r_1 %f r_2 %f r_3 %f", r_1, r_2, r_3);
+                ROS_INFO("(other_drone_tmp - c_1).norm %f c_2 %f c_3 %f", (other_drone_tmp - c_1).norm(), (other_drone_tmp - c_2).norm(), (other_drone_tmp - c_3).norm());
+                ROS_INFO("other_drone_tmp %s", VectorToString(other_drone_tmp).c_str());
+                Vector3f other_drone_rot = rotation * other_drone_tmp;
+                ROS_INFO("other_drone_rot %s", VectorToString(other_drone_rot).c_str());
+
+
+//                ROS_INFO("(#%d) drone%d @ x=%f y=%f z=%f norm=%f r_1=%f", droneNumber_, (int)i, other_drone_pos[0], other_drone_pos[1], other_drone_pos[2], other_drone_pos.norm(), r_1);
+
+/*
+                Vector3f other_drone_abs_pos = history3 + other_drone_pos;
+                Vector3f other_drone_abs_neg = history3 + other_drone_neg;
+                ROS_INFO("(#%d) cyclic_odometry_history3_ x=%f y=%f z=%f", droneNumber_, cyclic_odometry_history3_.position[0], cyclic_odometry_history3_.position[1], cyclic_odometry_history3_.position[2]);
+                ROS_INFO("other_drone_tmp %s", VectorToString(other_drone_tmp).c_str());
+                ROS_INFO("other_drone_pos %s", VectorToString(other_drone_pos).c_str());
+                ROS_INFO("other_drone_neg %s", VectorToString(other_drone_neg).c_str());
+                ROS_INFO("other_drone_abs_pos %s", VectorToString(other_drone_abs_pos).c_str());
+                ROS_INFO("other_drone_abs_neg %s", VectorToString(other_drone_abs_neg).c_str());
+                */
+                ROS_INFO("------------------------------");
+            }
+        }
+
+        if(cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_A)
+        {
+            set_point.pose.position.x = 0.0; // * velocity_scaling_;
+            set_point.pose.position.y = 0.0;
+            set_point.pose.position.z = 1.0;
+            set_point_marker[0] = odometry_.position[0];
+            set_point_marker[1] = odometry_.position[1];
+            set_point_marker[2] = odometry_.position[2] + 0.5;
+            exploration_info = 1;
+        }
+        else if(cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_B)
+        {
+            set_point.pose.position.x = 0.0;
+            set_point.pose.position.y = 1.0; // * velocity_scaling_;
+            set_point.pose.position.z = 0.0;
+            set_point_marker[0] = odometry_.position[0];
+            set_point_marker[1] = odometry_.position[1] + 0.5;
+            set_point_marker[2] = odometry_.position[2];
+            exploration_info = 2;
+        }
+        else if(cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_C)
+        {
+            set_point.pose.position.x = 1.0;
+            set_point.pose.position.y = 0.0; // * velocity_scaling_;
+            set_point.pose.position.z = 0.0;
+            set_point_marker[0] = odometry_.position[0] + 0.5;
+            set_point_marker[1] = odometry_.position[1];
+            set_point_marker[2] = odometry_.position[2];
+            exploration_info = 3;
+        }
+        else
+        {
+            exploration_info = 0;
+            set_point_marker[0] = odometry_.position[0];
+            set_point_marker[1] = odometry_.position[1];
+            set_point_marker[2] = odometry_.position[2];
+        }
     }
 
     if(enable_swarm_ != SWARM_DISABLED || target_swarm_.position_W[2] > 0.01) // do not enable drone until proper target point received

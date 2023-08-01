@@ -56,9 +56,16 @@
 #define N_BEACONS_MAX  5          /* maximum number of beacons */
 #define N_VECTORS_MAX  3          /* number of saved unit vectors */
 
-#define HISTORY_CNT_MAX                   512
+#define HISTORY_CNT_MAX           512
 
 #define N_STEPS                   5
+
+#define CYCLIC_PHASE_REST             0
+#define CYCLIC_PHASE_IDENTIFY_A       1
+#define CYCLIC_PHASE_IDENTIFY_B       2
+#define CYCLIC_PHASE_IDENTIFY_C       3
+#define CYCLIC_PHASE_CONTROL          4
+
 
 namespace rotors_control {
     using namespace Eigen;
@@ -151,6 +158,16 @@ namespace rotors_control {
             Matrix3f transform_vectors_;
             int transform_ok_;
             int transform_available_;
+
+            int cyclic_current_phase_;
+            EigenOdometry cyclic_odometry_history0_; // ground-truth at history point
+            EigenOdometry cyclic_odometry_history1_; // ground-truth at history point
+            EigenOdometry cyclic_odometry_history2_; // ground-truth at history point
+            EigenOdometry cyclic_odometry_history3_; // ground-truth at history point
+            float cyclic_distances_history0_[N_DRONES_MAX]; // distance measurements to own drone at history point
+            float cyclic_distances_history1_[N_DRONES_MAX]; // distance measurements to own drone at history point
+            float cyclic_distances_history2_[N_DRONES_MAX]; // distance measurements to own drone at history point
+            float cyclic_distances_history3_[N_DRONES_MAX]; // distance measurements to own drone at history point
 
             torch::jit::script::Module distances_model_[N_DRONES_MAX];
             c10::IValue distances_hx_[N_DRONES_MAX];

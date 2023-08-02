@@ -1374,205 +1374,90 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             for (size_t i = 0; i < droneCount_; i++)
                 cyclic_distances_history3_[i] = distances_[droneNumber_][i];
 
-            Vector3f movement_a, movement_b, movement_c, movement_v, movement_w, movement_u;
-            movement_a[0] = cyclic_odometry_history0_.position[0] - cyclic_odometry_history3_.position[0];
-            movement_a[1] = cyclic_odometry_history0_.position[1] - cyclic_odometry_history3_.position[1];
-            movement_a[2] = cyclic_odometry_history0_.position[2] - cyclic_odometry_history3_.position[2];
-            movement_b[0] = cyclic_odometry_history1_.position[0] - cyclic_odometry_history3_.position[0];
-            movement_b[1] = cyclic_odometry_history1_.position[1] - cyclic_odometry_history3_.position[1];
-            movement_b[2] = cyclic_odometry_history1_.position[2] - cyclic_odometry_history3_.position[2];
-            movement_c[0] = cyclic_odometry_history2_.position[0] - cyclic_odometry_history3_.position[0];
-            movement_c[1] = cyclic_odometry_history2_.position[1] - cyclic_odometry_history3_.position[1];
-            movement_c[2] = cyclic_odometry_history2_.position[2] - cyclic_odometry_history3_.position[2];
-            movement_v[0] = cyclic_odometry_history1_.position[0] - cyclic_odometry_history2_.position[0];
-            movement_v[1] = cyclic_odometry_history1_.position[1] - cyclic_odometry_history2_.position[1];
-            movement_v[2] = cyclic_odometry_history1_.position[2] - cyclic_odometry_history2_.position[2];
-            movement_w[0] = cyclic_odometry_history0_.position[0] - cyclic_odometry_history2_.position[0];
-            movement_w[1] = cyclic_odometry_history0_.position[1] - cyclic_odometry_history2_.position[1];
-            movement_w[2] = cyclic_odometry_history0_.position[2] - cyclic_odometry_history2_.position[2];
-            movement_u[0] = cyclic_odometry_history0_.position[0] - cyclic_odometry_history1_.position[0];
-            movement_u[1] = cyclic_odometry_history0_.position[1] - cyclic_odometry_history1_.position[1];
-            movement_u[2] = cyclic_odometry_history0_.position[2] - cyclic_odometry_history1_.position[2];
+            Vector3f positions_try_a[N_DRONES_MAX];
+            Vector3f positions_try_b[N_DRONES_MAX];
+            Vector3f positions_try_c[N_DRONES_MAX];
+            Vector3f positions_try_d[N_DRONES_MAX];
+            float quality_try_a[N_DRONES_MAX];
+            float quality_try_b[N_DRONES_MAX];
+            float quality_try_c[N_DRONES_MAX];
+            float quality_try_d[N_DRONES_MAX];
+            Vector3f positions_est[N_DRONES_MAX];
 
-            ROS_INFO("(#%d) movement_a x=%f y=%f z=%f", droneNumber_, movement_a[0], movement_a[1], movement_a[2]);
-            ROS_INFO("(#%d) movement_b x=%f y=%f z=%f", droneNumber_, movement_b[0], movement_b[1], movement_b[2]);
-            ROS_INFO("(#%d) movement_c x=%f y=%f z=%f", droneNumber_, movement_c[0], movement_c[1], movement_c[2]);
+            TrilaterationCalculation( &cyclic_odometry_history0_,
+                                      &cyclic_odometry_history1_,
+                                      &cyclic_odometry_history2_,
+                                      &cyclic_odometry_history3_,
+                                      cyclic_distances_history0_,
+                                      cyclic_distances_history1_,
+                                      cyclic_distances_history2_,
+                                      cyclic_distances_history3_,
+                                      &cyclic_odometry_history3_,
+                                      positions_try_a,
+                                      quality_try_a);
 
-            Vector3f c_1, c_2, c_3, c_4;
-            c_1[0] = 0; c_1[1] = 0; c_1[2] = 0;
-            c_2[0] = movement_c.norm(); c_2[1] = 0; c_2[2] = 0;
-            c_3[0] = (pow(movement_b.norm(),2) - pow(movement_v.norm(),2) + pow(c_2[0], 2)) / (2.0*c_2[0]);
-            if(pow(movement_b.norm(),2) - pow(c_3[0], 2) < 0)
-            {
-                ROS_ERROR("(#%d) ERROR: pow(movement_b.norm(),2) - pow(c_3[0], 2) < 0", droneNumber_);
-                c_3[1] = 0.01;
-            }
-            else
-                c_3[1] = sqrt(pow(movement_b.norm(),2) - pow(c_3[0], 2));
-            c_3[2] = 0;
+            TrilaterationCalculation( &cyclic_odometry_history1_,
+                                      &cyclic_odometry_history2_,
+                                      &cyclic_odometry_history3_,
+                                      &cyclic_odometry_history0_,
+                                      cyclic_distances_history1_,
+                                      cyclic_distances_history2_,
+                                      cyclic_distances_history3_,
+                                      cyclic_distances_history0_,
+                                      &cyclic_odometry_history3_,
+                                      positions_try_b,
+                                      quality_try_b);
 
-            ROS_INFO("(#%d) c_1 x=%f y=%f z=%f", droneNumber_, c_1[0], c_1[1], c_1[2]);
-            ROS_INFO("(#%d) c_2 x=%f y=%f z=%f", droneNumber_, c_2[0], c_2[1], c_2[2]);
-            ROS_INFO("(#%d) c_3 x=%f y=%f z=%f", droneNumber_, c_3[0], c_3[1], c_3[2]);
+            TrilaterationCalculation( &cyclic_odometry_history2_,
+                                      &cyclic_odometry_history3_,
+                                      &cyclic_odometry_history0_,
+                                      &cyclic_odometry_history1_,
+                                      cyclic_distances_history2_,
+                                      cyclic_distances_history3_,
+                                      cyclic_distances_history0_,
+                                      cyclic_distances_history1_,
+                                      &cyclic_odometry_history3_,
+                                      positions_try_c,
+                                      quality_try_c);
 
-            // determine rotation
-
-            // // first rotation: align point c_2 to movement_c
-            Vector3f a1 = c_2;
-            Vector3f b1 = movement_c;
-            a1 = a1 / a1.norm(); // divide by norm to get unit vector
-            b1 = b1 / b1.norm(); // divide by norm to get unit vector
-            // get axis of rotation by cross-product of a1, b1
-            Vector3f axis1 = a1.cross(b1);
-            Matrix3f rotation1;
-            if (axis1.norm() < 0.000001) // a1 is already aligned with b1, use identity matrix for first rotation
-                rotation1 = IdentityMatrix();
-            else
-                rotation1 = RotationMatrixFromAxisAngle(axis1 / axis1.norm(), acos(a1.dot(b1) / (a1.norm() * b1.norm()))); // get angle of rotation by scalar-product of a1, b1
-            /*
-            ROS_INFO("rotation1 %s", MatrixToString(rotation1).c_str());
-            Vector3f c_2_tmp = rotation1 * c_2;
-            ROS_INFO("c_2_tmp %s", VectorToString(c_2_tmp).c_str());
-            ROS_INFO("movement_c %s", VectorToString(movement_c).c_str());
-            */
-
-            Vector3f h0 = {0, 0, 1};
-            // // helper rotation: rotation axis to Z-axis
-            Vector3f aa1 = rotation1 * a1;
-            Vector3f axis0 = aa1.cross(h0);
-            Matrix3f rotation01 = RotationMatrixFromAxisAngle(axis0 / axis0.norm(), acos(aa1.dot(h0) / (aa1.norm() * h0.norm()))); // get angle of rotation by scalar-product of aa1, h0
-            Vector3f a_tmp = rotation01 * rotation1 * c_3;
-            a_tmp[2] = 0;
-
-            // // helper rotation: rotation axis to Z-axis
-            axis0 = b1.cross(h0);
-            Matrix3f rotation02 = RotationMatrixFromAxisAngle(axis0 / axis0.norm(), acos(b1.dot(h0) / (b1.norm() * h0.norm()))); // get angle of rotation by scalar-product of b1, h0
-            Vector3f b_tmp = rotation02 * movement_b;
-            b_tmp[2] = 0;
-
-            // // second rotation: align point a2 to b2
-            Vector3f a2 = c_3;
-            Vector3f b2 = movement_b;
-            a2 = a2 / a2.norm(); // divide by norm to get unit vector
-            b2 = b2 / b2.norm(); // divide by norm to get unit vector
-            // get axis as vector b1
-            Vector3f axis2 = b1 / b1.norm();
-            // get angle of rotation by scalar-product of a_tmp, b_tmp
-            float angle2 = acos(a_tmp.dot(b_tmp) / (a_tmp.norm() * b_tmp.norm()));
-            Matrix3f rotation2p = RotationMatrixFromAxisAngle(axis2, angle2);
-            Matrix3f rotation2m = RotationMatrixFromAxisAngle(axis2, -angle2);
-
-            Matrix3f rotation2;
-            // determine in which direction to rotate
-            float diff_p = (rotation2p * rotation1 * c_3 - movement_b).norm();
-            float diff_m = (rotation2m * rotation1 * c_3 - movement_b).norm();
-            if(diff_m < diff_p)
-                rotation2 = rotation2m;
-            else
-                rotation2 = rotation2p;
-            Matrix3f rotation = rotation2 * rotation1;
-/*
-            // if c_4:movement_a (tie-breaker) does not match, we need to do: https://www.youtube.com/watch?v=fXA7cgtgKH0
-            // b1 # first vector of reflection plane
-            // b2 # second vector of reflection plane
-            Vector3f b3 = movement_a;
-            Vector3f e1 = b1 / b1.norm();
-            Vector3f u2 = b2 - b2.dot(e1).dot(e1);
-            Vector3f e2 = u2 / u2.norm();
-            Vector3f u3 = b3 - b3.dot(e1).dot(e1) - b3.dot(e2).dot(e2);
-            Vector3f e3 = u3 / u3.norm();
-
-            Matrix3f transform_e1 = np.array([e1, e2, e3]);
-            Matrix3f transform_e = transform_e1.transpose();
-            Matrix3f transform_t = np.array([[1, 0, 0], [0, 1, 0], [0, 0, -1]]);
-            Matrix3f transform = transform_e * transform_t * transform_e1;
-
-            ROS_INFO("rotation2 %s", MatrixToString(rotation2).c_str());
-            ROS_INFO("rotation  %s", MatrixToString(rotation).c_str());
-*/
-
-            Vector3f c_2_tmp = rotation * c_2;
-            ROS_INFO("c_2_tmp %s", VectorToString(c_2_tmp).c_str());
-            ROS_INFO("movement_c %s", VectorToString(movement_c).c_str());
-
-            Vector3f c_3_tmp = rotation * c_3;
-            ROS_INFO("c_3_tmp %s", VectorToString(c_3_tmp).c_str());
-            ROS_INFO("movement_b %s", VectorToString(movement_b).c_str());
-
-            // check with c_4 (coresponds to history0_)
-            c_4[0] = (pow(movement_a.norm(), 2) - pow(movement_w.norm(), 2) + pow(c_2[0], 2)) / (2.0*c_2[0]);
-            c_4[1] = (pow(movement_a.norm(), 2) - pow(movement_u.norm(), 2) + pow(c_3[0], 2) + pow(c_3[1], 2) - 2*c_3[0]*c_4[0]) / (2.0*c_3[1]);
-            c_4[2] = sqrt(pow(movement_a.norm(), 2) - pow(c_4[0], 2) - pow(c_4[1], 2));
-            if(pow(movement_a.norm(), 2) - pow(c_4[0], 2) - pow(c_4[1], 2) < 0)
-                ROS_ERROR("(#%d) ERROR: pow(movement_a.norm(), 2) - pow(c_4[0], 2) - pow(c_4[1], 2) < 0", droneNumber_);
-
-            // check if it should be mirrored
-            Vector3f c_4neg = c_4;
-            c_4neg[2] = 0 - c_4neg[2];
-            if((rotation * c_4neg - movement_a).norm() < (rotation * c_4 - movement_a).norm())
-                c_4 = c_4neg;
-
-            Vector3f c_4_tmp = rotation * c_4;
-            ROS_INFO("c_4_tmp %s", VectorToString(c_4_tmp).c_str());
-            ROS_INFO("movement_a %s", VectorToString(movement_a).c_str());
-            ROS_INFO("------------------------------");
+            TrilaterationCalculation( &cyclic_odometry_history3_,
+                                      &cyclic_odometry_history2_,
+                                      &cyclic_odometry_history1_,
+                                      &cyclic_odometry_history0_,
+                                      cyclic_distances_history3_,
+                                      cyclic_distances_history2_,
+                                      cyclic_distances_history1_,
+                                      cyclic_distances_history0_,
+                                      &cyclic_odometry_history3_,
+                                      positions_try_d,
+                                      quality_try_d);
 
             for (size_t i = 0; i < droneCount_; i++)
             {
                 if(i == droneNumber_) // skip for own quadcopter
                     continue;
-                // calculate relative position of drone i w.r.t. to own drone
-                float r_1 = cyclic_distances_history3_[i], r_2 = cyclic_distances_history2_[i], r_3 = cyclic_distances_history1_[i], r_4 = cyclic_distances_history0_[i];
-                Vector3f other_drone_tmp;
-                Vector3f other_drone_neg;
-                Vector3f history3;
-                history3[0] = cyclic_odometry_history3_.position[0];
-                history3[1] = cyclic_odometry_history3_.position[1];
-                history3[2] = cyclic_odometry_history3_.position[2];
 
-                other_drone_tmp[0] = (pow(r_1, 2) - pow(r_2, 2) + pow(c_2[0], 2)) / (2.0*c_2[0]);
-                other_drone_tmp[1] = (pow(r_1, 2) - pow(r_3, 2) + pow(c_3[0], 2) + pow(c_3[1], 2) - 2*c_3[0]*other_drone_tmp[0]) / (2.0*c_3[1]);
-                other_drone_tmp[2] = sqrt(pow(r_1, 2) - pow(other_drone_tmp[0], 2) - pow(other_drone_tmp[1], 2));
-                if(pow(r_1, 2) - pow(other_drone_tmp[0], 2) - pow(other_drone_tmp[1], 2) < 0)
-                    ROS_ERROR("(#%d) ERROR: pow(r_1, 2) - pow(other_drone_tmp[0], 2) - pow(other_drone_tmp[1], 2) < 0", droneNumber_);
+                float best_quality = quality_try_a[i];
+                positions_est[i] = positions_try_a[i];
 
-                other_drone_neg = other_drone_tmp; other_drone_tmp[2] = 0 - other_drone_tmp[2];
-                if(fabs((other_drone_neg - c_4).norm() - r_4) < fabs((other_drone_tmp - c_4).norm() - r_4)) // check if it should be mirrored
-                    other_drone_tmp = other_drone_neg;
-
-                ROS_INFO("distances: r_1 %f r_2 %f r_3 %f r_4 %f", r_1, r_2, r_3, r_4);
-                ROS_INFO("(other_drone_tmp - c_1).norm %f c_2 %f c_3 %f c_4 %f", (other_drone_tmp - c_1).norm(), (other_drone_tmp - c_2).norm(), (other_drone_tmp - c_3).norm(), (other_drone_tmp - c_4).norm());
-                ROS_INFO("other_drone_tmp %s", VectorToString(other_drone_tmp).c_str());
-                Vector3f other_drone_rotated = rotation * other_drone_tmp;
-                ROS_INFO("other_drone_rotated %s", VectorToString(other_drone_rotated).c_str());
-                Vector3f other_drone_position = other_drone_rotated + history3;
-                ROS_INFO("other_drone_position %s", VectorToString(other_drone_position).c_str());
-                ROS_INFO("positions_gt_[%d] %s", (int)i, VectorToString(positions_gt_[i]).c_str()); // ground-truth position of drones, only to be used for verification of estimation
-
-                Vector3f r_1_vec = other_drone_tmp - c_1;
-                Vector3f r_2_vec = other_drone_tmp - c_2;
-                Vector3f r_3_vec = other_drone_tmp - c_3;
-                float angle1_2 = acos(r_1_vec.dot(r_2_vec) / (r_1_vec.norm() * r_2_vec.norm()));
-                float angle1_3 = acos(r_1_vec.dot(r_3_vec) / (r_1_vec.norm() * r_3_vec.norm()));
-                float angle2_3 = acos(r_2_vec.dot(r_3_vec) / (r_2_vec.norm() * r_3_vec.norm()));
-
-                ROS_INFO("angle: 1_2 %f 1_3 %f 2_3 %f", angle1_2, angle1_3, angle2_3);
-
-
-//                ROS_INFO("(#%d) drone%d @ x=%f y=%f z=%f norm=%f r_1=%f", droneNumber_, (int)i, other_drone_pos[0], other_drone_pos[1], other_drone_pos[2], other_drone_pos.norm(), r_1);
-
-/*
-                Vector3f other_drone_abs_pos = history3 + other_drone_pos;
-                Vector3f other_drone_abs_neg = history3 + other_drone_neg;
-                ROS_INFO("(#%d) cyclic_odometry_history3_ x=%f y=%f z=%f", droneNumber_, cyclic_odometry_history3_.position[0], cyclic_odometry_history3_.position[1], cyclic_odometry_history3_.position[2]);
-                ROS_INFO("other_drone_tmp %s", VectorToString(other_drone_tmp).c_str());
-                ROS_INFO("other_drone_pos %s", VectorToString(other_drone_pos).c_str());
-                ROS_INFO("other_drone_neg %s", VectorToString(other_drone_neg).c_str());
-                ROS_INFO("other_drone_abs_pos %s", VectorToString(other_drone_abs_pos).c_str());
-                ROS_INFO("other_drone_abs_neg %s", VectorToString(other_drone_abs_neg).c_str());
-                */
-                ROS_INFO("------------------------------");
+                if(quality_try_b[i] < best_quality)
+                {
+                    best_quality = quality_try_b[i];
+                    positions_est[i] = positions_try_b[i];
+                }
+                if(quality_try_c[i] < best_quality)
+                {
+                    best_quality = quality_try_c[i];
+                    positions_est[i] = positions_try_c[i];
+                }
+                if(quality_try_d[i] < best_quality)
+                {
+                    best_quality = quality_try_d[i];
+                    positions_est[i] = positions_try_d[i];
+                }
+                ROS_INFO("(%d) positions_est[%d] %s (quality: %f)", droneNumber_, (int)i, VectorToString(positions_est[i]).c_str(), best_quality);
             }
+            // ROS_INFO("############################");
         }
 
         if(cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_A)
@@ -1723,6 +1608,274 @@ void RelativeDistanceController::DistancesCallback(const std_msgs::Float32MultiA
     }
     odometry_last_distances_measurement_ = odometry_;
 }
+
+void RelativeDistanceController::TrilaterationCalculation(EigenOdometry* history0,
+                                                          EigenOdometry* history1,
+                                                          EigenOdometry* history2,
+                                                          EigenOdometry* history3,
+                                                          float* distances_history0,
+                                                          float* distances_history1,
+                                                          float* distances_history2,
+                                                          float* distances_history3,
+                                                          EigenOdometry* current,
+                                                          Vector3f* positions_result,
+                                                          float* quality_result
+                            )
+{
+    int error_occured = 0;
+    Vector3f movement_a, movement_b, movement_c, movement_v, movement_w, movement_u;
+    movement_a[0] = history0->position[0] - history3->position[0];
+    movement_a[1] = history0->position[1] - history3->position[1];
+    movement_a[2] = history0->position[2] - history3->position[2];
+    movement_b[0] = history1->position[0] - history3->position[0];
+    movement_b[1] = history1->position[1] - history3->position[1];
+    movement_b[2] = history1->position[2] - history3->position[2];
+    movement_c[0] = history2->position[0] - history3->position[0];
+    movement_c[1] = history2->position[1] - history3->position[1];
+    movement_c[2] = history2->position[2] - history3->position[2];
+    movement_v[0] = history1->position[0] - history2->position[0];
+    movement_v[1] = history1->position[1] - history2->position[1];
+    movement_v[2] = history1->position[2] - history2->position[2];
+    movement_w[0] = history0->position[0] - history2->position[0];
+    movement_w[1] = history0->position[1] - history2->position[1];
+    movement_w[2] = history0->position[2] - history2->position[2];
+    movement_u[0] = history0->position[0] - history1->position[0];
+    movement_u[1] = history0->position[1] - history1->position[1];
+    movement_u[2] = history0->position[2] - history1->position[2];
+
+    /*
+    ROS_INFO("(#%d) movement_a x=%f y=%f z=%f", droneNumber_, movement_a[0], movement_a[1], movement_a[2]);
+    ROS_INFO("(#%d) movement_b x=%f y=%f z=%f", droneNumber_, movement_b[0], movement_b[1], movement_b[2]);
+    ROS_INFO("(#%d) movement_c x=%f y=%f z=%f", droneNumber_, movement_c[0], movement_c[1], movement_c[2]);
+    */
+
+    Vector3f c_1, c_2, c_3, c_4;
+    c_1[0] = 0; c_1[1] = 0; c_1[2] = 0;
+    c_2[0] = movement_c.norm(); c_2[1] = 0; c_2[2] = 0;
+    c_3[0] = (pow(movement_b.norm(),2) - pow(movement_v.norm(),2) + pow(c_2[0], 2)) / (2.0*c_2[0]);
+    if(pow(movement_b.norm(),2) - pow(c_3[0], 2) < 0)
+    {
+        ROS_ERROR("(#%d) ERROR: pow(movement_b.norm(),2) - pow(c_3[0], 2) < 0", droneNumber_);
+        error_occured = 1;
+        c_3[1] = 0.01;
+    }
+    else
+        c_3[1] = sqrt(pow(movement_b.norm(),2) - pow(c_3[0], 2));
+    c_3[2] = 0;
+
+    /*
+    ROS_INFO("(#%d) c_1 x=%f y=%f z=%f", droneNumber_, c_1[0], c_1[1], c_1[2]);
+    ROS_INFO("(#%d) c_2 x=%f y=%f z=%f", droneNumber_, c_2[0], c_2[1], c_2[2]);
+    ROS_INFO("(#%d) c_3 x=%f y=%f z=%f", droneNumber_, c_3[0], c_3[1], c_3[2]);
+    */
+
+    // determine rotation
+
+    // // first rotation: align point c_2 to movement_c
+    Vector3f a1 = c_2;
+    Vector3f b1 = movement_c;
+    a1 = a1 / a1.norm(); // divide by norm to get unit vector
+    b1 = b1 / b1.norm(); // divide by norm to get unit vector
+    // get axis of rotation by cross-product of a1, b1
+    Vector3f axis1 = a1.cross(b1);
+    Matrix3f rotation1;
+    if (axis1.norm() < 0.000001) // a1 is already aligned with b1, use identity matrix for first rotation
+        rotation1 = IdentityMatrix();
+    else
+        rotation1 = RotationMatrixFromAxisAngle(axis1 / axis1.norm(), acos(a1.dot(b1) / (a1.norm() * b1.norm()))); // get angle of rotation by scalar-product of a1, b1
+    /*
+    ROS_INFO("rotation1 %s", MatrixToString(rotation1).c_str());
+    Vector3f c_2_tmp = rotation1 * c_2;
+    ROS_INFO("c_2_tmp %s", VectorToString(c_2_tmp).c_str());
+    ROS_INFO("movement_c %s", VectorToString(movement_c).c_str());
+    */
+
+    Vector3f h0 = {0, 0, 1};
+    // // helper rotation: rotation axis to Z-axis
+    Vector3f aa1 = rotation1 * a1;
+    Vector3f axis0 = aa1.cross(h0);
+    Matrix3f rotation01 = RotationMatrixFromAxisAngle(axis0 / axis0.norm(), acos(aa1.dot(h0) / (aa1.norm() * h0.norm()))); // get angle of rotation by scalar-product of aa1, h0
+    Vector3f a_tmp = rotation01 * rotation1 * c_3;
+    a_tmp[2] = 0;
+
+    // // helper rotation: rotation axis to Z-axis
+    axis0 = b1.cross(h0);
+    Matrix3f rotation02 = RotationMatrixFromAxisAngle(axis0 / axis0.norm(), acos(b1.dot(h0) / (b1.norm() * h0.norm()))); // get angle of rotation by scalar-product of b1, h0
+    Vector3f b_tmp = rotation02 * movement_b;
+    b_tmp[2] = 0;
+
+    // // second rotation: align point a2 to b2
+    Vector3f a2 = c_3;
+    Vector3f b2 = movement_b;
+    a2 = a2 / a2.norm(); // divide by norm to get unit vector
+    b2 = b2 / b2.norm(); // divide by norm to get unit vector
+    // get axis as vector b1
+    Vector3f axis2 = b1 / b1.norm();
+    // get angle of rotation by scalar-product of a_tmp, b_tmp
+    float angle2 = acos(a_tmp.dot(b_tmp) / (a_tmp.norm() * b_tmp.norm()));
+    Matrix3f rotation2p = RotationMatrixFromAxisAngle(axis2, angle2);
+    Matrix3f rotation2m = RotationMatrixFromAxisAngle(axis2, -angle2);
+
+    Matrix3f rotation2;
+    // determine in which direction to rotate
+    float diff_p = (rotation2p * rotation1 * c_3 - movement_b).norm();
+    float diff_m = (rotation2m * rotation1 * c_3 - movement_b).norm();
+    if(diff_m < diff_p)
+        rotation2 = rotation2m;
+    else
+        rotation2 = rotation2p;
+    Matrix3f rotation = rotation2 * rotation1;
+
+    Vector3f c_2_tmp = rotation * c_2;
+    if((c_2_tmp - movement_c).norm() > 0.01)
+    {
+        ROS_ERROR("(#%d) ERROR: c_2_tmp - movement_c alignment error", droneNumber_);
+        error_occured = 1;
+    }
+
+    Vector3f c_3_tmp = rotation * c_3;
+    if((c_3_tmp - movement_b).norm() > 0.01)
+    {
+        ROS_ERROR("(#%d) ERROR: c_3_tmp - movement_b alignment error", droneNumber_);
+        error_occured = 1;
+    }
+
+    /*
+    Vector3f c_2_tmp = rotation * c_2;
+    ROS_INFO("c_2_tmp %s", VectorToString(c_2_tmp).c_str());
+    ROS_INFO("movement_c %s", VectorToString(movement_c).c_str());
+
+    Vector3f c_3_tmp = rotation * c_3;
+    ROS_INFO("c_3_tmp %s", VectorToString(c_3_tmp).c_str());
+    ROS_INFO("movement_b %s", VectorToString(movement_b).c_str());
+    */
+
+    // check with c_4 (coresponds to history0_)
+    c_4[0] = (pow(movement_a.norm(), 2) - pow(movement_w.norm(), 2) + pow(c_2[0], 2)) / (2.0*c_2[0]);
+    c_4[1] = (pow(movement_a.norm(), 2) - pow(movement_u.norm(), 2) + pow(c_3[0], 2) + pow(c_3[1], 2) - 2*c_3[0]*c_4[0]) / (2.0*c_3[1]);
+    c_4[2] = sqrt(pow(movement_a.norm(), 2) - pow(c_4[0], 2) - pow(c_4[1], 2));
+    if(pow(movement_a.norm(), 2) - pow(c_4[0], 2) - pow(c_4[1], 2) < 0)
+    {
+        ROS_ERROR("(#%d) ERROR: pow(movement_a.norm(), 2) - pow(c_4[0], 2) - pow(c_4[1], 2) < 0", droneNumber_);
+        error_occured = 1;
+    }
+
+    // check if it should be mirrored
+    Vector3f c_4neg = c_4;
+    c_4neg[2] = 0 - c_4neg[2];
+    if((rotation * c_4neg - movement_a).norm() < (rotation * c_4 - movement_a).norm())
+        c_4 = c_4neg;
+
+    /*
+    Vector3f c_4_tmp = rotation * c_4;
+    ROS_INFO("c_4_tmp %s", VectorToString(c_4_tmp).c_str());
+    ROS_INFO("movement_a %s", VectorToString(movement_a).c_str());
+    ROS_INFO("------------------------------");
+    */
+
+    Vector3f c_4_tmp = rotation * c_4;
+    if((c_4_tmp - movement_a).norm() > 0.01)
+    {
+        ROS_ERROR("(#%d) ERROR: c_4_tmp - movement_a alignment error", droneNumber_);
+        error_occured = 1;
+    }
+
+    for (size_t i = 0; i < droneCount_; i++)
+    {
+        quality_result[i] = 0;
+        if(error_occured)
+            quality_result[i] += 5000;
+
+        if(i == droneNumber_) // skip for own quadcopter
+            continue;
+        // calculate relative position of drone i w.r.t. to own drone
+        float r_1 = distances_history3[i], r_2 = distances_history2[i], r_3 = distances_history1[i], r_4 = distances_history0[i];
+        Vector3f other_drone_tmp;
+        Vector3f other_drone_neg;
+        Vector3f current_v;
+        current_v[0] = current->position[0];
+        current_v[1] = current->position[1];
+        current_v[2] = current->position[2];
+
+        other_drone_tmp[0] = (pow(r_1, 2) - pow(r_2, 2) + pow(c_2[0], 2)) / (2.0*c_2[0]);
+        other_drone_tmp[1] = (pow(r_1, 2) - pow(r_3, 2) + pow(c_3[0], 2) + pow(c_3[1], 2) - 2*c_3[0]*other_drone_tmp[0]) / (2.0*c_3[1]);
+        other_drone_tmp[2] = sqrt(pow(r_1, 2) - pow(other_drone_tmp[0], 2) - pow(other_drone_tmp[1], 2));
+        if(pow(r_1, 2) - pow(other_drone_tmp[0], 2) - pow(other_drone_tmp[1], 2) < 0)
+        {
+            ROS_ERROR("(#%d) ERROR: pow(r_1, 2) - pow(other_drone_tmp[0], 2) - pow(other_drone_tmp[1], 2) < 0", droneNumber_);
+            quality_result[i] += 1000;
+        }
+
+        other_drone_neg = other_drone_tmp; other_drone_neg[2] = 0 - other_drone_tmp[2];
+        if(fabs((other_drone_neg - c_4).norm() - r_4) < fabs((other_drone_tmp - c_4).norm() - r_4)) // check if it should be mirrored
+            other_drone_tmp = other_drone_neg;
+
+        if((other_drone_tmp - c_1).norm() - r_1 > 0.01)
+        {
+            ROS_ERROR("(#%d;%d) ERROR: (other_drone_tmp - c_1).norm() - r_1 error", droneNumber_, (int)i);
+            quality_result[i] += 1000;
+        }
+        if((other_drone_tmp - c_2).norm() - r_2 > 0.01)
+        {
+            ROS_ERROR("(#%d;%d) ERROR: (other_drone_tmp - c_2).norm() - r_2 error", droneNumber_, (int)i);
+            quality_result[i] += 1000;
+        }
+        if((other_drone_tmp - c_3).norm() - r_3 > 0.01)
+        {
+            ROS_ERROR("(#%d;%d) ERROR: (other_drone_tmp - c_3).norm() - r_3 error", droneNumber_, (int)i);
+            quality_result[i] += 1000;
+        }
+
+        Vector3f other_drone_rotated = rotation * other_drone_tmp;
+        Vector3f other_drone_position = other_drone_rotated + current_v;
+
+        /*
+        ROS_INFO("distances: r_1 %f r_2 %f r_3 %f r_4 %f", r_1, r_2, r_3, r_4);
+        ROS_INFO("(other_drone_tmp - c_1).norm %f c_2 %f c_3 %f c_4 %f", (other_drone_tmp - c_1).norm(), (other_drone_tmp - c_2).norm(), (other_drone_tmp - c_3).norm(), (other_drone_tmp - c_4).norm());
+        ROS_INFO("other_drone_tmp %s", VectorToString(other_drone_tmp).c_str());
+        ROS_INFO("other_drone_rotated %s", VectorToString(other_drone_rotated).c_str());
+        */
+        //ROS_INFO("other_drone_position %s", VectorToString(other_drone_position).c_str());
+        //ROS_INFO("(other_drone_tmp - c_4).norm() - r_4 = %f", (other_drone_tmp - c_4).norm() - r_4);
+        //ROS_INFO("positions_gt_[%d] %s", (int)i, VectorToString(positions_gt_[i]).c_str()); // ground-truth position of drones, only to be used for verification of estimation
+        //ROS_INFO("error %s (norm: %f)", VectorToString(other_drone_position - positions_gt_[i]).c_str(), (other_drone_position - positions_gt_[i]).norm());
+        /*
+        other_drone_neg[2] = 0 - other_drone_tmp[2];
+        Vector3f other_drone_rotated_neg = rotation * other_drone_neg;
+        Vector3f other_drone_position_neg = other_drone_rotated_neg + current_v;
+
+        ROS_INFO("other_drone_position_neg %s", VectorToString(other_drone_position_neg).c_str());
+        ROS_INFO("(other_drone_neg - c_4).norm() - r_4 = %f", (other_drone_neg - c_4).norm() - r_4);
+        ROS_INFO("positions_gt_[%d] %s", (int)i, VectorToString(positions_gt_[i]).c_str()); // ground-truth position of drones, only to be used for verification of estimation
+        ROS_INFO("error %s (norm: %f)", VectorToString(other_drone_position_neg - positions_gt_[i]).c_str(), (other_drone_position_neg - positions_gt_[i]).norm());
+
+        Vector3f r_1_vec = other_drone_tmp - c_1;
+        Vector3f r_2_vec = other_drone_tmp - c_2;
+        Vector3f r_3_vec = other_drone_tmp - c_3;
+        float angle1_2 = acos(r_1_vec.dot(r_2_vec) / (r_1_vec.norm() * r_2_vec.norm()));
+        float angle1_3 = acos(r_1_vec.dot(r_3_vec) / (r_1_vec.norm() * r_3_vec.norm()));
+        float angle2_3 = acos(r_2_vec.dot(r_3_vec) / (r_2_vec.norm() * r_3_vec.norm()));
+
+        ROS_INFO("angle: 1_2 %f 1_3 %f 2_3 %f (product: %f)", angle1_2, angle1_3, angle2_3, angle1_2*angle1_3*angle2_3);
+        */
+
+        positions_result[i] = other_drone_position;
+        quality_result[i] += fabs((other_drone_tmp - c_4).norm() - r_4);
+
+        if(isnan(quality_result[i]))
+        {
+            positions_result[i][0] = 0;
+            positions_result[i][1] = 0;
+            positions_result[i][2] = 1;
+            quality_result[i] = 100000;
+        }
+
+        // ROS_INFO("quality_result[i] %f", quality_result[i]);
+        // ROS_INFO("------------------------------");
+    }
+}
+
+
 
 void RelativeDistanceController::ElevationCallback(const std_msgs::Float32MultiArray& elevation_msg) {
     ROS_INFO_ONCE("DistancesCallback got first elevation message.");

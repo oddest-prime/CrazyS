@@ -206,7 +206,9 @@ namespace rotors_control {
                                           float* distances_history1,
                                           float* distances_history2,
                                           float* distances_history3,
-                                          EigenOdometry* current
+                                          EigenOdometry* current,
+                                          Vector3f* positions_result,
+                                          float* quality_result
                                         );
 
             //subscribers

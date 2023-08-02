@@ -198,6 +198,17 @@ namespace rotors_control {
 
             void FileSaveData(void);
 
+            void TrilaterationCalculation(EigenOdometry* history0,
+                                          EigenOdometry* history1,
+                                          EigenOdometry* history2,
+                                          EigenOdometry* history3,
+                                          float* distances_history0,
+                                          float* distances_history1,
+                                          float* distances_history2,
+                                          float* distances_history3,
+                                          EigenOdometry* current
+                                        );
+
             //subscribers
             ros::Subscriber cmd_multi_dof_joint_trajectory_sub_;
             ros::Subscriber odometry_sub_;

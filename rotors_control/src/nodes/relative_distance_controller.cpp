@@ -1522,9 +1522,8 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 if(i == droneNumber_) // skip for own quadcopter
                     continue;
                 // calculate relative position of drone i w.r.t. to own drone
-                float r_1 = cyclic_distances_history3_[i], r_2 = cyclic_distances_history2_[i], r_3 = cyclic_distances_history1_[i];
+                float r_1 = cyclic_distances_history3_[i], r_2 = cyclic_distances_history2_[i], r_3 = cyclic_distances_history1_[i], r_4 = cyclic_distances_history0_[i];
                 Vector3f other_drone_tmp;
-                Vector3f other_drone_pos;
                 Vector3f other_drone_neg;
                 Vector3f history3;
                 history3[0] = cyclic_odometry_history3_.position[0];
@@ -1537,11 +1536,27 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 if(pow(r_1, 2) - pow(other_drone_tmp[0], 2) - pow(other_drone_tmp[1], 2) < 0)
                     ROS_ERROR("(#%d) ERROR: pow(r_1, 2) - pow(other_drone_tmp[0], 2) - pow(other_drone_tmp[1], 2) < 0", droneNumber_);
 
-                ROS_INFO("distances: r_1 %f r_2 %f r_3 %f", r_1, r_2, r_3);
-                ROS_INFO("(other_drone_tmp - c_1).norm %f c_2 %f c_3 %f", (other_drone_tmp - c_1).norm(), (other_drone_tmp - c_2).norm(), (other_drone_tmp - c_3).norm());
+                other_drone_neg = other_drone_tmp; other_drone_tmp[2] = 0 - other_drone_tmp[2];
+                if(fabs((other_drone_neg - c_4).norm() - r_4) < fabs((other_drone_tmp - c_4).norm() - r_4)) // check if it should be mirrored
+                    other_drone_tmp = other_drone_neg;
+
+                ROS_INFO("distances: r_1 %f r_2 %f r_3 %f r_4 %f", r_1, r_2, r_3, r_4);
+                ROS_INFO("(other_drone_tmp - c_1).norm %f c_2 %f c_3 %f c_4 %f", (other_drone_tmp - c_1).norm(), (other_drone_tmp - c_2).norm(), (other_drone_tmp - c_3).norm(), (other_drone_tmp - c_4).norm());
                 ROS_INFO("other_drone_tmp %s", VectorToString(other_drone_tmp).c_str());
-                Vector3f other_drone_rot = rotation * other_drone_tmp;
-                ROS_INFO("other_drone_rot %s", VectorToString(other_drone_rot).c_str());
+                Vector3f other_drone_rotated = rotation * other_drone_tmp;
+                ROS_INFO("other_drone_rotated %s", VectorToString(other_drone_rotated).c_str());
+                Vector3f other_drone_position = other_drone_rotated + history3;
+                ROS_INFO("other_drone_position %s", VectorToString(other_drone_position).c_str());
+                ROS_INFO("positions_gt_[%d] %s", (int)i, VectorToString(positions_gt_[i]).c_str()); // ground-truth position of drones, only to be used for verification of estimation
+
+                Vector3f r_1_vec = other_drone_tmp - c_1;
+                Vector3f r_2_vec = other_drone_tmp - c_2;
+                Vector3f r_3_vec = other_drone_tmp - c_3;
+                float angle1_2 = acos(r_1_vec.dot(r_2_vec) / (r_1_vec.norm() * r_2_vec.norm()));
+                float angle1_3 = acos(r_1_vec.dot(r_3_vec) / (r_1_vec.norm() * r_3_vec.norm()));
+                float angle2_3 = acos(r_2_vec.dot(r_3_vec) / (r_2_vec.norm() * r_3_vec.norm()));
+
+                ROS_INFO("angle: 1_2 %f 1_3 %f 2_3 %f", angle1_2, angle1_3, angle2_3);
 
 
 //                ROS_INFO("(#%d) drone%d @ x=%f y=%f z=%f norm=%f r_1=%f", droneNumber_, (int)i, other_drone_pos[0], other_drone_pos[1], other_drone_pos[2], other_drone_pos.norm(), r_1);
@@ -1772,9 +1787,9 @@ void RelativeDistanceController::PositionsCallback(const std_msgs::Float32MultiA
     for (size_t i = 0; i < droneCount_; i++)
     {
         // ground-truth positions of all drones, only to be used for verification of estimation
-        positions_gt_[i][0]= positions_msg.data[i*droneCount_ + 0];
-        positions_gt_[i][1]= positions_msg.data[i*droneCount_ + 1];
-        positions_gt_[i][2]= positions_msg.data[i*droneCount_ + 2];
+        positions_gt_[i][0]= positions_msg.data[i*3 + 0];
+        positions_gt_[i][1]= positions_msg.data[i*3 + 1];
+        positions_gt_[i][2]= positions_msg.data[i*3 + 2];
 
         ROS_INFO_ONCE("PositionsCallback (%d) drone#%d @ %s.", droneNumber_, (int)i, VectorToString(positions_gt_[i]).c_str());
     }

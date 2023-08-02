@@ -1339,7 +1339,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     {
         ROS_INFO_ONCE("RelativeDistanceController %d starting swarm mode: SWARM_SPC_CYCLIC", droneNumber_);
 
-        float window_len = 2.0;
+        float window_len = 3.0;
         float window_time = std::fmod(odometry_.timeStampSec + odometry_.timeStampNsec/(double)1000000000, (double)droneCount_ * (double)window_len) - ((double)droneNumber_ * (double)window_len);
 
         if(window_time < 0)
@@ -1352,6 +1352,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             cyclic_odometry_history0_ = odometry_; // save absolute position, but use relative position only for calculation
             for (size_t i = 0; i < droneCount_; i++)
                 cyclic_distances_history0_[i] = distances_[droneNumber_][i];
+            cyclic_distances_history0_[droneNumber_] = beacons_[droneNumber_][0]; // quickfix to use own drone index for beacon0
         }
         else if(window_time > 0.4 && cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_A)
         {
@@ -1359,6 +1360,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             cyclic_odometry_history1_ = odometry_; // save absolute position, but use relative position only for calculation
             for (size_t i = 0; i < droneCount_; i++)
                 cyclic_distances_history1_[i] = distances_[droneNumber_][i];
+            cyclic_distances_history1_[droneNumber_] = beacons_[droneNumber_][0]; // quickfix to use own drone index for beacon0
         }
         else if(window_time > 0.8 && cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_B)
         {
@@ -1366,6 +1368,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             cyclic_odometry_history2_ = odometry_; // save absolute position, but use relative position only for calculation
             for (size_t i = 0; i < droneCount_; i++)
                 cyclic_distances_history2_[i] = distances_[droneNumber_][i];
+            cyclic_distances_history2_[droneNumber_] = beacons_[droneNumber_][0]; // quickfix to use own drone index for beacon0
         }
         else if(window_time > 1.4 && cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_C)
         {
@@ -1373,6 +1376,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             cyclic_odometry_history3_ = odometry_; // save absolute position, but use relative position only for calculation
             for (size_t i = 0; i < droneCount_; i++)
                 cyclic_distances_history3_[i] = distances_[droneNumber_][i];
+            cyclic_distances_history3_[droneNumber_] = beacons_[droneNumber_][0]; // quickfix to use own drone index for beacon0
 
             Vector3f positions_try_a[N_DRONES_MAX];
             Vector3f positions_try_b[N_DRONES_MAX];
@@ -1382,7 +1386,6 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             float quality_try_b[N_DRONES_MAX];
             float quality_try_c[N_DRONES_MAX];
             float quality_try_d[N_DRONES_MAX];
-            Vector3f positions_est[N_DRONES_MAX];
 
             TrilaterationCalculation( &cyclic_odometry_history0_,
                                       &cyclic_odometry_history1_,
@@ -1434,28 +1437,29 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
             for (size_t i = 0; i < droneCount_; i++)
             {
-                if(i == droneNumber_) // skip for own quadcopter
-                    continue;
+                //if(i == droneNumber_) // skip for own quadcopter
+                //    continue;
+                // quickfix: do not skip, as this contains the distance to beacon0
 
                 float best_quality = quality_try_a[i];
-                positions_est[i] = positions_try_a[i];
+                cyclic_positions_est_[i] = positions_try_a[i];
 
                 if(quality_try_b[i] < best_quality)
                 {
                     best_quality = quality_try_b[i];
-                    positions_est[i] = positions_try_b[i];
+                    cyclic_positions_est_[i] = positions_try_b[i];
                 }
                 if(quality_try_c[i] < best_quality)
                 {
                     best_quality = quality_try_c[i];
-                    positions_est[i] = positions_try_c[i];
+                    cyclic_positions_est_[i] = positions_try_c[i];
                 }
                 if(quality_try_d[i] < best_quality)
                 {
                     best_quality = quality_try_d[i];
-                    positions_est[i] = positions_try_d[i];
+                    cyclic_positions_est_[i] = positions_try_d[i];
                 }
-                ROS_INFO("(%d) positions_est[%d] %s (quality: %f)", droneNumber_, (int)i, VectorToString(positions_est[i]).c_str(), best_quality);
+                ROS_INFO("(%d) cyclic_positions_est_[%d] %s (quality: %f)", droneNumber_, (int)i, VectorToString(cyclic_positions_est_[i]).c_str(), best_quality);
             }
             // ROS_INFO("############################");
         }
@@ -1490,12 +1494,141 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             set_point_marker[2] = odometry_.position[2];
             exploration_info = 3;
         }
+        else if(cyclic_current_phase_ == CYCLIC_PHASE_CONTROL)
+        {
+            Vector3f best_movement;
+            float best_sum = FLT_MAX;
+            float min_coehesion_term;
+            float min_separation_term;
+            float min_target_term;
+            float min_calm_term;
+            float min_height_term;
+
+            float still_sum = FLT_MAX;
+            float still_coehesion_term;
+            float still_separation_term;
+            float still_target_term;
+            float still_calm_term;
+            float still_height_term;
+
+            int neighbourhood_cnt = droneCount_ - 1;
+
+            for(int ai = 0; ai <= n_move_max_; ai ++) // iterate over all possible next actions in x-, y- and z-dimension; and over length n_move_max_
+            {
+                for(int xi = -1; xi <= 1; xi ++)
+                {
+                    for(int yi = -1; yi <= 1; yi ++)
+                    {
+                        for(int zi = -1; zi <= 1; zi ++)
+                        {
+                            Vector3f potential_movement = {(float)xi, (float)yi, (float)zi}; // 3-dimensional vector of movement
+                            float potential_movement_norm = potential_movement.norm();
+                            if(xi != 0 || yi != 0 || zi != 0)
+                                potential_movement = (potential_movement / potential_movement_norm) * eps_move_ * ai; // normalize movement vector to get length 1 and then scale by desired length
+
+                            Vector3f potential_position;
+                            potential_position[0] = odometry_.position[0] + potential_movement[0];
+                            potential_position[1] = odometry_.position[1] + potential_movement[1];
+                            potential_position[2] = odometry_.position[2] + potential_movement[2];
+                            // odometry_ would actually be replaced by relative state-estimation.
+
+                            float cohesion_sum = 0;
+                            float separation_sum = 0;
+                            float total_sum = 0;
+
+                            for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+                            {
+                                if(i == droneNumber_) // skip for own quadcopter
+                                    continue;
+
+                                float dist = (potential_position - cyclic_positions_est_[i]).norm();
+
+                                if(true) // separation and cohesion only calculated for quadcopters in neighbourhood
+                                {
+                                    cohesion_sum += pow(dist, 2);
+                                    separation_sum += 1.0/pow(fmax(0.000001, dist - 2*drone_radius_ - extra_separation_distance_), 2);
+                                }
+                                ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) i=%d, dist=%f, cohesion_sum=%f, separation_sum=%f", droneNumber_, xi, yi, zi, ai, (int)i, dist, cohesion_sum, separation_sum);
+                            }
+
+                            float dist_beacon[N_BEACONS_MAX], dist_gt_beacon[N_BEACONS_MAX];
+                            dist_beacon[0] = (potential_position - cyclic_positions_est_[droneNumber_]).norm();
+                            // quickfix: cyclic_positions_est_[droneNumber_] contains the distance to beacon0
+
+                            float target_sum;
+                            target_sum = fabs(dist_beacon[current_target_]);
+
+                            float height_diff = swarm_elevation_ - (elevation_filtered_[droneNumber_] + potential_movement[2]);
+                            float height_sum = height_diff*height_diff;
+
+                            float coehesion_term = spc_cohesion_weight_ * cohesion_sum / ((float)neighbourhood_cnt);
+                            float separation_term = spc_separation_weight_ * separation_sum / ((float)neighbourhood_cnt);
+                            float target_term = spc_target_weight_ * target_sum;
+                            float calm_term = spc_calm_weight_ * potential_movement.norm();
+                            float height_term = 0;
+
+                            if(enable_swarm_ & SWARM_SPC_DISTANCES_ELEV)
+                                height_term += spc_height_weight_ * height_sum;
+
+                            if(neighbourhood_cnt != 0) // no neighbours means there was a division by 0
+                                total_sum = coehesion_term + separation_term + target_term + calm_term + height_term;
+                            else
+                                total_sum = target_term + calm_term + height_term;
+
+                            ROS_INFO_ONCE("dr.%d (%2d/%2d/%2d|%2d) coh=%7.1f sep=%7.1f tar=%7.1f calm=%7.1f total=%7.1f len=%f", droneNumber_, xi, yi, zi, ai, coehesion_term, separation_term, target_term, calm_term, total_sum, potential_movement.norm());
+                            //ROS_INFO("dr.%d (%2d/%2d/%2d|%2d) tar=%f", droneNumber_, xi, yi, zi, ai, target_sum);
+
+                            if(total_sum < best_sum)
+                            {
+                                best_sum = total_sum;
+
+                                best_movement = potential_movement; // save movement vector
+
+                                min_coehesion_term = coehesion_term;
+                                min_separation_term = separation_term;
+                                min_target_term = target_term;
+                                min_calm_term = calm_term;
+                                min_height_term = height_term;
+                            }
+
+                            if(xi == 0 && yi == 0 && zi == 0)
+                            {
+                                still_sum = total_sum;
+
+                                still_coehesion_term = coehesion_term;
+                                still_separation_term = separation_term;
+                                still_target_term = target_term;
+                                still_calm_term = calm_term;
+                                still_height_term = height_term;
+                            }
+
+                        }
+                    }
+                }
+            }
+
+            ROS_INFO_ONCE("drone%d coh=%7.1f sep=%7.1f tar=%7.1f calm=%7.1f total=%7.1f", droneNumber_, min_coehesion_term, min_separation_term, min_target_term, min_calm_term, best_sum);
+
+            if(inner_controller_ == 3) // velocity controller
+            {
+                set_point.pose.position.x = best_movement(0) * velocity_scaling_;
+                set_point.pose.position.y = best_movement(1) * velocity_scaling_;
+                set_point.pose.position.z = best_movement(2) * velocity_scaling_;
+                ROS_INFO_ONCE("RelativeDistanceController %d exploitation (velocity) tsum=%f scal=%f", droneNumber_, best_sum, velocity_scaling_);
+                set_point_marker[0] = odometry_.position[0] + best_movement(0) * velocity_scaling_;
+                set_point_marker[1] = odometry_.position[1] + best_movement(1) * velocity_scaling_;
+                set_point_marker[2] = odometry_.position[2] + best_movement(2) * velocity_scaling_;
+                tempEnv << exploration_info << "," << best_movement(0) * velocity_scaling_ << "," << best_movement(1) * velocity_scaling_ << "," << best_movement(2) * velocity_scaling_ << "," << (float)best_sum << "," << history_cnt_ << ",";
+            }
+            else
+                ROS_FATAL("inner_controller_ != 3, not velocity controller");
+        }
         else
         {
             exploration_info = 0;
-            set_point_marker[0] = odometry_.position[0];
-            set_point_marker[1] = odometry_.position[1];
-            set_point_marker[2] = odometry_.position[2];
+            set_point_marker[0] = 0;
+            set_point_marker[1] = 0;
+            set_point_marker[2] = -1000;
         }
     }
 
@@ -1786,8 +1919,10 @@ void RelativeDistanceController::TrilaterationCalculation(EigenOdometry* history
         if(error_occured)
             quality_result[i] += 5000;
 
-        if(i == droneNumber_) // skip for own quadcopter
-            continue;
+        //if(i == droneNumber_) // skip for own quadcopter
+        //    continue;
+        // quickfix: do not skip, as this contains the distance to beacon0
+
         // calculate relative position of drone i w.r.t. to own drone
         float r_1 = distances_history3[i], r_2 = distances_history2[i], r_3 = distances_history1[i], r_4 = distances_history0[i];
         Vector3f other_drone_tmp;

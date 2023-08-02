@@ -168,6 +168,7 @@ namespace rotors_control {
             float cyclic_distances_history1_[N_DRONES_MAX]; // distance measurements to own drone at history point
             float cyclic_distances_history2_[N_DRONES_MAX]; // distance measurements to own drone at history point
             float cyclic_distances_history3_[N_DRONES_MAX]; // distance measurements to own drone at history point
+            Vector3f cyclic_positions_est_[N_DRONES_MAX];
 
             torch::jit::script::Module distances_model_[N_DRONES_MAX];
             c10::IValue distances_hx_[N_DRONES_MAX];

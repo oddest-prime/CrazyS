@@ -441,7 +441,7 @@ void DroneStateWithTime::OdometryCallback(const nav_msgs::OdometryConstPtr& odom
     pos.layout.dim[0].stride = droneCount_*3;
     pos.layout.dim[1].stride = 3;
     pos.layout.data_offset = 0;
-    std::vector<float> posi(droneCount_*droneCount_, 0);
+    std::vector<float> posi(droneCount_*3, 0);
     for (size_t i = 0; i < droneCount_; i++)
     {
       posi[i*3 + 0] = dronestate_[i].odometry_gt_.position[0];

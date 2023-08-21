@@ -88,6 +88,7 @@ RelativeDistanceController::RelativeDistanceController() {
     cmd_multi_dof_joint_trajectory_sub_ = nh.subscribe(mav_msgs::default_topics::COMMAND_TRAJECTORY, 1, &RelativeDistanceController::MultiDofJointTrajectoryCallback, this);
     odometry_sub_ = nh.subscribe("odometry", 1, &RelativeDistanceController::OdometryCallback, this);
     enable_sub_ = nh.subscribe("enable", 1, &RelativeDistanceController::EnableCallback, this);
+    active_sub_ = nh.subscribe("active", 1, &RelativeDistanceController::ActiveCallback, this);
     target_sub_ = nh.subscribe("target", 1, &RelativeDistanceController::TargetCallback, this);
     update_sub_ = nh.subscribe("update", 1, &RelativeDistanceController::UpdateCallback, this);
     logsave_sub_ = nh.subscribe("logsave", 1, &RelativeDistanceController::SaveLogCallback, this);
@@ -144,6 +145,7 @@ void RelativeDistanceController::InitializeParams() {
     GetRosParameter(pnh, "dist/noise_suppression", (int)1, &noise_suppression_);
     GetRosParameter(pnh, "elevation/target_elevation", (float)0.0, &target_elevation_);
     GetRosParameter(pnh, "elevation/swarm_elevation", (float)1.0, &swarm_elevation_);
+    GetRosParameter(pnh, "cyclic/window_len", (float)3.0, &window_len_);
     GetRosParameter(pnh, "inner/controller", (int)0, &inner_controller_);
 
     ROS_INFO_ONCE("[RelativeDistanceController] GetRosParameter values:");
@@ -169,6 +171,7 @@ void RelativeDistanceController::InitializeParams() {
     ROS_INFO_ONCE("  dist/noise_suppression=%d", noise_suppression_);
     ROS_INFO_ONCE("  elevation/target_elevation=%f", target_elevation_);
     ROS_INFO_ONCE("  elevation/swarm_elevation=%f", swarm_elevation_);
+    ROS_INFO_ONCE("  cyclic/window_len=%f", window_len_);
     ROS_INFO_ONCE("  inner/controller=%d", inner_controller_);
 
     //Reading the parameters come from the launch file
@@ -280,6 +283,12 @@ void RelativeDistanceController::EnableCallback(const std_msgs::Int32ConstPtr& e
     ROS_INFO("RelativeDistanceController (%d) got enable message: %d", droneNumber_, enable_msg->data);
 
     enable_swarm_ = enable_msg->data;
+}
+
+void RelativeDistanceController::ActiveCallback(const std_msgs::Int32ConstPtr& active_msg) {
+    ROS_INFO_ONCE("RelativeDistanceController (%d) got active message: %d", droneNumber_, active_msg->data);
+
+    drone_active_ = active_msg->data;
 }
 
 void RelativeDistanceController::TargetCallback(const std_msgs::Int32ConstPtr& target_msg) {
@@ -691,6 +700,20 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
     int exploration_info = 0;
 
+    // calculate neighbourhood independently from potential position
+    int neighbourhood_cnt = 0;
+    bool neighbourhood_bool[N_DRONES_MAX];
+    for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
+    {
+        if(distances_filtered_[droneNumber_][i] < neighbourhood_distance_ && i != droneNumber_) // distance smaller than threshold and not own quadcopter
+        {
+            neighbourhood_cnt ++;
+            neighbourhood_bool[i] = true;
+        }
+        else
+            neighbourhood_bool[i] = false;
+    }
+
     // ################################################################################
     if(enable_swarm_ == SWARM_DISABLED) // set target point if not in swarm mode
     {
@@ -731,20 +754,6 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             ROS_INFO_ONCE("RelativeDistanceController %d starting swarm mode: SWARM_SPC_DISTANCES_ELEV", droneNumber_);
         else if(enable_swarm_ & SWARM_SPC_DISTANCES_CHAIN)
             ROS_INFO_ONCE("RelativeDistanceController %d starting swarm mode: SWARM_SPC_DISTANCES_CHAIN", droneNumber_);
-
-        // calculate neighbourhood independently from potential position
-        int neighbourhood_cnt = 0;
-        bool neighbourhood_bool[N_DRONES_MAX];
-        for (size_t i = 0; i < droneCount_; i++) // iterate over all quadcopters
-        {
-            if(distances_filtered_[droneNumber_][i] < neighbourhood_distance_ && i != droneNumber_) // distance smaller than threshold and not own quadcopter
-            {
-                neighbourhood_cnt ++;
-                neighbourhood_bool[i] = true;
-            }
-            else
-                neighbourhood_bool[i] = false;
-        }
 
         //if(!transform_ok_) // need to do exploration
         if(!transform_ok_ && !(enable_swarm_ & SWARM_USE_GROUND_TRUTH)) // need to do exploration (no exploration if ground truth data used for debugging)
@@ -1339,22 +1348,27 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     {
         ROS_INFO_ONCE("RelativeDistanceController %d starting swarm mode: SWARM_SPC_CYCLIC", droneNumber_);
 
-        float window_len = 3.0;
-        float window_time = std::fmod(odometry_.timeStampSec + odometry_.timeStampNsec/(double)1000000000, (double)droneCount_ * (double)window_len) - ((double)droneNumber_ * (double)window_len);
+        float window_time = (float)(odometry_.timeStampSec + odometry_.timeStampNsec/(double)1000000000) - drone_active_start_time_;
+        // float window_time = std::fmod(odometry_.timeStampSec + odometry_.timeStampNsec/(double)1000000000, (double)droneCount_ * (double)window_len_) - ((double)droneNumber_ * (double)window_len_);
+        // ROS_INFO("drone#%d phase_ = %d, window_time = %f, start_time_ = %f, active_ = %d", droneNumber_, cyclic_current_phase_, window_time, drone_active_start_time_, drone_active_);
 
-        if(window_time < 0)
+        if(drone_active_ == 0 && cyclic_current_phase_ != CYCLIC_PHASE_REST)
             cyclic_current_phase_ = CYCLIC_PHASE_REST;
-        else if(window_time > window_len)
+        else if(window_time < 0 && cyclic_current_phase_ != CYCLIC_PHASE_REST)
             cyclic_current_phase_ = CYCLIC_PHASE_REST;
-        else if(window_time > 0.0 && cyclic_current_phase_ == CYCLIC_PHASE_REST)
+        else if(window_time > window_len_ && cyclic_current_phase_ != CYCLIC_PHASE_REST)
+            cyclic_current_phase_ = CYCLIC_PHASE_REST;
+        else if(drone_active_ == 1 && cyclic_current_phase_ == CYCLIC_PHASE_REST) // (window_time > 0.0 && cyclic_current_phase_ == CYCLIC_PHASE_REST)
         {
+            drone_active_start_time_ = (float)(odometry_.timeStampSec + odometry_.timeStampNsec/(double)1000000000);
+
             cyclic_current_phase_ = CYCLIC_PHASE_IDENTIFY_A;
             cyclic_odometry_history0_ = odometry_; // save absolute position, but use relative position only for calculation
             for (size_t i = 0; i < droneCount_; i++)
                 cyclic_distances_history0_[i] = distances_[droneNumber_][i];
             cyclic_distances_history0_[droneNumber_] = beacons_[droneNumber_][0]; // quickfix to use own drone index for beacon0
         }
-        else if(window_time > 0.4 && cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_A)
+        else if(window_time > (window_len_ / 3.0 * 0.4) && cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_A) // 0.4
         {
             cyclic_current_phase_ = CYCLIC_PHASE_IDENTIFY_B;
             cyclic_odometry_history1_ = odometry_; // save absolute position, but use relative position only for calculation
@@ -1362,7 +1376,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 cyclic_distances_history1_[i] = distances_[droneNumber_][i];
             cyclic_distances_history1_[droneNumber_] = beacons_[droneNumber_][0]; // quickfix to use own drone index for beacon0
         }
-        else if(window_time > 0.8 && cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_B)
+        else if(window_time > (window_len_ / 3.0 * 0.8) && cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_B) // 0.8
         {
             cyclic_current_phase_ = CYCLIC_PHASE_IDENTIFY_C;
             cyclic_odometry_history2_ = odometry_; // save absolute position, but use relative position only for calculation
@@ -1370,7 +1384,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 cyclic_distances_history2_[i] = distances_[droneNumber_][i];
             cyclic_distances_history2_[droneNumber_] = beacons_[droneNumber_][0]; // quickfix to use own drone index for beacon0
         }
-        else if(window_time > 1.4 && cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_C)
+        else if(window_time > (window_len_ / 3.0 * 1.4) && cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_C) // 1.4
         {
             cyclic_current_phase_ = CYCLIC_PHASE_CONTROL;
             cyclic_odometry_history3_ = odometry_; // save absolute position, but use relative position only for calculation
@@ -1543,7 +1557,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
                                 float dist = (potential_position - cyclic_positions_est_[i]).norm();
 
-                                if(true) // separation and cohesion only calculated for quadcopters in neighbourhood
+                                if(neighbourhood_bool[i]) // separation only calculated for quadcopters in neighbourhood
                                 {
                                     cohesion_sum += pow(dist, 2);
                                     separation_sum += 1.0/pow(fmax(0.000001, dist - 2*drone_radius_ - extra_separation_distance_), 2);

@@ -93,12 +93,16 @@ DistanceMeasurementSim::DistanceMeasurementSim() {
       enable_sub_[i] = nhq[i].subscribe("enable", 1, &DroneStateWithTime::EnableCallback, &dronestate[i]);
       distances_pub_[i] = nhq[i].advertise<std_msgs::Float32MultiArray>("drone_distances", 1);
       beacons_pub_[i] = nhq[i].advertise<std_msgs::Float32MultiArray>("beacon_distances", 1);
+      active_pub_[i] = nhq[i].advertise<std_msgs::Int32>("active", 1);
 
       dronestate[i].SetId(this, (int)i, droneCount_, beaconCount_,
                           distance_noise_, elevation_noise_, noise_color_,
                           distance_max_rate_, elevation_max_rate_, dronestate,
-                          &(distances_pub_[i]), &positions_pub_, &elevation_pub_, &(beacons_pub_[i]),
+                          &(distances_pub_[i]), &positions_pub_, &elevation_pub_, &(beacons_pub_[i]), &(active_pub_[i]),
                           dataStoring_active_, beacon_gt_, beacon_air_, &swarm_center_gt_);
+
+      droneArbiterActive_[i] = 0;
+      droneArbiterPrio_[i] = (int)i;
     }
 }
 
@@ -114,6 +118,7 @@ void DistanceMeasurementSim::InitializeParams() {
     GetRosParameter(pnh, "swarm/noise_color", (int)NOISE_COLOR_WHITE, &noise_color_);
     GetRosParameter(pnh, "swarm/distance_max_rate", (float)100, &distance_max_rate_);
     GetRosParameter(pnh, "swarm/elevation_max_rate", (float)100, &elevation_max_rate_);
+    GetRosParameter(pnh, "cyclic/window_len", (float)3.0, &window_len_);
 
     ROS_INFO_ONCE("[DistanceMeasurementSim] GetRosParameter values:");
     ROS_INFO_ONCE("  swarm/distance_noise=%f", distance_noise_);
@@ -121,6 +126,7 @@ void DistanceMeasurementSim::InitializeParams() {
     ROS_INFO_ONCE("  swarm/noise_color=%d", noise_color_);
     ROS_INFO_ONCE("  swarm/distance_max_rate=%f", distance_max_rate_);
     ROS_INFO_ONCE("  swarm/elevation_max_rate=%f", elevation_max_rate_);
+    ROS_INFO_ONCE("  cyclic/window_len=%f", window_len_);
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
@@ -166,7 +172,8 @@ void DistanceMeasurementSim::InitializeParams() {
       ROS_FATAL("droneCount_ (%d) exceeds N_DRONES_MAX (%d)", droneCount_, N_DRONES_MAX);
 
     ros::NodeHandle nh;
-    timer_saveData = nh.createTimer(ros::Duration(dataStoringTime), &DistanceMeasurementSim::CallbackSaveData, this, false, true);
+    timer_saveData_ = nh.createTimer(ros::Duration(dataStoringTime), &DistanceMeasurementSim::CallbackSaveData, this, false, true);
+    timer_arbiter_ = nh.createTimer(ros::Duration(window_len_), &DistanceMeasurementSim::CallbackArbiter, this);
 }
 
 void DistanceMeasurementSim::ModelstateCallback(const gazebo_msgs::ModelStatesConstPtr& modelstates_msg)
@@ -569,6 +576,37 @@ void DistanceMeasurementSim::RecalcTargetSpeed(ros::Time timeStamp){
   old_beacon0_gt_ = beacon_gt_[0];
 }
 
+// global arbiter for cyclic mode
+void DistanceMeasurementSim::CallbackArbiter(const ros::TimerEvent& event){
+  ROS_INFO("DistanceMeasurementSim CallbackArbiter.");
+  int max_prio = -1;
+  std_msgs::Int32 active_msg;
+
+  for (size_t i = 0; i < droneCount_; i++)
+    if(droneArbiterPrio_[i] > max_prio)
+      max_prio = droneArbiterPrio_[i];
+
+  for (size_t i = 0; i < droneCount_; i++)
+  {
+    if(droneArbiterPrio_[i] == max_prio)
+    {
+      droneArbiterActive_[i] = 1;
+      droneArbiterPrio_[i] = 0;
+
+      active_msg.data = 1;
+      active_pub_[i].publish(active_msg);
+    }
+    else
+    {
+      droneArbiterActive_[i] = 0;
+      droneArbiterPrio_[i]++;
+
+      active_msg.data = 0;
+      active_pub_[i].publish(active_msg);
+    }
+  }
+}
+
 //The callback saves data into csv files
 void DistanceMeasurementSim::CallbackSaveData(const ros::TimerEvent& event){
   ROS_INFO("DistanceMeasurementSim CallbackSavaData.");
@@ -663,7 +701,7 @@ void DroneStateWithTime::FileSaveData(void){
       // dataStoring_active_ = false;
 }
 
-void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, float elevation_noise, int noise_color, float distance_max_rate, float elevation_max_rate, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* beacon_air, Vector3f* swarm_center_gt)
+void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, float elevation_noise, int noise_color, float distance_max_rate, float elevation_max_rate, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, ros::Publisher* active_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* beacon_air, Vector3f* swarm_center_gt)
 {
     parentPtr_ = parentPtr;
 
@@ -684,6 +722,7 @@ void DroneStateWithTime::SetId(DistanceMeasurementSim* parentPtr, int droneNumbe
     positions_pub_ = positions_pub;
     elevation_pub_ = elevation_pub;
     beacons_pub_ = beacons_pub;
+    active_pub_ = active_pub;
 
     beacon_gt_ = beacon_gt;
     beacon_air_ = beacon_air;

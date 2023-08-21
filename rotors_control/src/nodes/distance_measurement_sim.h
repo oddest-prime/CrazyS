@@ -61,7 +61,7 @@ namespace rotors_control {
 
     class DroneStateWithTime {
      public:
-      void SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, float elevation_noise, int noise_color, float distance_max_rate, float elevation_max_rate, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* beacon_air, Vector3f* swarm_center_gt);
+      void SetId(DistanceMeasurementSim* parentPtr, int droneNumber, int droneCount, int beaconCount, float position_noise, float elevation_noise, int noise_color, float distance_max_rate, float elevation_max_rate, DroneStateWithTime* dronestate, ros::Publisher* distances_pub, ros::Publisher* positions_pub, ros::Publisher* elevation_pub, ros::Publisher* beacons_pub, ros::Publisher* active_pub, bool dataStoring_active, Vector3f* beacon_gt, Vector3f* beacon_air, Vector3f* swarm_center_gt);
       void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
       void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
       void FileSaveData(void);
@@ -88,6 +88,7 @@ namespace rotors_control {
       ros::Publisher* positions_pub_;
       ros::Publisher* elevation_pub_;
       ros::Publisher* beacons_pub_;
+      ros::Publisher* active_pub_;
 
       ros::Time distances_pub_last_time_; // save time, when distances_pub_ was published last time (for rate limiting)
       ros::Time elevation_pub_last_time_; // save time, when distances_pub_ was published last time (for rate limiting)
@@ -143,6 +144,7 @@ namespace rotors_control {
             int noise_color_;
             float distance_max_rate_;
             float elevation_max_rate_;
+            float window_len_;
 
             // RecalcTargetSpeed history data, for last execution
             float old_timeStamp_;
@@ -152,10 +154,12 @@ namespace rotors_control {
             std::string namespace_;
 
             ros::NodeHandle n_;
-            ros::Timer timer_saveData;
+            ros::Timer timer_saveData_;
+            ros::Timer timer_arbiter_;
 
             void SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg);
             void CallbackSaveData(const ros::TimerEvent& event);
+            void CallbackArbiter(const ros::TimerEvent& event);
             void ModelstateCallback(const gazebo_msgs::ModelStatesConstPtr& modelstates_msg);
 
             //subscribers
@@ -169,9 +173,12 @@ namespace rotors_control {
             ros::Publisher positions_pub_;
             ros::Publisher elevation_pub_;
             ros::Publisher beacons_pub_[N_DRONES_MAX];
+            ros::Publisher active_pub_[N_DRONES_MAX];
 
             // drone states
             DroneStateWithTime dronestate[N_DRONES_MAX];
+            int droneArbiterActive_[N_DRONES_MAX];
+            int droneArbiterPrio_[N_DRONES_MAX];
 
             // Lists for data saving
             std::vector<std::string> listTarget_;

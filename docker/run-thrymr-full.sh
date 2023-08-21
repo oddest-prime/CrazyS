@@ -63,7 +63,7 @@ function wait_until_max_procs_running {
 
 rm -f rotors_gazebo/resource/crazyflie2_mpc1_dyn_*.yaml
 # test different separation weights
-for i in a b c d e
+for i in a
 do
 #  for j in 5 7 10 12 15 20 30 50 70 100 150 200 250 300 500 700 1000 2000 3000 # dyn_sep
 #  for j in 600 700 850 1000 1200 1500 1800 2200 # dyn_sep

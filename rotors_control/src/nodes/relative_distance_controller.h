@@ -122,10 +122,13 @@ namespace rotors_control {
             float target_elevation_;
             float swarm_elevation_;
             int inner_controller_;
+            float window_len_;
             int noise_suppression_;
 
             bool dataStoring_active_;
             int enable_swarm_ = SWARM_DISABLED;
+            int drone_active_ = 0;
+            float drone_active_start_time_ = 0;
             int current_target_ = 0;
             int history_cnt_;
             Vector3f random_direction_; // save random exploration direction
@@ -190,6 +193,7 @@ namespace rotors_control {
             void ElevationCallback(const std_msgs::Float32MultiArray& elevation_msg);
             void BeaconsCallback(const std_msgs::Float32MultiArray& distances_msg);
             void EnableCallback(const std_msgs::Int32ConstPtr& enable_msg);
+            void ActiveCallback(const std_msgs::Int32ConstPtr& enable_msg);
             void TargetCallback(const std_msgs::Int32ConstPtr& target_msg);
             void UpdateCallback(const std_msgs::Int32ConstPtr& update_msg);
             void SaveLogCallback(const std_msgs::Int32ConstPtr& save_msg);
@@ -220,6 +224,7 @@ namespace rotors_control {
             ros::Subscriber elevation_sub_;
             ros::Subscriber beacons_sub_;
             ros::Subscriber enable_sub_;
+            ros::Subscriber active_sub_;
             ros::Subscriber target_sub_;
             ros::Subscriber update_sub_;
             ros::Subscriber logsave_sub_;

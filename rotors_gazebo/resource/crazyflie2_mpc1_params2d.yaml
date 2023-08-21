@@ -42,6 +42,10 @@
 "gradient": {
   "scale_factor": 0.005
   },
+"cyclic": {
+  "window_len": 3.0, # duration of time-slices
+  "neighbourhood_distance_extra": 1.0 # extra distance to ensure agents keep out of neighbourhood during movements
+  },
 "inner": {
   "controller": 3 # 1 -> PID (A), 2 -> explicit (B), 3 -> velocity (C), 4 -> velocity/altitude (D)
   }

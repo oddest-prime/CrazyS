@@ -89,15 +89,15 @@ DistanceMeasurementSim::DistanceMeasurementSim() {
     {
       // mav_msgs::default_topics::ODOMETRY
       ROS_INFO("DistanceMeasurementSim: Setup subscriber %s/%s.", nhq[i].getNamespace().c_str(), "odometry");
-      odometry_sub_[i] = nhq[i].subscribe("odometry", 1, &DroneStateWithTime::OdometryCallback, &dronestate[i]);
-      enable_sub_[i] = nhq[i].subscribe("enable", 1, &DroneStateWithTime::EnableCallback, &dronestate[i]);
+      odometry_sub_[i] = nhq[i].subscribe("odometry", 1, &DroneStateWithTime::OdometryCallback, &dronestate_[i]);
+      enable_sub_[i] = nhq[i].subscribe("enable", 1, &DroneStateWithTime::EnableCallback, &dronestate_[i]);
       distances_pub_[i] = nhq[i].advertise<std_msgs::Float32MultiArray>("drone_distances", 1);
       beacons_pub_[i] = nhq[i].advertise<std_msgs::Float32MultiArray>("beacon_distances", 1);
       active_pub_[i] = nhq[i].advertise<std_msgs::Int32>("active", 1);
 
-      dronestate[i].SetId(this, (int)i, droneCount_, beaconCount_,
+      dronestate_[i].SetId(this, (int)i, droneCount_, beaconCount_,
                           distance_noise_, elevation_noise_, noise_color_,
-                          distance_max_rate_, elevation_max_rate_, dronestate,
+                          distance_max_rate_, elevation_max_rate_, dronestate_,
                           &(distances_pub_[i]), &positions_pub_, &elevation_pub_, &(beacons_pub_[i]), &(active_pub_[i]),
                           dataStoring_active_, beacon_gt_, beacon_air_, &swarm_center_gt_);
 
@@ -113,20 +113,24 @@ void DistanceMeasurementSim::InitializeParams() {
 
     ROS_INFO_ONCE("[DistanceMeasurementSim] InitializeParams");
 
+    GetRosParameter(pnh, "swarm/neighbourhood_distance", (float)99, &neighbourhood_distance_);
     GetRosParameter(pnh, "swarm/distance_noise", (float)0.1, &distance_noise_);
     GetRosParameter(pnh, "swarm/elevation_noise", (float)0.1, &elevation_noise_);
     GetRosParameter(pnh, "swarm/noise_color", (int)NOISE_COLOR_WHITE, &noise_color_);
     GetRosParameter(pnh, "swarm/distance_max_rate", (float)100, &distance_max_rate_);
     GetRosParameter(pnh, "swarm/elevation_max_rate", (float)100, &elevation_max_rate_);
     GetRosParameter(pnh, "cyclic/window_len", (float)3.0, &window_len_);
+    GetRosParameter(pnh, "cyclic/neighbourhood_distance_extra", (float)1.0, &neighbourhood_distance_extra_);
 
     ROS_INFO_ONCE("[DistanceMeasurementSim] GetRosParameter values:");
+    ROS_INFO_ONCE("  swarm/neighbourhood_distance=%f", neighbourhood_distance_);
     ROS_INFO_ONCE("  swarm/distance_noise=%f", distance_noise_);
     ROS_INFO_ONCE("  swarm/elevation_noise=%f", elevation_noise_);
     ROS_INFO_ONCE("  swarm/noise_color=%d", noise_color_);
     ROS_INFO_ONCE("  swarm/distance_max_rate=%f", distance_max_rate_);
     ROS_INFO_ONCE("  swarm/elevation_max_rate=%f", elevation_max_rate_);
     ROS_INFO_ONCE("  cyclic/window_len=%f", window_len_);
+    ROS_INFO_ONCE("  cyclic/neighbourhood_distance_extra=%f", neighbourhood_distance_extra_);
 
     //Reading the parameters come from the launch file
     std::string dataStoringActive;
@@ -581,44 +585,68 @@ void DistanceMeasurementSim::CallbackArbiter(const ros::TimerEvent& event){
   ROS_INFO("DistanceMeasurementSim CallbackArbiter.");
   int max_prio = -1;
   std_msgs::Int32 active_msg;
+  int undefined_count;
 
-  for (size_t i = 0; i < droneCount_; i++)
-    if(droneArbiterPrio_[i] > max_prio)
-      max_prio = droneArbiterPrio_[i];
+  for (size_t i = 0; i < droneCount_; i++) droneArbiterActive_[i] = -1; // set all drones to undefined active state
+
+  do
+  {
+    undefined_count = 0;
+    max_prio = -1;
+    for (size_t i = 0; i < droneCount_; i++) if(droneArbiterPrio_[i] > max_prio) max_prio = droneArbiterPrio_[i]; // calculate max_prio
+    ROS_INFO("max_prio = %d", max_prio);
+
+    for (size_t i = 0; i < droneCount_; i++)
+    {
+      if(droneArbiterPrio_[i] == max_prio)
+      {
+        int in_range_cnt = 0;
+        for (size_t j = 0; j < droneCount_; j++) // count other active drones within range
+          if(    i != j
+              && droneArbiterActive_[j] == 1
+              && dronestate_[i].distances_gt_[j] < (neighbourhood_distance_ + neighbourhood_distance_extra_)
+              )
+            in_range_cnt ++;
+
+        ROS_INFO("droneArbiterPrio_[%d] == max_prio, in_range_cnt = %d (dist0-1: %f)", (int)i, in_range_cnt, dronestate_[0].distances_gt_[1]);
+        if(in_range_cnt <= 0) // check if no other active drone within range
+        {
+          droneArbiterActive_[i] = 1;
+          droneArbiterPrio_[i] = 0;
+        }
+        else
+          droneArbiterActive_[i] = 0;
+      }
+      if(droneArbiterActive_[i] == -1)
+        undefined_count ++;
+      ROS_INFO("undefined_count = %d", undefined_count);
+    }
+  }while(undefined_count > 0);
 
   for (size_t i = 0; i < droneCount_; i++)
   {
-    if(droneArbiterPrio_[i] == max_prio)
-    {
-      droneArbiterActive_[i] = 1;
-      droneArbiterPrio_[i] = 0;
+    active_msg.data = (droneArbiterActive_[i] == 1 ? 1 : 0);
+    active_pub_[i].publish(active_msg); // send active messages
 
-      active_msg.data = 1;
-      active_pub_[i].publish(active_msg);
-    }
-    else
-    {
-      droneArbiterActive_[i] = 0;
-      droneArbiterPrio_[i]++;
+    droneArbiterPrio_[i] ++; // increase priority for next round
 
-      active_msg.data = 0;
-      active_pub_[i].publish(active_msg);
-    }
+    ROS_INFO(".. droneArbiterPrio_[%d] = %d, droneArbiterActive_[%d] = %d", (int)i, droneArbiterPrio_[i], (int)i, droneArbiterActive_[i]);
   }
+
 }
 
 //The callback saves data into csv files
 void DistanceMeasurementSim::CallbackSaveData(const ros::TimerEvent& event){
   ROS_INFO("DistanceMeasurementSim CallbackSavaData.");
   for (size_t i = 0; i < droneCount_; i++)
-    dronestate[i].FileSaveData();
+    dronestate_[i].FileSaveData();
     this->FileSaveData();
 }
 
 void DistanceMeasurementSim::SaveLogCallback(const std_msgs::Int32ConstPtr& enable_msg){
   ROS_INFO("DistanceMeasurementSim SaveLogCallback.");
   for (size_t i = 0; i < droneCount_; i++)
-    dronestate[i].FileSaveData();
+    dronestate_[i].FileSaveData();
   this->FileSaveData();
 }
 

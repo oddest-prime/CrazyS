@@ -113,6 +113,7 @@ make all-distanceGT
 make all-state
 make all-cost
 make all-trace
+make PaperDist.pdf
 
 mkdir -p /tmp/plot_output/
 mv /tmp/log_output/*.png /tmp/plot_output/.

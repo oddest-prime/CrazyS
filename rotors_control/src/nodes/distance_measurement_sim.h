@@ -139,12 +139,14 @@ namespace rotors_control {
             EigenOdometry odometry_; // with simulated sensor noise
             EigenOdometry odometry_gt_; // ground-truth
 
+            float neighbourhood_distance_;
             float distance_noise_;
             float elevation_noise_;
             int noise_color_;
             float distance_max_rate_;
             float elevation_max_rate_;
             float window_len_;
+            float neighbourhood_distance_extra_;
 
             // RecalcTargetSpeed history data, for last execution
             float old_timeStamp_;
@@ -176,7 +178,7 @@ namespace rotors_control {
             ros::Publisher active_pub_[N_DRONES_MAX];
 
             // drone states
-            DroneStateWithTime dronestate[N_DRONES_MAX];
+            DroneStateWithTime dronestate_[N_DRONES_MAX];
             int droneArbiterActive_[N_DRONES_MAX];
             int droneArbiterPrio_[N_DRONES_MAX];
 

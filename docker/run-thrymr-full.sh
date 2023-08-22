@@ -115,7 +115,7 @@ do
     #dyn_ese="$jscaled"
     dyn_ese="1.35" # "0.87" # "1.10"
     #dyn_nhd="$jscaled"
-    dyn_nhd="999.99"
+    dyn_nhd="3.0" # "999.99"
     dyn_hzd="17"
     dyn_col="0" # "3" $c
     dyn_sup="1"

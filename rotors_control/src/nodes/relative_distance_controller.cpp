@@ -52,9 +52,9 @@ RelativeDistanceController::RelativeDistanceController() {
     ROS_INFO("RelativeDistanceController: Seed random number generator (droneNumber_): %d", droneNumber_);
 
     history_cnt_ = 0;
-    random_direction_[0] = 0;
-    random_direction_[1] = 0;
-    random_direction_[2] = 0;
+    random_direction_a_[0] = 0;
+    random_direction_a_[1] = 0;
+    random_direction_a_[2] = 0;
     odometry_history1_.position[0] = 0;
     odometry_history1_.position[1] = 0;
     odometry_history1_.position[2] = 0;
@@ -308,9 +308,9 @@ void RelativeDistanceController::UpdateCallback(const std_msgs::Int32ConstPtr& u
 
     odometry_history1_ = odometry_;
     history_cnt_ = 0;
-    random_direction_[0] = 0;
-    random_direction_[1] = 0;
-    random_direction_[2] = 0;
+    random_direction_a_[0] = 0;
+    random_direction_a_[1] = 0;
+    random_direction_a_[2] = 0;
 
     transform_ok_ = 0; // need to do exploration now
 }
@@ -486,9 +486,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
         odometry_history1_ = odometry_;
         history_cnt_ = 0;
-        random_direction_[0] = 0;
-        random_direction_[1] = 0;
-        random_direction_[2] = 0;
+        random_direction_a_[0] = 0;
+        random_direction_a_[1] = 0;
+        random_direction_a_[2] = 0;
     }
     */
 
@@ -551,9 +551,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             ROS_INFO("OdometryCallback (%d) Over threshold: %d. Reset history_cnt_: %d.", droneNumber_, HISTORY_CNT_MAX, history_cnt_);
             odometry_history1_ = odometry_;
             history_cnt_ = 0;
-            random_direction_[0] = 0;
-            random_direction_[1] = 0;
-            random_direction_[2] = 0;
+            random_direction_a_[0] = 0;
+            random_direction_a_[1] = 0;
+            random_direction_a_[2] = 0;
         }
         else if(movement_norm > explore_movement_thr_) // last move was at least Xcm, TODO: find better threshold?
         {
@@ -690,9 +690,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             odometry_history1_ = odometry_;
             ROS_INFO_ONCE("OdometryCallback (%d) Reset history_cnt_: %d.", droneNumber_, history_cnt_);
             history_cnt_ = 0;
-            random_direction_[0] = 0;
-            random_direction_[1] = 0;
-            random_direction_[2] = 0;
+            random_direction_a_[0] = 0;
+            random_direction_a_[1] = 0;
+            random_direction_a_[2] = 0;
         }
         else
             history_cnt_ ++;
@@ -758,23 +758,23 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         //if(!transform_ok_) // need to do exploration
         if(!transform_ok_ && !(enable_swarm_ & SWARM_USE_GROUND_TRUTH)) // need to do exploration (no exploration if ground truth data used for debugging)
         {
-            if(random_direction_.norm() <= 0.001) // need new random value, if value was cleared
+            if(random_direction_a_.norm() <= 0.001) // need new random value, if value was cleared
             {
                 std::normal_distribution<float> dist(0.0, 1); // gaussian random number generator
-                random_direction_[0] = dist(generator_);
-                random_direction_[1] = dist(generator_);
-                random_direction_[2] = dist(generator_);
+                random_direction_a_[0] = dist(generator_);
+                random_direction_a_[1] = dist(generator_);
+                random_direction_a_[2] = dist(generator_);
             }
             exploration_info = 18;
             Vector3f direction = {1, 1, 1};
             if(unit_vectors_[0].norm() <= 0.02 || unit_vectors_age_[0] < 0) // all unit vectors empty, since they are populated sequentially
             {
-                direction = random_direction_; // go to random direction
+                direction = random_direction_a_; // go to random direction
                 exploration_info = 5;
             }
             else if(unit_vectors_[1].norm() <= 0.02 || unit_vectors_age_[1] < 0) // only vector 0 is not empty
             {
-                Vector3f tmp = unit_vectors_[0] + random_direction_;
+                Vector3f tmp = unit_vectors_[0] + random_direction_a_;
                 direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
                 exploration_info = 6;
             }
@@ -782,7 +782,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             {
                 if(abs(unit_vectors_[0].dot(unit_vectors_[1])) > 0.99) // dot-procut: same direction = 1; orthogonal = 0
                 { // vectors go into the same direction, need some orthogonal move
-                    Vector3f tmp = unit_vectors_[1] + random_direction_;
+                    Vector3f tmp = unit_vectors_[1] + random_direction_a_;
                     direction = unit_vectors_[0].cross(tmp); // get direction by cross-product, s.t. it is orthogonal to unit_vectors_[0]
                     exploration_info = 7;
                 }
@@ -1350,7 +1350,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
         float window_time = (float)(odometry_.timeStampSec + odometry_.timeStampNsec/(double)1000000000) - drone_active_start_time_;
         // float window_time = std::fmod(odometry_.timeStampSec + odometry_.timeStampNsec/(double)1000000000, (double)droneCount_ * (double)window_len_) - ((double)droneNumber_ * (double)window_len_);
-        // ROS_INFO("drone#%d phase_ = %d, window_time = %f, start_time_ = %f, active_ = %d", droneNumber_, cyclic_current_phase_, window_time, drone_active_start_time_, drone_active_);
+        // ROS_INFO("drone#%d phase_ = %d, window_time = %f, start_time_ = %f, active_ = %d, nhd = %d", droneNumber_, cyclic_current_phase_, window_time, drone_active_start_time_, drone_active_, neighbourhood_cnt);
 
         if(drone_active_ == 0 && cyclic_current_phase_ != CYCLIC_PHASE_REST)
             cyclic_current_phase_ = CYCLIC_PHASE_REST;
@@ -1362,6 +1362,12 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         {
             drone_active_start_time_ = (float)(odometry_.timeStampSec + odometry_.timeStampNsec/(double)1000000000);
 
+            std::normal_distribution<float> dist(0.0, 1); // gaussian random number generator
+            random_direction_a_[0] = dist(generator_);
+            random_direction_a_[1] = dist(generator_);
+            random_direction_a_[2] = dist(generator_);
+            random_direction_a_ = random_direction_a_ / random_direction_a_.norm(); // scale to length 1
+
             cyclic_current_phase_ = CYCLIC_PHASE_IDENTIFY_A;
             cyclic_odometry_history0_ = odometry_; // save absolute position, but use relative position only for calculation
             for (size_t i = 0; i < droneCount_; i++)
@@ -1371,6 +1377,15 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         else if(window_time > (window_len_ / 3.0 * 0.4) && cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_A) // 0.4
         {
             cyclic_current_phase_ = CYCLIC_PHASE_IDENTIFY_B;
+
+            std::normal_distribution<float> dist(0.0, 1); // gaussian random number generator
+            random_direction_b_[0] = dist(generator_);
+            random_direction_b_[1] = dist(generator_);
+            random_direction_b_[2] = dist(generator_);
+            Vector3f tmp = random_direction_a_ + random_direction_b_;
+            random_direction_b_ = random_direction_a_.cross(tmp); // get direction by cross-product, s.t. it is orthogonal to random_direction_a_
+            random_direction_b_ = random_direction_b_ / random_direction_b_.norm(); // scale to length 1
+
             cyclic_odometry_history1_ = odometry_; // save absolute position, but use relative position only for calculation
             for (size_t i = 0; i < droneCount_; i++)
                 cyclic_distances_history1_[i] = distances_[droneNumber_][i];
@@ -1379,6 +1394,10 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
         else if(window_time > (window_len_ / 3.0 * 0.8) && cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_B) // 0.8
         {
             cyclic_current_phase_ = CYCLIC_PHASE_IDENTIFY_C;
+
+            random_direction_c_ = random_direction_a_.cross(random_direction_b_); // get direction by cross-product, s.t. it is orthogonal to random_direction_a_
+            random_direction_c_ = random_direction_c_ / random_direction_c_.norm(); // scale to length 1
+
             cyclic_odometry_history2_ = odometry_; // save absolute position, but use relative position only for calculation
             for (size_t i = 0; i < droneCount_; i++)
                 cyclic_distances_history2_[i] = distances_[droneNumber_][i];
@@ -1480,32 +1499,32 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
 
         if(cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_A)
         {
-            set_point.pose.position.x = 0.0; // * velocity_scaling_;
-            set_point.pose.position.y = 0.0;
-            set_point.pose.position.z = 1.0;
-            set_point_marker[0] = odometry_.position[0];
-            set_point_marker[1] = odometry_.position[1];
-            set_point_marker[2] = odometry_.position[2] + 0.5;
+            set_point.pose.position.x = random_direction_a_[0]; // * velocity_scaling_;
+            set_point.pose.position.y = random_direction_a_[1];
+            set_point.pose.position.z = random_direction_a_[2];
+            set_point_marker[0] = odometry_.position[0] + random_direction_a_[0];
+            set_point_marker[1] = odometry_.position[1] + random_direction_a_[1];
+            set_point_marker[2] = odometry_.position[2] + random_direction_a_[2];
             exploration_info = 1;
         }
         else if(cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_B)
         {
-            set_point.pose.position.x = 0.0;
-            set_point.pose.position.y = 1.0; // * velocity_scaling_;
-            set_point.pose.position.z = 0.0;
-            set_point_marker[0] = odometry_.position[0];
-            set_point_marker[1] = odometry_.position[1] + 0.5;
-            set_point_marker[2] = odometry_.position[2];
+          set_point.pose.position.x = random_direction_b_[0]; // * velocity_scaling_;
+          set_point.pose.position.y = random_direction_b_[1];
+          set_point.pose.position.z = random_direction_b_[2];
+          set_point_marker[0] = odometry_.position[0] + random_direction_b_[0];
+          set_point_marker[1] = odometry_.position[1] + random_direction_b_[1];
+          set_point_marker[2] = odometry_.position[2] + random_direction_b_[2];
             exploration_info = 2;
         }
         else if(cyclic_current_phase_ == CYCLIC_PHASE_IDENTIFY_C)
         {
-            set_point.pose.position.x = 1.0;
-            set_point.pose.position.y = 0.0; // * velocity_scaling_;
-            set_point.pose.position.z = 0.0;
-            set_point_marker[0] = odometry_.position[0] + 0.5;
-            set_point_marker[1] = odometry_.position[1];
-            set_point_marker[2] = odometry_.position[2];
+          set_point.pose.position.x = random_direction_c_[0]; // * velocity_scaling_;
+          set_point.pose.position.y = random_direction_c_[1];
+          set_point.pose.position.z = random_direction_c_[2];
+          set_point_marker[0] = odometry_.position[0] + random_direction_c_[0];
+          set_point_marker[1] = odometry_.position[1] + random_direction_c_[1];
+          set_point_marker[2] = odometry_.position[2] + random_direction_c_[2];
             exploration_info = 3;
         }
         else if(cyclic_current_phase_ == CYCLIC_PHASE_CONTROL)
@@ -1525,7 +1544,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
             float still_calm_term;
             float still_height_term;
 
-            int neighbourhood_cnt = droneCount_ - 1;
+            //int neighbourhood_cnt = droneCount_ - 1;
 
             for(int ai = 0; ai <= n_move_max_; ai ++) // iterate over all possible next actions in x-, y- and z-dimension; and over length n_move_max_
             {

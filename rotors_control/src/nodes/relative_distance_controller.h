@@ -131,7 +131,9 @@ namespace rotors_control {
             float drone_active_start_time_ = 0;
             int current_target_ = 0;
             int history_cnt_;
-            Vector3f random_direction_; // save random exploration direction
+            Vector3f random_direction_a_; // save random exploration direction
+            Vector3f random_direction_b_; // save random exploration direction
+            Vector3f random_direction_c_; // save random exploration direction
             bool waypointHasBeenPublished_ = false;
             mav_msgs::EigenTrajectoryPoint target_swarm_;
 

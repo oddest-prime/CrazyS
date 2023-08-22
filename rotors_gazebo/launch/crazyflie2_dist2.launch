@@ -16,7 +16,7 @@
   <arg name="swarm_mode" default="dist"/>
   <arg name="swarm_params" default="mpc1_params2b"/>
   <arg name="csvFilesStoring" default="yes"/> <!-- possible values: "yes", "no", "distance" -->
-  <arg name="csvFilesStoringTime" default="30.0"/> <!-- seconds -->
+  <arg name="csvFilesStoringTime" default="9999.0"/> <!-- seconds -->
   <!-- The following line causes gzmsg and gzerr messages to be printed to the console
       (even when Gazebo is started through roslaunch) -->
   <arg name="verbose" default="false"/>

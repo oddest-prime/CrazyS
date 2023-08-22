@@ -593,12 +593,14 @@ void DistanceMeasurementSim::CallbackArbiter(const ros::TimerEvent& event){
   {
     undefined_count = 0;
     max_prio = -1;
-    for (size_t i = 0; i < droneCount_; i++) if(droneArbiterPrio_[i] > max_prio) max_prio = droneArbiterPrio_[i]; // calculate max_prio
-    ROS_INFO("max_prio = %d", max_prio);
+    for (size_t i = 0; i < droneCount_; i++)
+      if(droneArbiterPrio_[i] > max_prio && droneArbiterActive_[i] == -1) // calculate max prio of not yet decided drones
+        max_prio = droneArbiterPrio_[i]; // calculate max_prio
+    //ROS_INFO("max_prio = %d", max_prio);
 
     for (size_t i = 0; i < droneCount_; i++)
     {
-      if(droneArbiterPrio_[i] == max_prio)
+      if(droneArbiterPrio_[i] == max_prio && droneArbiterActive_[i] == -1) // find drone with max prio and not yet decided
       {
         int in_range_cnt = 0;
         for (size_t j = 0; j < droneCount_; j++) // count other active drones within range
@@ -608,7 +610,7 @@ void DistanceMeasurementSim::CallbackArbiter(const ros::TimerEvent& event){
               )
             in_range_cnt ++;
 
-        ROS_INFO("droneArbiterPrio_[%d] == max_prio, in_range_cnt = %d (dist0-1: %f)", (int)i, in_range_cnt, dronestate_[0].distances_gt_[1]);
+        //ROS_INFO("droneArbiterPrio_[%d] == max_prio, in_range_cnt = %d (dist0-1: %f)", (int)i, in_range_cnt, dronestate_[0].distances_gt_[1]);
         if(in_range_cnt <= 0) // check if no other active drone within range
         {
           droneArbiterActive_[i] = 1;
@@ -619,7 +621,7 @@ void DistanceMeasurementSim::CallbackArbiter(const ros::TimerEvent& event){
       }
       if(droneArbiterActive_[i] == -1)
         undefined_count ++;
-      ROS_INFO("undefined_count = %d", undefined_count);
+      //ROS_INFO("undefined_count = %d", undefined_count);
     }
   }while(undefined_count > 0);
 
@@ -629,8 +631,7 @@ void DistanceMeasurementSim::CallbackArbiter(const ros::TimerEvent& event){
     active_pub_[i].publish(active_msg); // send active messages
 
     droneArbiterPrio_[i] ++; // increase priority for next round
-
-    ROS_INFO(".. droneArbiterPrio_[%d] = %d, droneArbiterActive_[%d] = %d", (int)i, droneArbiterPrio_[i], (int)i, droneArbiterActive_[i]);
+    //ROS_INFO(".. droneArbiterPrio_[%d] = %d, droneArbiterActive_[%d] = %d", (int)i, droneArbiterPrio_[i], (int)i, droneArbiterActive_[i]);
   }
 
 }

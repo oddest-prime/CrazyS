@@ -117,6 +117,8 @@ make PaperDist.pdf
 
 mkdir -p /tmp/plot_output/
 mv /tmp/log_output/*.png /tmp/plot_output/.
+mv /tmp/log_output/*.pdf /tmp/plot_output/.
+mv /tmp/plot_output/PaperDist_log_output.pdf /tmp/plot_output/PaperDist_log_${date_hash_mode}.pdf
 
 echo "metrics file content:" >> /tmp/video.info
 echo "---------------------------------------------------------" >> /tmp/video.info

@@ -111,7 +111,7 @@ do
     dyn_hgh="800"
     dyn_cal="0" # 30, 5
     #dyn_sca="$jscaled"
-    dyn_sca="1.5" # "2"
+    dyn_sca="1.2" # "2" "1.5"
     dyn_thr="0.55" # "0.15" # "0.12" # "0.55"
     #dyn_thr="$jscaled"
     #dyn_ese="$jscaled"
@@ -148,7 +148,7 @@ do
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9_rover dist mpc1_dyn_${yamlname} 0 6 "${extratext}" &
 
     #extratext="dyn_sup${dyn_sup}dyn_iir${dyn_iir}dyn_nse${dyn_nse}"
-    extratext="dyn_nhd${dyn_nhd}dyn_nse${dyn_nse}"
+    extratext="dyn_nhd${dyn_nhd}dyn_nse${dyn_nse}dyn_sca${dyn_sca}"
     #extratext="dyn_j${j}"
 
 #    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` join15 dist mpc1_dyn_${yamlname} 0 9 "${extratext}" &

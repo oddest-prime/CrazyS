@@ -111,11 +111,11 @@ do
     dyn_hgh="800"
     dyn_cal="0" # 30, 5
     #dyn_sca="$jscaled"
-    dyn_sca="1.2" # "2" "1.5"
+    dyn_sca="1.25" # "2" "1.5"
     dyn_thr="0.55" # "0.15" # "0.12" # "0.55"
     #dyn_thr="$jscaled"
     #dyn_ese="$jscaled"
-    dyn_ese="1.35" # "0.87" # "1.10"
+    dyn_ese="1.5" # "1.35" # "0.87" # "1.10"
     #dyn_nhd="$jscaled"
     dyn_nhd="$iscaled" # "999.99" "3.0"
     dyn_hzd="17"

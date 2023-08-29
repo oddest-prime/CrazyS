@@ -63,7 +63,7 @@ function wait_until_max_procs_running {
 
 rm -f rotors_gazebo/resource/crazyflie2_mpc1_dyn_*.yaml
 # test different separation weights
-for i in 300 99999 # dyn_nhd
+for i in 300 # dyn_nhd # 300 99999
 do
 #  for j in 5 7 10 12 15 20 30 50 70 100 150 200 250 300 500 700 1000 2000 3000 # dyn_sep
 #  for j in 600 700 850 1000 1200 1500 1800 2200 # dyn_sep
@@ -92,7 +92,7 @@ do
 #  for j in 2 5 7 10 20 30  # dyn_iir
 # for j in 1 # fake loop
 #  for j in 20 0 2 5 10 15 # dyn_nse
-for j in 0 10 # dyn_nse
+for j in 10 # dyn_nse # 0 10
 do
     #for c in 0 2 3 # dyn_col
     #for c in 0 1 # dyn_col
@@ -111,8 +111,8 @@ do
     dyn_hgh="800"
     dyn_cal="0" # 30, 5
     #dyn_sca="$jscaled"
-    dyn_sca="1.1" # "2" "1.5"
-    dyn_thr="0.55" # "0.15" # "0.12" # "0.55"
+    dyn_sca="1.5" # "2" "1.5"
+    dyn_thr="0.25" # "0.15" # "0.12" # "0.55"
     #dyn_thr="$jscaled"
     #dyn_ese="$jscaled"
     dyn_ese="1.35" # "1.35" # "0.87" # "1.10"
@@ -163,21 +163,21 @@ do
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elevGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     #wait_until_max_procs_running
 
-###    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 cyclic mpc1_dyn_${yamlname} 0 5 "${extratext}" &
-###    wait_until_max_procs_running
-    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 cyclic mpc1_dyn_${yamlname} 0 5 "${extratext}" &
-    wait_until_max_procs_running
-###    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 cyclic mpc1_dyn_${yamlname} 0 5 "${extratext}" &
-###    wait_until_max_procs_running
+#!#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 cyclic mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+#!#    wait_until_max_procs_running
+#!#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 cyclic mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+#!#    wait_until_max_procs_running
+#!#    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 cyclic mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+#!#    wait_until_max_procs_running
 #    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 cyclic mpc1_dyn_${yamlname} 0 5 "${extratext}" &
 #    wait_until_max_procs_running
 
-###    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
-###    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     wait_until_max_procs_running
-###    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
-###    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
 #    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
 #    wait_until_max_procs_running
 
@@ -191,12 +191,12 @@ do
 #    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 distGT mpc1_dyn_${yamlname} 0 5 "${extratext}" &
 #    wait_until_max_procs_running
 
-###    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 elev mpc1_dyn_${yamlname} 0 5 "${extratext}" &
-###    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 elev mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
     docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 elev mpc1_dyn_${yamlname} 0 5 "${extratext}" &
     wait_until_max_procs_running
-###    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elev mpc1_dyn_${yamlname} 0 5 "${extratext}" &
-###    wait_until_max_procs_running
+    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elev mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+    wait_until_max_procs_running
 #    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist2 elev mpc1_dyn_${yamlname} 0 5 "${extratext}" &
 #    wait_until_max_procs_running
 

@@ -34,7 +34,7 @@
   "velocity_scaling": __DYN_SCA__,
   "distance_iir_filter": __DYN_IIR__,
   "elevation_iir_filter": __DYN_IIR__,
-  "distance_min_filter": 0.05, # minimum value for distances to be accepted, otherwise using old value # 0.25
+  "distance_min_filter": 0.25, # minimum value for distances to be accepted, otherwise using old value # 0.25 0.05
   "distance_max_filter": 100.0, # maximum value for distances to be accepted, otherwise using old value
   "extra_separation_distance": __DYN_ESE__,
   "noise_suppression": __DYN_SUP__ # 1 -> filter and linear regression, 0 -> none of these

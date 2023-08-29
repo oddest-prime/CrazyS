@@ -63,7 +63,7 @@ function wait_until_max_procs_running {
 
 rm -f rotors_gazebo/resource/crazyflie2_mpc1_dyn_*.yaml
 # test different separation weights
-for i in 300 # dyn_nhd # 300 99999
+for i in 300 99999 # dyn_nhd # 300 99999
 do
 #  for j in 5 7 10 12 15 20 30 50 70 100 150 200 250 300 500 700 1000 2000 3000 # dyn_sep
 #  for j in 600 700 850 1000 1200 1500 1800 2200 # dyn_sep
@@ -86,13 +86,13 @@ do
 #  for j in 1000 100 50 25 20 15 12 10 7 5 2  # dyn_hzd
 #  for j in 0 2 3 5 6 7 8 10 12 15 20 25 30 # dyn_nse
 #  for j in 100 120 150 180 # dyn_sep
-#  for j in 15 # dyn_thr
 #  for j in 150 170 190 210 230 250 # dyn_sca
 #  for j in 150 200 250 300 400 500 999 # dyn_nhd
 #  for j in 2 5 7 10 20 30  # dyn_iir
 # for j in 1 # fake loop
 #  for j in 20 0 2 5 10 15 # dyn_nse
-for j in 10 # dyn_nse # 0 10
+#  for j in 10 # dyn_nse # 0 10 ##!!
+for j in 30 35 40  # dyn_thr
 do
     #for c in 0 2 3 # dyn_col
     #for c in 0 1 # dyn_col
@@ -102,7 +102,7 @@ do
     iscaled=`echo "scale=2;$i / 100" | bc | awk '{printf "%.2f", $0}'`
     jscaled=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`
 
-    dyn_nse="$jscaled" # 0.0 0.05 0.1
+    dyn_nse="0.1" # 0.0 0.05 0.1
     #dyn_eps="$jscaled"
     dyn_eps="0.07" # "0.1" # "0.05" "0.15"
     dyn_nmm="6" # 6 # 3
@@ -112,7 +112,7 @@ do
     dyn_cal="0" # 30, 5
     #dyn_sca="$jscaled"
     dyn_sca="1.5" # "2" "1.5"
-    dyn_thr="0.25" # "0.15" # "0.12" # "0.55"
+    dyn_thr="$jscaled" # "0.15" # "0.12" # "0.55" # "0.25"
     #dyn_thr="$jscaled"
     #dyn_ese="$jscaled"
     dyn_ese="1.35" # "1.35" # "0.87" # "1.10"
@@ -148,7 +148,7 @@ do
     #docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9_rover dist mpc1_dyn_${yamlname} 0 6 "${extratext}" &
 
     #extratext="dyn_sup${dyn_sup}dyn_iir${dyn_iir}dyn_nse${dyn_nse}"
-    extratext="dyn_nhd${dyn_nhd}dyn_nse${dyn_nse}dyn_sca${dyn_sca}"
+    extratext="dyn_nhd${dyn_nhd}dyn_nse${dyn_nse}dyn_thr${dyn_thr}"
     #extratext="dyn_j${j}"
 
 #    docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` join15 dist mpc1_dyn_${yamlname} 0 9 "${extratext}" &

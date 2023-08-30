@@ -1,0 +1,56 @@
+# Swarm controller parameters
+{
+"swarm": {
+  "position_noise": 0.0, # simulate gaussian sensor noise, sigma = 0 cm
+  "distance_noise": __DYN_NSE__, # simulate gaussian sensor noise for distance measurements, sigma = 0 cm
+  "elevation_noise": __DYN_NSE__, # simulate gaussian sensor noise for elevation measurements, sigma = 0 cm
+  "noise_color": 3, # NOISE_COLOR_WHITE=0, NOISE_COLOR_RED=1, NOISE_COLOR_PINK=2
+  "distance_max_rate": 17, # max rate for distance measurements [Hz]
+  "elevation_max_rate": 1000, # max rate for distance measurements [Hz]
+  "neighbourhood_distance": __DYN_NHD__, # 999.0 = global neighbourhood
+  "drone_radius": 0.07, # 7 cm
+  "obstacle_radius": 0.25 # 15 cm
+  },
+"mpc1": {
+  "eps_move": 0.06,
+  "n_move_max": 3,
+  "mpc_cohesion_weight": 20.0,
+  "mpc_separation_weight": 11.0,
+  "mpc_target_weight": 150.0,
+  "mpc_obstacle_weight": 20.0
+  },
+"dist": {
+  "eps_move": 0.07, # 0.05
+  "n_move_max": 6, # 6,
+  "explore_command_length": 0.35, # length for exploration vector in meters
+  "explore_movement_thr":  0.35, # threshold for movement in meters, s.t. it is considered as new measurement
+  "explore_distance_cap": 100.0, # maxium distance for learned data
+  "spc_cohesion_weight": 30.0,
+  "spc_separation_weight": 100,
+  "spc_target_weight": 6000,
+  "spc_height_weight": 800,
+  "spc_limit_weight": 0.0,
+  "spc_calm_weight": 0,
+  "velocity_scaling": 1.5,
+  "distance_iir_filter": 0.05,
+  "elevation_iir_filter": 0.05,
+  "distance_min_filter": 0.25, # minimum value for distances to be accepted, otherwise using old value # 0.25 0.05
+  "distance_max_filter": 100.0, # maximum value for distances to be accepted, otherwise using old value
+  "extra_separation_distance": 1.35,
+  "noise_suppression": 1 # 1 -> filter and linear regression, 0 -> none of these
+  },
+"elevation": {
+  "target_elevation": 0.0, # target is located on ground [m]
+  "swarm_elevation": 5.0 # swarm should stay at this altitude [m]
+  },
+"gradient": {
+  "scale_factor": 0.005
+  },
+"cyclic": {
+  "window_len": 3.0, # duration of time-slices
+  "neighbourhood_distance_extra": 1.0 # extra distance to ensure agents keep out of neighbourhood during movements
+  },
+"inner": {
+  "controller": 3 # 1 -> PID (A), 2 -> explicit (B), 3 -> velocity (C), 4 -> velocity/altitude (D)
+  }
+}

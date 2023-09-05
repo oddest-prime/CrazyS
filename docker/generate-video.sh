@@ -62,7 +62,11 @@ ffmpeg \
 [c0][vv]concat=n=2:v=1:a=0,format=yuv420p[v]" \
  -map [v] -y /tmp/my_out.mp4
 
-mv /tmp/my_out.mp4 /crazyflie_ws/src/crazys/video_${date_hash}.mp4
+ mv /tmp/my_out.mp4 /crazyflie_ws/src/crazys/video_${date_hash}.mp4
+ mv /tmp/my_cam1.mp4 /crazyflie_ws/src/crazys/video_${date_hash}_cam1.mp4
+ mv /tmp/my_cam2.mp4 /crazyflie_ws/src/crazys/video_${date_hash}_cam2.mp4
+ mv /tmp/my_cam3.mp4 /crazyflie_ws/src/crazys/video_${date_hash}_cam3.mp4
+ mv /tmp/my_cam4.mp4 /crazyflie_ws/src/crazys/video_${date_hash}_cam4.mp4
 
 #mv /tmp/my_cam1.mp4 /crazyflie_ws/src/crazys/video_${date_hash}_cam1.mp4
 #mv /tmp/my_cam2.mp4 /crazyflie_ws/src/crazys/video_${date_hash}_cam2.mp4

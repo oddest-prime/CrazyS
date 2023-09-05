@@ -10,24 +10,27 @@
     </include>
 
     <include>
-      <uri>model://flat_marker</uri>
+      <!--uri>model://flat_marker</uri-->
       <!--uri>model://construction_cone</uri-->
+      <uri>model://construction_cone</uri>
       <name>cone_00</name>
       <!--pose>x y z roll  pitch yaw</pose-->
-      <pose>0.0 8.0 0.0  0 0 0</pose>
+      <pose>10.0 0.0 0.0  0 0 0</pose>
       <static>true</static>
     </include>
     <include>
-      <uri>model://flat_marker</uri>
+      <!--uri>model://flat_marker</uri-->
       <!--uri>model://construction_cone</uri-->
+      <uri>model://construction_cone</uri>
       <name>cone_01</name>
       <!--pose>x y z roll  pitch yaw</pose-->
-      <pose>0.0 8.0 0.0  0 0 0</pose>
+      <pose>10.0 10.0 0.0  0 0 0</pose>
       <static>true</static>
     </include>
     <include>
-      <uri>model://flat_marker</uri>
+      <!--uri>model://flat_marker</uri-->
       <!--uri>model://construction_cone</uri-->
+      <uri>model://construction_cone</uri>
       <name>cone_02</name>
       <!--pose>x y z roll  pitch yaw</pose-->
       <pose>0.0 0.0 0.0  0 0 0</pose>
@@ -37,7 +40,7 @@
     <model name="camera1">
     <link name="link">
       <gravity>0</gravity>
-      <pose>-11 0 5 0 0 0</pose> <!-- place a bit higher -->
+      <pose>-11 0 5 0 0.17 0</pose> <!-- place a bit higher -->
       <!--pose>-4 0 0.8 0 0 0</pose-->
       <inertial>
         <mass>0.1</mass>
@@ -81,7 +84,8 @@
     <model name="camera2">
     <link name="link">
       <gravity>0</gravity>
-      <pose>0 3 15 0 1.5708 0</pose>
+      <pose>-5.7 14.5 11 0 0.5 -0.7854</pose> <!-- nice far away distance -->
+      <!--pose>0 3 15 0 1.5708 0</pose-->
       <inertial>
         <mass>0.1</mass>
       </inertial>
@@ -124,7 +128,7 @@
     <model name="camera3">
     <link name="link">
       <gravity>0</gravity>
-      <pose>0 -11 5 0 0 1.5708</pose> <!-- place a bit higher -->
+      <pose>0 -11 5 0 0.17 1.5708</pose> <!-- place a bit higher -->
       <!--pose>0 -4 0.8 0 0 1.5708</pose-->
       <inertial>
         <mass>0.1</mass>
@@ -169,7 +173,7 @@
     <link name="link">
       <gravity>0</gravity>
       <!--pose>x y z roll pitch yaw</pose-->
-      <pose>-7 -7 12 0 0.5 0.7854</pose> <!-- nice far away distance -->
+      <pose>-4.5 -12.0 12 0 0.5 1.1</pose> <!-- nice far away distance -->
       <!--pose>-0.6 0.7 1.7 0 1 -0.7854</pose--> <!-- as in testing room at homeoffice -->
       <inertial>
         <mass>0.1</mass>

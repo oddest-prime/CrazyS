@@ -61,11 +61,11 @@ function wait_until_max_procs_running {
   fi;
 }
 
-for i in a b c
+for i in a # b c
 do
-    for j in 300 99999 # dyn_nhd
+    for j in 300 # 99999 # dyn_nhd
     do
-        for k in 0 10 # dyn_nse
+        for k in 10 # 0 # dyn_nse
         do
         yamlname=`printf "%05d%s%02d" $j $i $k`
         dyn_nhd=`echo "scale=2;$j / 100" | bc | awk '{printf "%.2f", $0}'`

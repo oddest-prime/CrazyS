@@ -75,7 +75,7 @@ do
         sed -i "s/__DYN_NHD__/$dyn_nhd/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
         sed -i "s/__DYN_NSE__/$dyn_nse/g" rotors_gazebo/resource/crazyflie2_mpc1_dyn_${yamlname}.yaml
 
-        extratext="dyn_nhd${dyn_nhd}dyn_nse${dyn_nse}fin"
+        extratext="dyn_nhd${dyn_nhd}dyn_nse${dyn_nse}vid"
 
         docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 dist mpc1_dyn_${yamlname} 0 5 "${extratext}" &
         wait_until_max_procs_running

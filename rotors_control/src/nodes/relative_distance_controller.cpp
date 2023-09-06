@@ -1716,8 +1716,9 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
     pr2_position_red.x = set_point_marker[0];
     pr2_position_red.y = set_point_marker[1];
     pr2_position_red.z = set_point_marker[2];
-    if(enable_swarm_ == SWARM_DISABLED) // hovering at fixed position, use both markers
+    if(enable_swarm_ == SWARM_DISABLED) // hovering at fixed position, disable both markers
     {
+      pr2_position_red.z -= 5000;
         pr2_position_blue = pr2_position_red;
     }
     else if(exploration_info == 0) // exploitation phase, use blue marker

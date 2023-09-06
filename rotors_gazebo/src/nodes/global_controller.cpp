@@ -521,7 +521,6 @@ int main(int argc, char** argv) {
     if(droneCount == 2)
       modulus = 1;
 
-    move_marker_beacon(&gazebo_client_, 0, desired_position.x(), desired_position.y(), desired_position.z());
     ROS_INFO("global_controller (timed): Go to starting position (hovering).");
     for (size_t i = 0; i < droneCount; i++) // go to starting position (hovering)
     {

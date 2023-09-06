@@ -54,7 +54,7 @@
            -sdf
            -x 0.0
            -y 0.0
-           -z 0.0
+           -z 1000.0
            -model marker_green_beacon_0"
      respawn="false" output="screen">
    </node>

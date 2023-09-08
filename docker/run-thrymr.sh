@@ -61,7 +61,7 @@ function wait_until_max_procs_running {
   fi;
 }
 
-for i in a # b c
+for i in a b c
 do
     for j in 300 # 99999 # dyn_nhd
     do

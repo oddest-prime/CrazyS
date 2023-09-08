@@ -913,9 +913,12 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 set_point.pose.position.y = direction[1] * velocity_scaling_;
                 set_point.pose.position.z = direction[2] * velocity_scaling_;
                 ROS_INFO_ONCE("RelativeDistanceController %d explore:%d (velocity) direction:%s", droneNumber_, exploration_info, VectorToString(direction).c_str());
-                set_point_marker[0] = odometry_.position[0] + direction[0] * velocity_scaling_;
-                set_point_marker[1] = odometry_.position[1] + direction[1] * velocity_scaling_;
-                set_point_marker[2] = odometry_.position[2] + direction[2] * velocity_scaling_;
+                //set_point_marker[0] = odometry_.position[0] + direction[0] * velocity_scaling_;
+                //set_point_marker[1] = odometry_.position[1] + direction[1] * velocity_scaling_;
+                //set_point_marker[2] = odometry_.position[2] + direction[2] * velocity_scaling_;
+                set_point_marker[0] = odometry_.position[0]; // for paper video
+                set_point_marker[1] = odometry_.position[1]; // for paper video
+                set_point_marker[2] = odometry_.position[2]; // for paper video
             }
             else if(inner_controller_ == 4) // HW controller
             {
@@ -1308,7 +1311,7 @@ void RelativeDistanceController::OdometryCallback(const nav_msgs::OdometryConstP
                 ROS_INFO_ONCE("RelativeDistanceController %d exploitation (velocity) tsum=%f scal=%f", droneNumber_, best_sum, velocity_scaling_);
                 set_point_marker[0] = odometry_.position[0] + best_movement(0) * velocity_scaling_;
                 set_point_marker[1] = odometry_.position[1] + best_movement(1) * velocity_scaling_;
-                set_point_marker[2] = odometry_.position[2] + best_movement(2) * velocity_scaling_;
+                set_point_marker[2] = odometry_.position[2] + best_movement(2) * velocity_scaling_ - 10000; // do not show blue marker for paper video
                 tempEnv << exploration_info << "," << best_movement(0) * velocity_scaling_ << "," << best_movement(1) * velocity_scaling_ << "," << best_movement(2) * velocity_scaling_ << "," << (float)best_sum << "," << history_cnt_ << ",";
             }
             else if(inner_controller_ == 4) // HW controller

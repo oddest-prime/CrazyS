@@ -91,12 +91,12 @@ do
         docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 elev mpc1_dyn_${yamlname} 0 5 "${extratext}" &
         wait_until_max_procs_running
 
-        docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 cyclic mpc1_dyn_${yamlname} 0 5 "${extratext}" &
-        wait_until_max_procs_running
-        docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 cyclic mpc1_dyn_${yamlname} 0 5 "${extratext}" &
-        wait_until_max_procs_running
-        docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 cyclic mpc1_dyn_${yamlname} 0 5 "${extratext}" &
-        wait_until_max_procs_running
+#        docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist15 cyclic mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+#        wait_until_max_procs_running
+#        docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist9 cyclic mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+#        wait_until_max_procs_running
+#        docker run --rm --volume ~/SWARM/crazys:/crazyflie_ws/src/crazys crazys /crazyflie_ws/src/crazys/docker/run-simulation.sh `git rev-parse --short HEAD` dist5 cyclic mpc1_dyn_${yamlname} 0 5 "${extratext}" &
+#        wait_until_max_procs_running
 
         done
     done

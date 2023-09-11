@@ -7,14 +7,14 @@
             <pose>0 0 0 0 0 0</pose>
             <geometry>
               <sphere>
-                <radius>0.04</radius>
+                <radius>0.12</radius>
               </sphere>
             </geometry>
             <material>
-              <script>
-                <name>Gazebo/BlueTransparentOverlay</name>
-                <uri>__default__</uri>
-              </script>
+              <ambient>0 0 1 0.2</ambient>
+              <diffuse>0 0 1 0.2</diffuse>
+              <specular>0.2 0.2 0.2 64</specular>
+              <emissive>0 0 1 0.2</emissive>
             </material>
         </visual>
     </link>

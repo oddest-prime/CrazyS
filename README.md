@@ -1,6 +1,32 @@
-# swarm simulation using crazys
+# Flock-Formation Control of Multi-Agent Systems using Imperfect Relative Distance Measurements
 
-## Quick start (everything you need to get it running the first time)
+This implements the software as used in the following paper:
+A. Brandstätter, S. A. Smolka, S. D. Stoller, A. Tiwari and R. Grosu, "Flock-Formation Control of Multi-Agent Systems using Imperfect Relative Distance Measurements," 2024 IEEE International Conference on Robotics and Automation (ICRA), Yokohama, Japan, 2024, pp. 12193-12200, doi: [10.1109/ICRA57147.2024.10610147](https://doi.org/10.1109/ICRA57147.2024.10610147).
+
+Please cite this work as follows:
+
+```console
+@INPROCEEDINGS{10610147,
+  author={Brandstätter, Andreas and Smolka, Scott A. and Stoller, Scott D. and Tiwari, Ashish and Grosu, Radu},
+  booktitle={2024 IEEE International Conference on Robotics and Automation (ICRA)}, 
+  title={Flock-Formation Control of Multi-Agent Systems using Imperfect Relative Distance Measurements}, 
+  year={2024},
+  volume={},
+  number={},
+  pages={12193-12200},
+  keywords={Location awareness;Dictionaries;Control systems;Distance measurement;Stability analysis;Robotics and automation;Physics},
+  doi={10.1109/ICRA57147.2024.10610147}}
+}
+```
+
+## Acknowledgment
+
+The software is based on **CrazyS** by Giuseppe Silano et al. Thanks for this awesome work!
+
+For details please refer to the repository of CrazyS: [https://github.com/gsilano/CrazyS](https://github.com/gsilano/CrazyS)
+
+## Quick start
+*Everything you need to get it running initially...*
 
 * Execute command `id` to get your own uid and gid and set it in file `docker/Dockerfile` at lines 28 and 29. This is needed to correctly map the user and group inside the docker container to your user and group on the host system.
 

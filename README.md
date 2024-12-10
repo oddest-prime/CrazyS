@@ -50,3 +50,8 @@ For details please refer to the repository of CrazyS: [https://github.com/gsilan
 
 For more information and examples also refer to `README.md` in folder `docker`.
 
+## Troubleshooting
+
+* If Gazebo GUI is not showing up, you might check if the X forwarding from inside docker is working. Inside docker run the following command to check if X is working:
+
+    `xeyes`

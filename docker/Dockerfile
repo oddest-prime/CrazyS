@@ -20,14 +20,14 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     python3-vcstool python3-catkin-tools protobuf-compiler libgoogle-glog-dev \
     python3-rosdep python3-wstool ros-noetic-ros \
     ffmpeg screen xvfb imagemagick gnuplot sqlite3 jq \
-    wget
+    wget x11-apps
 
     # fix imagemagick version, as current version is buggy and does not generate iamges from text input
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --allow-downgrades \
     imagemagick=8:6.9.10.23+dfsg-2.1ubuntu11 imagemagick-6-common=8:6.9.10.23+dfsg-2.1ubuntu11
 
-RUN groupadd -g 1001 flie && \
-    useradd -u 1001 -g flie -m -s /bin/bash flie && \
+RUN groupadd -g 1000 flie && \
+    useradd -u 1000 -g flie -m -s /bin/bash flie && \
     echo "flie:flie" | chpasswd && \
     adduser flie sudo && \
     adduser flie plugdev && \
